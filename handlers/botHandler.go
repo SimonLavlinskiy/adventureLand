@@ -7,14 +7,34 @@ import (
 
 var msg tgbotapi.MessageConfig
 
+// TODO вынести костантные названия кнопок в отдельный файл(Можно даже в yml)
+
+var mainKeyboardNames = [][]string{
+	{"Карта", "👜 Инвентарь 👜"},
+	{"/menu"},
+}
+
+var backpackKeyboardNames = [][]string{
+	{"\U0001F9BA Шмот \U0001F9BA", "\"🍕 Еда 🍕\""},
+	{"/menu"},
+}
+
+func names2buttons(names [][]string) [][]tgbotapi.KeyboardButton {
+	var rows [][]tgbotapi.KeyboardButton
+	for _, l := range names {
+		var row []tgbotapi.KeyboardButton
+		for _, s := range l {
+			row = append(row, tgbotapi.NewKeyboardButton(s))
+		}
+		rows = append(rows, tgbotapi.NewKeyboardButtonRow(row...))
+	}
+	return rows
+}
+
 var mainKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("Карта"),
 		tgbotapi.NewKeyboardButton("👜 Инвентарь 👜"),
-	),
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("Жопа"),
-		tgbotapi.NewKeyboardButton("Попа"),
 	),
 )
 
