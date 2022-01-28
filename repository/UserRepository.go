@@ -1,37 +1,34 @@
 package repository
 
 import (
-	"database/sql"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"gorm.io/gorm"
 	"project0/config"
 	"time"
 )
 
 type User struct {
-	ID         uint           `gorm:"primaryKey"`
-	TgId       int64          `gorm:"embedded"`
-	TgChatId   int64          `gorm:"embedded"`
-	Username   string         `gorm:"embedded"`
-	LocationId sql.NullString `gorm:"embedded"`
-	CreatedAt  time.Time      `gorm:"autoCreateTime"`
-	Deleted    bool           `gorm:"embedded"`
+	ID         uint      `gorm:"primaryKey"`
+	TgId       uint      `gorm:"embedded"`
+	Username   string    `gorm:"embedded"`
+	LocationId *uint     `gorm:"embedded"`
+	CreatedAt  time.Time `gorm:"autoCreateTime"`
+	Deleted    bool      `gorm:"embedded"`
 }
 
-func GetOrCreateUser(update tgbotapi.Update) *gorm.DB {
+func GetOrCreateUser(update tgbotapi.Update) User {
 
-	requestUser := &User{
-		TgId:     update.Message.From.ID,
-		TgChatId: update.Message.Chat.ID,
+	result := User{
+		TgId:     uint(update.Message.From.ID),
 		Username: update.Message.From.UserName,
 	}
-
 	fmt.Println(update.Message.From.ID)
-	res := config.Db.Where(User{TgId: requestUser.TgId}).First(&requestUser)
-	if res.RowsAffected == 0 {
-		config.Db.Create(&requestUser)
+	err := config.Db.Where(&User{TgId: uint(update.Message.From.ID)}).FirstOrCreate(&result).Error
+	if err != nil {
+		panic(err)
 	}
-	fmt.Println(res.RowsAffected)
-	return res
+
+	fmt.Printf("%+v", result)
+
+	return result
 }
