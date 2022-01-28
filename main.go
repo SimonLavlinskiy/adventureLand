@@ -1,13 +1,14 @@
 package main
 
 import (
-	"database/sql"
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 	"log"
 	"os"
+	"runtime"
+
 	"project0/handlers"
-	"time"
+
+	"project0/config"
 )
 
 func main() {
@@ -18,14 +19,11 @@ func main() {
 
 	telegramApiToken, _ := os.LookupEnv("TELEGRAM_APITOKEN")
 
-	db, err := sql.Open("mysql", "user:password@/dbname")
-	if err != nil {
-		panic(err)
+	mysqlStatus := config.InitMySQL()
+
+	if mysqlStatus != true {
+		runtime.Goexit()
 	}
-	// See "Important settings" section.
-	db.SetConnMaxLifetime(time.Minute * 3)
-	db.SetMaxOpenConns(10)
-	db.SetMaxIdleConns(10)
 
 	handlers.GetMessage(telegramApiToken)
 }
