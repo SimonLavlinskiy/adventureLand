@@ -1,13 +1,11 @@
 package config
 
 import (
-	"database/sql"
 	"fmt"
-	"log"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 	"os"
-	"time"
-
-	_ "github.com/go-sql-driver/mysql"
+	"project0/repository"
 )
 
 const driverName string = "mysql"
@@ -20,15 +18,21 @@ func InitMySQL() bool {
 	mysqlPort, _ := os.LookupEnv("MYSQL_PORT")
 	mysqlDbName, _ := os.LookupEnv("MYSQL_DB_NAME")
 
-	db, err := sql.Open(driverName, fmt.Sprintf("%s:%s@/tcp(%s:%s)/%s", mysqlUserName, mysqlPassword, mysqlHots, mysqlPort, mysqlDbName))
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", mysqlUserName, mysqlPassword, mysqlHots, mysqlPort, mysqlDbName)
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+
 	if err != nil {
-		log.Printf("Database init error")
-		log.Fatalf("error opening file: %v", err)
+		fmt.Println("DB initialization failed")
+		panic(err)
 		return false
 	}
 
-	db.SetConnMaxLifetime(time.Minute * 3)
-	db.SetMaxOpenConns(10)
-	db.SetMaxIdleConns(10)
+	err = db.AutoMigrate(repository.User{})
+
+	if err != nil {
+		fmt.Println("Migration failed")
+		panic(err)
+		return false
+	}
 	return true
 }

@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"project0/repository"
 )
 
 var msg tgbotapi.MessageConfig
@@ -16,6 +18,8 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 		msg.ReplyMarkup = moveKeyboard
 	case "/start":
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Приветствую тебя, мистер "+update.Message.From.FirstName+" "+update.Message.From.LastName)
+		fmt.Println(update.Message.From.ID)
+		repository.GetOrCreateUser(update.Message.From.ID)
 	case "/menu":
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Меню")
 		msg.ReplyMarkup = mainKeyboard
