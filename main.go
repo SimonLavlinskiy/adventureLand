@@ -4,11 +4,10 @@ import (
 	"github.com/joho/godotenv"
 	"log"
 	"os"
-	"runtime"
-
-	"project0/handlers"
-
 	"project0/config"
+	"project0/handlers"
+	"project0/migrations"
+	"runtime"
 )
 
 func main() {
@@ -20,6 +19,7 @@ func main() {
 	telegramApiToken, _ := os.LookupEnv("TELEGRAM_APITOKEN")
 
 	mysqlStatus := config.InitMySQL()
+	migrations.Migrate()
 
 	if mysqlStatus != true {
 		runtime.Goexit()

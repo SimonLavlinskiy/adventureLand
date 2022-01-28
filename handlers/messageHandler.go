@@ -18,8 +18,8 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 		msg.ReplyMarkup = moveKeyboard
 	case "/start":
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Приветствую тебя, мистер "+update.Message.From.FirstName+" "+update.Message.From.LastName)
-		fmt.Println(update.Message.From.ID)
-		repository.GetOrCreateUser(update.Message.From.ID)
+		res := repository.GetOrCreateUser(update)
+		fmt.Println(res)
 	case "/menu":
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Меню")
 		msg.ReplyMarkup = mainKeyboard
