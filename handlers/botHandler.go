@@ -74,7 +74,7 @@ func GetMessage(telegramApiToken string) {
 		panic(err)
 	}
 	bot.Debug = false
-
+	// пизда
 	updateConfig := tgbotapi.NewUpdate(0)
 
 	updateConfig.Timeout = 30
