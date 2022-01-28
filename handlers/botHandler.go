@@ -28,8 +28,9 @@ func names2buttons(names []string) []tgbotapi.KeyboardButton {
 
 var mainKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("Карта"),
-		tgbotapi.NewKeyboardButton("👜 Инвентарь 👜"),
+		tgbotapi.NewKeyboardButton("🗺\nКарта"),
+		tgbotapi.NewKeyboardButton("👜\nИнвентарь"),
+		tgbotapi.NewKeyboardButton("👤👔\nПрофиль"),
 	),
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("/menu"),
@@ -40,6 +41,15 @@ var backpackKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("\U0001F9BA Шмот \U0001F9BA"),
 		tgbotapi.NewKeyboardButton("🍕 Еда 🍕"),
+	),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("/menu"),
+	),
+)
+
+var profileKeyboard = tgbotapi.NewReplyKeyboard(
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("📝 Изменить имя на Писю? 📝"),
 	),
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("/menu"),

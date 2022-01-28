@@ -32,3 +32,18 @@ func GetOrCreateUser(update tgbotapi.Update) User {
 
 	return result
 }
+
+func UpdateUsername(update tgbotapi.Update) User {
+	result := User{
+		Username: update.Message.From.UserName,
+	}
+
+	err := config.Db.Where(&User{TgId: uint(update.Message.From.ID)}).Updates(User{Username: "Пися"}).Error //Where(&User{TgId: uint(update.Message.From.ID)}).Update("username", "Пися")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("%+v", result)
+
+	return result
+}
