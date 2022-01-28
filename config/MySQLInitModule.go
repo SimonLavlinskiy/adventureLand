@@ -8,8 +8,6 @@ import (
 	"project0/repository"
 )
 
-const driverName string = "mysql"
-
 func InitMySQL() bool {
 
 	mysqlUserName, _ := os.LookupEnv("MYSQL_USER")
