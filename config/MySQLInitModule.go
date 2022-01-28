@@ -5,8 +5,10 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"os"
-	"project0/repository"
 )
+
+var Db *gorm.DB
+var err error
 
 func InitMySQL() bool {
 
@@ -17,7 +19,9 @@ func InitMySQL() bool {
 	mysqlDbName, _ := os.LookupEnv("MYSQL_DB_NAME")
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", mysqlUserName, mysqlPassword, mysqlHots, mysqlPort, mysqlDbName)
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	Db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+
+	//Db = Db.Debug()
 
 	if err != nil {
 		fmt.Println("DB initialization failed")
@@ -25,12 +29,5 @@ func InitMySQL() bool {
 		return false
 	}
 
-	err = db.AutoMigrate(repository.User{})
-
-	if err != nil {
-		fmt.Println("Migration failed")
-		panic(err)
-		return false
-	}
 	return true
 }
