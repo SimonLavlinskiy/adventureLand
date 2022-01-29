@@ -18,11 +18,13 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 	if username == "Пися" && newMessage == "👤👔\nПрофиль" || newMessage == "📝 Изменить имя обратно? 📝" {
 		switch newMessage {
 		case "👤👔\nПрофиль":
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "\bПрофиль:\b\nТы жмых из под пня, и звать тебя "+res.Username+"!\nНо я буду звать ультра-мышь!")
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "*Профиль:*\nТы *"+res.Username+"*!\nНо я буду звать ультра-мышь!")
+			msg.ParseMode = "markdown"
 			msg.ReplyMarkup = profileKeyboardBackUsername
 		case "📝 Изменить имя обратно? 📝":
-			res := user.UpdateUsername(update, true)
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "\bПрофиль:\b\nТы жмых из под пня, и звать тебя "+res.Username+"!\nНо я буду звать ультра-мышь!")
+			res := user.UpdateUsername(update, user.User{Username: "Попа"}, true)
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "*Профиль:*\nТы *"+res.Username+"*!")
+			msg.ParseMode = "markdown"
 			msg.ReplyMarkup = profileKeyboard
 		}
 	} else {
@@ -41,11 +43,13 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 
 		case "👤👔\nПрофиль":
 			res := user.GetOrCreateUser(update)
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "\bПрофиль:\b\nТы жмых из под пня, и звать тебя "+res.Username+"!\nНо я буду звать ультра-мышь!")
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "*Профиль*:\nТы *"+res.Username+"*!\nНо я буду звать ультра-мышь!")
+			msg.ParseMode = "markdown"
 			msg.ReplyMarkup = profileKeyboard
 		case "📝 Изменить имя на Писю? 📝":
-			user.UpdateUsername(update, false)
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Эх, Пися, для меня ты все равно ультра-мышь :D")
+			res = user.UpdateUsername(update, user.User{Username: "Пися"}, false)
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "*Профиль*:\nТы *"+res.Username+"*!\n")
+			msg.ParseMode = "markdown"
 			msg.ReplyMarkup = profileKeyboardBackUsername
 		case "👜\nИнвентарь":
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Инвентарь")
