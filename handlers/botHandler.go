@@ -6,25 +6,25 @@ import (
 
 // TODO вынести костантные названия кнопок в отдельный файл(Можно даже в yml)
 
-var mainKeyboardNames = []string{
-	"Карта", "👜 Инвентарь 👜",
-}
-
-var menuButtons = []string{
-	"/menu",
-}
-
-var backpackKeyboardNames = [][]string{
-	{"\U0001F9BA Шмот \U0001F9BA", "\"🍕 Еда 🍕\""},
-}
-
-func names2buttons(names []string) []tgbotapi.KeyboardButton {
-	var row []tgbotapi.KeyboardButton
-	for _, l := range names {
-		row = append(row, tgbotapi.NewKeyboardButton(l))
-	}
-	return row
-}
+//var mainKeyboardNames = []string{
+//	"Карта", "👜 Инвентарь 👜",
+//}
+//
+//var menuButtons = []string{
+//	"/menu",
+//}
+//
+//var backpackKeyboardNames = [][]string{
+//	{"\U0001F9BA Шмот \U0001F9BA", "\"🍕 Еда 🍕\""},
+//}
+//
+//func names2buttons(names []string) []tgbotapi.KeyboardButton {
+//	var row []tgbotapi.KeyboardButton
+//	for _, l := range names {
+//		row = append(row, tgbotapi.NewKeyboardButton(l))
+//	}
+//	return row
+//}
 
 var mainKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
