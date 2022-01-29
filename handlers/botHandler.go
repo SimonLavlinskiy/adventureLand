@@ -49,16 +49,7 @@ var backpackKeyboard = tgbotapi.NewReplyKeyboard(
 
 var profileKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("📝 Изменить имя на Писю? 📝"),
-	),
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("/menu"),
-	),
-)
-
-var profileKeyboardBackUsername = tgbotapi.NewReplyKeyboard(
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("📝 Изменить имя обратно? 📝"),
+		tgbotapi.NewKeyboardButton("📝 Изменить имя? 📝"),
 	),
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("/menu"),

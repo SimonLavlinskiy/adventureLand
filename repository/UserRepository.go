@@ -29,20 +29,13 @@ func GetOrCreateUser(update tgbotapi.Update) User {
 	return result
 }
 
-func UpdateUsername(update tgbotapi.Update, UserStr User, originalUsername bool) User {
+func UpdateUser(update tgbotapi.Update, UserStruct User) User {
 	var err error
 
-	//result := User{
-	//	Username: update.Message.From.UserName,
-	//}
-	if originalUsername {
-		err = config.Db.Where(&User{TgId: uint(update.Message.From.ID)}).Updates(UserStr).Error
-	} else {
-		err = config.Db.Where(&User{TgId: uint(update.Message.From.ID)}).Updates(User{Username: "Пися"}).Error
-	}
+	err = config.Db.Where(&User{TgId: uint(update.Message.From.ID)}).Updates(UserStruct).Error
 	if err != nil {
 		panic(err)
 	}
 
-	return UserStr
+	return UserStruct
 }
