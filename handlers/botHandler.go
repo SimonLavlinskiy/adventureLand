@@ -56,6 +56,15 @@ var profileKeyboard = tgbotapi.NewReplyKeyboard(
 	),
 )
 
+var profileKeyboardBackUsername = tgbotapi.NewReplyKeyboard(
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("📝 Изменить имя обратно? 📝"),
+	),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("/menu"),
+	),
+)
+
 var moveKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("⬛"),
