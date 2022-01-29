@@ -10,6 +10,7 @@ type User struct {
 	ID         uint      `gorm:"primaryKey"`
 	TgId       uint      `gorm:"embedded"`
 	Username   string    `gorm:"embedded"`
+	Avatar     string    `gorm:"embedded"`
 	LocationId uint      `gorm:"embedded"`
 	CreatedAt  time.Time `gorm:"autoCreateTime"`
 	Deleted    bool      `gorm:"embedded"`
@@ -37,5 +38,6 @@ func UpdateUser(update tgbotapi.Update, UserStruct User) User {
 		panic(err)
 	}
 
-	return UserStruct
+	res := GetOrCreateUser(update)
+	return res
 }

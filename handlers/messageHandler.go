@@ -9,13 +9,17 @@ var msg tgbotapi.MessageConfig
 
 func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 	res := user.GetOrCreateUser(update)
-	username := res.Username
 
 	newMessage := update.Message.Text
 
-	if username == "null" {
+	if res.Username == "waiting" {
 		res = user.UpdateUser(update, user.User{Username: newMessage})
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "*Профиль*:\n_Твое имя_ *"+res.Username+"*!\nНо я буду звать ультра-мышь!")
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "*Профиль*:\n_Твое имя_ *"+res.Username+"*!\nАватар:"+res.Avatar)
+		msg.ParseMode = "markdown"
+		msg.ReplyMarkup = profileKeyboard
+	} else if res.Avatar == "waiting" {
+		res = user.UpdateUser(update, user.User{Avatar: newMessage})
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "*Профиль*:\n_Твое имя_ *"+res.Username+"*!\nАватар:"+res.Avatar)
 		msg.ParseMode = "markdown"
 		msg.ReplyMarkup = profileKeyboard
 	} else {
@@ -33,15 +37,19 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 			msg.ReplyMarkup = moveKeyboard
 		case "👤👔\nПрофиль":
 			res := user.GetOrCreateUser(update)
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "*Профиль*:\n_Твое имя_ *"+res.Username+"*!\nНо я буду звать ультра-мышь!")
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "*Профиль*:\n_Твое имя_ *"+res.Username+"*!\nАватар:"+res.Avatar)
 			msg.ParseMode = "markdown"
 			msg.ReplyMarkup = profileKeyboard
 		case "📝 Изменить имя? 📝":
-			res = user.UpdateUser(update, user.User{Username: "null"})
+			res = user.UpdateUser(update, user.User{Username: "waiting"})
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "‼️ *ВНИМАНИЕ*: ‼️‼\nТы должен вписать новое имя?\n‼️‼️‼️‼️‼️‼️‼️")
 			msg.ParseMode = "markdown"
 			msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
-
+		case "👤 Изменить аватар? 👤":
+			res = user.UpdateUser(update, user.User{Avatar: "waiting"})
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "‼️ *ВНИМАНИЕ*: ‼️‼\nТы должен прислать смайлик\n(_валидации пока нет_)\n‼️‼️‼️‼️‼️‼️‼️")
+			msg.ParseMode = "markdown"
+			msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 		case "👜\nИнвентарь":
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Инвентарь")
 			msg.ReplyMarkup = backpackKeyboard

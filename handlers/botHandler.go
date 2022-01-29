@@ -50,6 +50,7 @@ var backpackKeyboard = tgbotapi.NewReplyKeyboard(
 var profileKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("📝 Изменить имя? 📝"),
+		tgbotapi.NewKeyboardButton("👤 Изменить аватар? 👤"),
 	),
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("/menu"),
