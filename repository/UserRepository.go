@@ -7,23 +7,26 @@ import (
 )
 
 type User struct {
-	ID         uint      `gorm:"primaryKey"`
-	TgId       uint      `gorm:"embedded"`
-	Username   string    `gorm:"embedded"`
-	Avatar     string    `gorm:"embedded"`
-	LocationId uint      `gorm:"embedded"`
-	CreatedAt  time.Time `gorm:"autoCreateTime"`
-	Deleted    bool      `gorm:"embedded"`
+	ID        uint      `gorm:"primaryKey"`
+	TgId      uint      `gorm:"embedded"`
+	Username  string    `gorm:"embedded"`
+	Avatar    string    `gorm:"embedded"`
+	FirstName string    `gorm:"embedded"`
+	LastName  string    `gorm:"embedded"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+	Deleted   bool      `gorm:"embedded"`
 }
 
 func GetOrCreateUser(update tgbotapi.Update) User {
-
 	result := User{
-		TgId:     uint(update.Message.From.ID),
-		Username: update.Message.From.UserName,
-		Avatar:   "👤",
+		TgId:      uint(update.Message.From.ID),
+		Username:  update.Message.From.UserName,
+		FirstName: update.Message.From.FirstName,
+		LastName:  update.Message.From.LastName,
+		Avatar:    "👤",
 	}
 	err := config.Db.Where(&User{TgId: uint(update.Message.From.ID)}).FirstOrCreate(&result).Error
+
 	if err != nil {
 		panic(err)
 	}
