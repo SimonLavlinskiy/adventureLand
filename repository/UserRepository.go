@@ -21,6 +21,7 @@ func GetOrCreateUser(update tgbotapi.Update) User {
 	result := User{
 		TgId:     uint(update.Message.From.ID),
 		Username: update.Message.From.UserName,
+		Avatar:   "👤",
 	}
 	err := config.Db.Where(&User{TgId: uint(update.Message.From.ID)}).FirstOrCreate(&result).Error
 	if err != nil {

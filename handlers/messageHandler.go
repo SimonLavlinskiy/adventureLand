@@ -14,12 +14,12 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 
 	if res.Username == "waiting" {
 		res = user.UpdateUser(update, user.User{Username: newMessage})
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "*Профиль*:\n_Твое имя_ *"+res.Username+"*!\nАватар:"+res.Avatar)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "*Профиль*:\n_Твое имя_ *"+res.Username+"*!\n_Аватар_:"+res.Avatar)
 		msg.ParseMode = "markdown"
 		msg.ReplyMarkup = profileKeyboard
 	} else if res.Avatar == "waiting" {
 		res = user.UpdateUser(update, user.User{Avatar: newMessage})
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "*Профиль*:\n_Твое имя_ *"+res.Username+"*!\nАватар:"+res.Avatar)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "*Профиль*:\n_Твое имя_ *"+res.Username+"*!\n_Аватар_:"+res.Avatar)
 		msg.ParseMode = "markdown"
 		msg.ReplyMarkup = profileKeyboard
 	} else {
@@ -27,8 +27,8 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 		case "/start":
 			res := user.GetOrCreateUser(update)
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Приветствую тебя,  "+res.Username)
-			user.GetOrCreateLocation(update)
-		case "/menu":
+			msg.ReplyMarkup = mainKeyboard
+		case "/menu", "Меню":
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Меню")
 			msg.ReplyMarkup = mainKeyboard
 		case "🗺\nКарта":
@@ -37,18 +37,15 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 			msg.ReplyMarkup = moveKeyboard
 		case "👤👔\nПрофиль":
 			res := user.GetOrCreateUser(update)
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "*Профиль*:\n_Твое имя_ *"+res.Username+"*!\nАватар:"+res.Avatar)
-			msg.ParseMode = "markdown"
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "*Профиль*:\n_Твое имя_ *"+res.Username+"*!\n_Аватар_:"+res.Avatar)
 			msg.ReplyMarkup = profileKeyboard
 		case "📝 Изменить имя? 📝":
 			res = user.UpdateUser(update, user.User{Username: "waiting"})
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "‼️ *ВНИМАНИЕ*: ‼️‼\nТы должен вписать новое имя?\n‼️‼️‼️‼️‼️‼️‼️")
-			msg.ParseMode = "markdown"
 			msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 		case "👤 Изменить аватар? 👤":
 			res = user.UpdateUser(update, user.User{Avatar: "waiting"})
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "‼️ *ВНИМАНИЕ*: ‼️‼\nТы должен прислать смайлик\n(_валидации пока нет_)\n‼️‼️‼️‼️‼️‼️‼️")
-			msg.ParseMode = "markdown"
 			msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 		case "👜\nИнвентарь":
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Инвентарь")
@@ -57,6 +54,7 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Сам ты "+newMessage)
 		}
 	}
+	msg.ParseMode = "markdown"
 
 	return msg
 }

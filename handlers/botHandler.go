@@ -29,11 +29,10 @@ import (
 var mainKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("🗺\nКарта"),
-		tgbotapi.NewKeyboardButton("👜\nИнвентарь"),
 		tgbotapi.NewKeyboardButton("👤👔\nПрофиль"),
 	),
 	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("/menu"),
+		tgbotapi.NewKeyboardButton("👜\nИнвентарь"),
 	),
 )
 
@@ -43,7 +42,7 @@ var backpackKeyboard = tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButton("🍕 Еда 🍕"),
 	),
 	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("/menu"),
+		tgbotapi.NewKeyboardButton("Меню"),
 	),
 )
 
@@ -53,7 +52,7 @@ var profileKeyboard = tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButton("👤 Изменить аватар? 👤"),
 	),
 	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("/menu"),
+		tgbotapi.NewKeyboardButton("Меню"),
 	),
 )
 
@@ -71,11 +70,7 @@ var moveKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("⬛"),
 		tgbotapi.NewKeyboardButton("🔽"),
-		tgbotapi.NewKeyboardButton("/menu"),
-	),
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("\U0001F9BA Шмот \U0001F9BA"),
-		tgbotapi.NewKeyboardButton("🍕 Еда 🍕"),
+		tgbotapi.NewKeyboardButton("Меню"),
 	),
 )
 

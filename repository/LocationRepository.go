@@ -6,21 +6,19 @@ import (
 )
 
 type Location struct {
-	ID     uint   `gorm:"primaryKey"`
-	UserId uint   `gorm:"embedded"`
-	AxisX  uint64 `gorm:"embedded"`
-	AxisY  uint64 `gorm:"embedded"`
-	Maps   string `gorm:"embedded"`
+	ID    uint   `gorm:"primaryKey"`
+	AxisX uint64 `gorm:"embedded"`
+	AxisY uint64 `gorm:"embedded"`
+	Maps  string `gorm:"embedded"`
 }
 
 func GetOrCreateLocation(update tgbotapi.Update) Location {
 	res := GetOrCreateUser(update)
 
 	result := Location{
-		UserId: res.ID,
-		AxisX:  5,
-		AxisY:  5,
-		Maps:   "Main",
+		AxisX: 5,
+		AxisY: 5,
+		Maps:  "Main",
 	}
 
 	err := config.Db.Where(&Location{ID: uint(res.LocationId)}).FirstOrCreate(&result).Error
