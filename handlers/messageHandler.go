@@ -52,22 +52,22 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 			msg.ReplyMarkup = backpackKeyboard
 		case "🔼":
 			res := repository.GetOrCreateMyLocation(update)
-			repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: res.AxisX + 1, AxisY: res.AxisY})
+			repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: res.AxisY + 1})
 			msg, buttons = repository.GetMyMap(update)
 			msg.ReplyMarkup = createMoveKeyboard(buttons)
 		case "◀️":
 			res := repository.GetOrCreateMyLocation(update)
-			repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisY: res.AxisY - 1, AxisX: res.AxisX})
+			repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: res.AxisX - 1, AxisY: res.AxisY})
 			msg, buttons = repository.GetMyMap(update)
 			msg.ReplyMarkup = createMoveKeyboard(buttons)
 		case "▶️":
 			res := repository.GetOrCreateMyLocation(update)
-			repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisY: res.AxisY + 1, AxisX: res.AxisX})
+			repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: res.AxisX + 1, AxisY: res.AxisY})
 			msg, buttons = repository.GetMyMap(update)
 			msg.ReplyMarkup = createMoveKeyboard(buttons)
 		case "🔽":
 			res := repository.GetOrCreateMyLocation(update)
-			repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: res.AxisX - 1, AxisY: res.AxisY})
+			repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: res.AxisY - 1})
 			msg, buttons = repository.GetMyMap(update)
 			msg.ReplyMarkup = createMoveKeyboard(buttons)
 		default:

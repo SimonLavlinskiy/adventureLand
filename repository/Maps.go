@@ -44,16 +44,16 @@ func GetMyMap(update tgbotapi.Update) (tgbotapi.MessageConfig, MapButtons) {
 		m[Point{cell.AxisX - 1, cell.AxisY - 1}] = cell
 	}
 
-	if cell := m[Point{resLocation.AxisX, resLocation.AxisY - 1}]; !cell.CanStep {
+	if cell := m[Point{resLocation.AxisX - 1, resLocation.AxisY}]; !cell.CanStep {
 		buttons.Up = "🚫" + cell.View + "🚫"
 	}
-	if cell := m[Point{resLocation.AxisX - 2, resLocation.AxisY - 1}]; !cell.CanStep {
+	if cell := m[Point{resLocation.AxisX - 1, resLocation.AxisY - 2}]; !cell.CanStep {
 		buttons.Down = "🚫" + cell.View + "🚫"
 	}
-	if cell := m[Point{resLocation.AxisY, resLocation.AxisX - 1}]; !cell.CanStep {
+	if cell := m[Point{resLocation.AxisX, resLocation.AxisY - 1}]; !cell.CanStep {
 		buttons.Right = "🚫" + cell.View + "🚫"
 	}
-	if cell := m[Point{resLocation.AxisY - 2, resLocation.AxisX - 1}]; !cell.CanStep {
+	if cell := m[Point{resLocation.AxisX - 2, resLocation.AxisY - 1}]; !cell.CanStep {
 		buttons.Left = "🚫" + cell.View + "🚫"
 	}
 
@@ -61,7 +61,7 @@ func GetMyMap(update tgbotapi.Update) (tgbotapi.MessageConfig, MapButtons) {
 
 	for i := range Maps {
 		for y := 0; y < 7; y++ {
-			Maps[i] = append(Maps[i], m[Point{uint(i), uint(y)}].View)
+			Maps[i] = append(Maps[i], m[Point{uint(y), uint(i)}].View)
 		}
 	}
 
