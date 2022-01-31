@@ -2,6 +2,7 @@ package handlers
 
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"project0/repository"
 )
 
 // TODO вынести костантные названия кнопок в отдельный файл(Можно даже в yml)
@@ -56,23 +57,26 @@ var profileKeyboard = tgbotapi.NewReplyKeyboard(
 	),
 )
 
-var moveKeyboard = tgbotapi.NewReplyKeyboard(
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("⬛"),
-		tgbotapi.NewKeyboardButton("🔼"),
-		tgbotapi.NewKeyboardButton("⬛"),
-	),
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("◀️"),
-		tgbotapi.NewKeyboardButton("️⏺"),
-		tgbotapi.NewKeyboardButton("▶️"),
-	),
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("⬛"),
-		tgbotapi.NewKeyboardButton("🔽"),
-		tgbotapi.NewKeyboardButton("Меню"),
-	),
-)
+func createMoveKeyboard(buttons repository.MapButtons) tgbotapi.ReplyKeyboardMarkup {
+	var moveKeyboard = tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("⬛"),
+			tgbotapi.NewKeyboardButton(buttons.Up),
+			tgbotapi.NewKeyboardButton("⬛"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(buttons.Left),
+			tgbotapi.NewKeyboardButton("️⏺"),
+			tgbotapi.NewKeyboardButton(buttons.Right),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("⬛"),
+			tgbotapi.NewKeyboardButton(buttons.Down),
+			tgbotapi.NewKeyboardButton("Меню"),
+		),
+	)
+	return moveKeyboard
+}
 
 func GetMessage(telegramApiToken string) {
 	bot, err := tgbotapi.NewBotAPI(telegramApiToken)
