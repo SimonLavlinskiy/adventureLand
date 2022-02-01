@@ -9,8 +9,8 @@ type Location struct {
 	ID       uint `gorm:"primaryKey"`
 	UserTgId uint
 	UserID   uint
-	AxisX    uint   `gorm:"embedded"`
-	AxisY    uint   `gorm:"embedded"`
+	AxisX    int    `gorm:"embedded"`
+	AxisY    int    `gorm:"embedded"`
 	Map      string `gorm:"embedded"`
 }
 

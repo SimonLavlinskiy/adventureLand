@@ -29,11 +29,11 @@ import (
 
 var mainKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("🗺\nКарта"),
-		tgbotapi.NewKeyboardButton("👤👔\nПрофиль"),
+		tgbotapi.NewKeyboardButton("🗺 Карта 🗺"),
+		tgbotapi.NewKeyboardButton("👤 Профиль 👔"),
 	),
 	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("👜\nИнвентарь"),
+		tgbotapi.NewKeyboardButton("👜 Инвентарь 👜"),
 	),
 )
 
@@ -66,7 +66,7 @@ func createMoveKeyboard(buttons repository.MapButtons) tgbotapi.ReplyKeyboardMar
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(buttons.Left),
-			tgbotapi.NewKeyboardButton("️⏺"),
+			tgbotapi.NewKeyboardButton("❇️"),
 			tgbotapi.NewKeyboardButton(buttons.Right),
 		),
 		tgbotapi.NewKeyboardButtonRow(
@@ -77,6 +77,35 @@ func createMoveKeyboard(buttons repository.MapButtons) tgbotapi.ReplyKeyboardMar
 	)
 	return moveKeyboard
 }
+
+//func Keyboard(buttons [][]string) tgbotapi.ReplyKeyboardMarkup {
+//	buttons = make([][]string, 3)
+
+//m := map[[3]int][]
+
+//var moveKeyboard = tgbotapi.NewReplyKeyboard(
+//	tgbotapi.NewKeyboardButtonRow(
+//		tgbotapi.NewKeyboardButton(buttons[]),
+//		tgbotapi.NewKeyboardButton(buttons.Up),
+//		tgbotapi.NewKeyboardButton("⬛"),
+//	),
+//	tgbotapi.NewKeyboardButtonRow(
+//		tgbotapi.NewKeyboardButton(buttons.Left),
+//		tgbotapi.NewKeyboardButton("❇️"),
+//		tgbotapi.NewKeyboardButton(buttons.Right),
+//	),
+//	tgbotapi.NewKeyboardButtonRow(
+//		tgbotapi.NewKeyboardButton("⬛"),
+//		tgbotapi.NewKeyboardButton(buttons.Down),
+//		tgbotapi.NewKeyboardButton("Меню"),
+//	),
+//)
+//return moveKeyboard
+//}
+
+var deleteBotMsg = tgbotapi.DeleteMessageConfig{}
+
+//var updateMsg = tgbotapi.EditMessageTextConfig{}
 
 func GetMessage(telegramApiToken string) {
 	bot, err := tgbotapi.NewBotAPI(telegramApiToken)
@@ -96,12 +125,38 @@ func GetMessage(telegramApiToken string) {
 			continue
 		}
 
-		msg := messageResolver(update)
+		deleteBotMsg = tgbotapi.NewDeleteMessage(update.Message.Chat.ID, update.Message.MessageID-1)
+		msg = messageResolver(update)
 
-		if _, err := bot.Send(msg); err != nil {
-			panic(err)
-		}
+		//updateMsg = tgbotapi.NewEditMessageText(366780332, 6304, "пипися")
+		//if _, err := bot.Send(updateMsg); err != nil
+		//	panic("Error update msg: " + err.Error())
+		//}
+
+		//DeleteMessage(deleteBotMsg, telegramApiToken)
+		SendMessage(msg, telegramApiToken)
 		//msg.ReplyToMessageID = update.Message.MessageID
 
+	}
+
+}
+
+func DeleteMessage(message tgbotapi.DeleteMessageConfig, telegramApiToken string) {
+	bot, err := tgbotapi.NewBotAPI(telegramApiToken)
+	if err != nil {
+		panic(err)
+	}
+	if _, err := bot.Request(message); err != nil {
+		panic("Error delete msg: " + err.Error())
+	}
+}
+
+func SendMessage(message tgbotapi.MessageConfig, telegramApiToken string) {
+	bot, err := tgbotapi.NewBotAPI(telegramApiToken)
+	if err != nil {
+		panic(err)
+	}
+	if _, err := bot.Send(message); err != nil {
+		panic("Error send msg: " + err.Error())
 	}
 }

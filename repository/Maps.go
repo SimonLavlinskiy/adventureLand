@@ -8,10 +8,10 @@ import (
 )
 
 type Map struct {
-	ID    uint
-	Name  string
-	SizeX uint
-	SizeY uint
+	ID    uint   `gorm:"primaryKey"`
+	Name  string `gorm:"embedded"`
+	SizeX int    `gorm:"embedded"`
+	SizeY int    `gorm:"embedded"`
 }
 
 type MapButtons struct {
@@ -31,20 +31,20 @@ func DefaultButtons() MapButtons {
 }
 
 type UserMap struct {
-	leftIndent  uint
-	rightIndent uint
-	upperIndent uint
-	downIndent  uint
+	leftIndent  int
+	rightIndent int
+	upperIndent int
+	downIndent  int
 }
 
-var displayMapSize = uint(5)
+var displayMapSize = 5
 
 func DefaultUserMap(location Location) UserMap {
 	return UserMap{
-		leftIndent:  Dif(location.AxisX, displayMapSize),
-		rightIndent: Sum(location.AxisX, displayMapSize),
-		upperIndent: Sum(location.AxisY, displayMapSize),
-		downIndent:  Dif(location.AxisY, displayMapSize),
+		leftIndent:  location.AxisX - displayMapSize,
+		rightIndent: location.AxisX + displayMapSize,
+		upperIndent: location.AxisY + displayMapSize,
+		downIndent:  location.AxisY - displayMapSize,
 	}
 }
 
@@ -61,20 +61,95 @@ func GetMap(update tgbotapi.Update) Map {
 	return result
 }
 
-func GetMyMap(update tgbotapi.Update) (tgbotapi.MessageConfig, MapButtons) {
+func GetMyMap(update tgbotapi.Update) (textMessage string, buttons MapButtons) {
 	resUser := GetOrCreateUser(update)
 	resLocation := GetOrCreateMyLocation(update)
 	resMap := GetMap(update)
-	buttons := DefaultButtons()
-	mapSize := DefaultUserMap(resLocation)
-	var Maps [50][]string
+	buttons = DefaultButtons()
+	mapSize := CalculateUserMapBorder(resLocation, resMap)
 
-	if resLocation.AxisX < mapSize.leftIndent {
-		mapSize.leftIndent = uint(1)
+	var result []Cellule
+
+	err := config.Db.Where("map = '" + resLocation.Map + "' and axis_x >= " + ToString(mapSize.leftIndent) + " and axis_x <= " + ToString(mapSize.rightIndent) + " and axis_y >= " + ToString(mapSize.downIndent) + " and axis_y <= " + ToString(mapSize.upperIndent)).Order("axis_x ASC").Order("axis_y ASC").Find(&result).Error
+	if err != nil {
+		panic(err)
+	}
+
+	var Maps [][]string
+	Maps = make([][]string, resMap.SizeY+1)
+
+	type Point = [2]int
+	m := map[Point]Cellule{}
+
+	for _, cell := range result {
+		m[Point{cell.AxisX, cell.AxisY}] = cell
+	}
+
+	if cell := m[Point{resLocation.AxisX, resLocation.AxisY + 1}]; !cell.CanStep {
+		if cell.View == "" {
+			buttons.Up = "🚫"
+		} else {
+			buttons.Up = cell.View
+		}
+	}
+	if cell := m[Point{resLocation.AxisX, resLocation.AxisY - 1}]; !cell.CanStep {
+		if cell.View == "" {
+			buttons.Down = "🚫"
+		} else {
+			buttons.Down = cell.View
+		}
+	}
+	if cell := m[Point{resLocation.AxisX + 1, resLocation.AxisY}]; !cell.CanStep {
+		if cell.View == "" {
+			buttons.Right = "🚫"
+		} else {
+			buttons.Right = cell.View
+		}
+	}
+	if cell := m[Point{resLocation.AxisX - 1, resLocation.AxisY}]; !cell.CanStep {
+		if cell.View == "" {
+			buttons.Left = "🚫"
+		} else {
+			buttons.Left = cell.View
+		}
+	}
+
+	m[Point{resLocation.AxisX, resLocation.AxisY}] = Cellule{View: resUser.Avatar}
+
+	for i := range Maps {
+		for x := mapSize.leftIndent; x <= mapSize.rightIndent; x++ {
+			if m[Point{x, i}].ID != 0 || m[Point{x, i}] == m[Point{resLocation.AxisX, resLocation.AxisY}] {
+				Maps[i] = append(Maps[i], m[Point{x, i}].View)
+			} else {
+				Maps[i] = append(Maps[i], "\U0001FAA8")
+			}
+		}
+	}
+
+	messageMap := "*Карта*: _" + resLocation.Map + "_ *X*: _" + ToString(resLocation.AxisX) + "_  *Y*: _" + ToString(resLocation.AxisY) + "_"
+
+	for i, row := range Maps {
+		if i >= mapSize.downIndent && i <= mapSize.upperIndent {
+			messageMap = strings.Join(row, ``) + "\n" + messageMap
+		}
+	}
+
+	return messageMap, buttons
+}
+
+func ToString(int int) string {
+	return strconv.FormatInt(int64(int), 10)
+}
+
+func CalculateUserMapBorder(resLocation Location, resMap Map) UserMap {
+	mapSize := DefaultUserMap(resLocation)
+
+	if resLocation.AxisX < displayMapSize {
+		mapSize.leftIndent = 0
 		mapSize.rightIndent = displayMapSize * 2
 	}
-	if resLocation.AxisY < mapSize.downIndent {
-		mapSize.downIndent = uint(1)
+	if resLocation.AxisY < displayMapSize {
+		mapSize.downIndent = 0
 		mapSize.upperIndent = displayMapSize * 2
 	}
 	if mapSize.rightIndent > resMap.SizeX && resLocation.AxisX > displayMapSize {
@@ -86,58 +161,5 @@ func GetMyMap(update tgbotapi.Update) (tgbotapi.MessageConfig, MapButtons) {
 		mapSize.upperIndent = resMap.SizeY
 	}
 
-	messageMap := "*Карта*: _" + resLocation.Map + "_\n*X*: _" + strconv.FormatUint(uint64(resLocation.AxisX), 10) + "_  *Y*: _" + strconv.FormatUint(uint64(resLocation.AxisY), 10) + "_\n"
-
-	var result []Cellule
-
-	err := config.Db.Where("map = '" + resLocation.Map + "' and axis_x >= " + ToString(mapSize.leftIndent) + " and axis_x <= " + ToString(mapSize.rightIndent) + " and axis_y >= " + ToString(mapSize.downIndent) + " and axis_y <= " + ToString(mapSize.upperIndent)).Order("axis_x ASC").Order("axis_y ASC").Find(&result).Error
-	if err != nil {
-		panic(err)
-	}
-
-	type Point = [2]uint
-
-	m := map[Point]Cellule{}
-	for _, cell := range result {
-		m[Point{cell.AxisX - 1, cell.AxisY - 1}] = cell
-	}
-
-	if cell := m[Point{resLocation.AxisX - 1, resLocation.AxisY}]; !cell.CanStep {
-		buttons.Up = cell.View
-	}
-	if cell := m[Point{resLocation.AxisX - 1, resLocation.AxisY - 2}]; !cell.CanStep {
-		buttons.Down = cell.View
-	}
-	if cell := m[Point{resLocation.AxisX, resLocation.AxisY - 1}]; !cell.CanStep {
-		buttons.Right = cell.View
-	}
-	if cell := m[Point{resLocation.AxisX - 2, resLocation.AxisY - 1}]; !cell.CanStep {
-		buttons.Left = cell.View
-	}
-
-	m[Point{resLocation.AxisX - 1, resLocation.AxisY - 1}] = Cellule{View: resUser.Avatar}
-
-	for i := range Maps {
-		for y := 0; y < int(resMap.SizeX); y++ {
-			Maps[i] = append(Maps[i], m[Point{uint(y), uint(i)}].View)
-		}
-	}
-
-	for _, row := range Maps {
-		messageMap = strings.Join(row, ``) + "\n" + messageMap
-	}
-
-	return tgbotapi.NewMessage(update.Message.Chat.ID, messageMap), buttons
-}
-
-func Sum(x uint, y uint) uint {
-	return x + y
-}
-
-func Dif(x uint, y uint) uint {
-	return x - y
-}
-
-func ToString(uint uint) string {
-	return strconv.FormatUint(uint64(uint), 10)
+	return mapSize
 }

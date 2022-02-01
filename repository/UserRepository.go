@@ -3,6 +3,7 @@ package repository
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
+	"strconv"
 	"time"
 )
 
@@ -15,6 +16,9 @@ type User struct {
 	LastName  string    `gorm:"embedded"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	Deleted   bool      `gorm:"embedded"`
+}
+
+type UserInfo struct {
 }
 
 func GetOrCreateUser(update tgbotapi.Update) User {
@@ -44,4 +48,13 @@ func UpdateUser(update tgbotapi.Update, UserStruct User) User {
 
 	res := GetOrCreateUser(update)
 	return res
+}
+
+func GetUserInfo(update tgbotapi.Update) string {
+	resUser := GetOrCreateUser(update)
+	resLocation := GetOrCreateMyLocation(update)
+
+	messageMap := "*Карта*: _" + resLocation.Map + "_ *X*: _" + strconv.FormatUint(uint64(resLocation.AxisX), 10) + "_  *Y*: _" + strconv.FormatUint(uint64(resLocation.AxisY), 10) + "_\n_Имя_ " + resUser.Username + "\nАватар:" + resUser.Avatar
+
+	return messageMap
 }
