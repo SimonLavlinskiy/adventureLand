@@ -3,12 +3,14 @@ package handlers
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/repository"
+	"time"
 )
 
 var msg tgbotapi.MessageConfig
 
 func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 	resUser := repository.GetOrCreateUser(update)
+	currentTime := time.Now()
 
 	newMessage := update.Message.Text
 	var buttons = repository.MapButtons{}
@@ -70,6 +72,10 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 			repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: res.AxisY - 1})
 			msg, buttons = repository.GetMyMap(update)
 			msg.ReplyMarkup = createMoveKeyboard(buttons)
+		case "\U0001F7E6":
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Ты не похож на Jesus! 👮‍♂️")
+		case "🕦":
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, currentTime.Format("3:4:5")+"\nЧасики тикают...")
 		default:
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Сам ты "+newMessage)
 		}
