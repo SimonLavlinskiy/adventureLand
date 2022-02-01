@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/repository"
 )
@@ -66,7 +67,7 @@ func createMoveKeyboard(buttons repository.MapButtons) tgbotapi.ReplyKeyboardMar
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(buttons.Left),
-			tgbotapi.NewKeyboardButton("❇️"),
+			tgbotapi.NewKeyboardButton(buttons.Center),
 			tgbotapi.NewKeyboardButton(buttons.Right),
 		),
 		tgbotapi.NewKeyboardButtonRow(
@@ -78,30 +79,26 @@ func createMoveKeyboard(buttons repository.MapButtons) tgbotapi.ReplyKeyboardMar
 	return moveKeyboard
 }
 
-//func Keyboard(buttons [][]string) tgbotapi.ReplyKeyboardMarkup {
-//	buttons = make([][]string, 3)
-
-//m := map[[3]int][]
-
-//var moveKeyboard = tgbotapi.NewReplyKeyboard(
-//	tgbotapi.NewKeyboardButtonRow(
-//		tgbotapi.NewKeyboardButton(buttons[]),
-//		tgbotapi.NewKeyboardButton(buttons.Up),
-//		tgbotapi.NewKeyboardButton("⬛"),
-//	),
-//	tgbotapi.NewKeyboardButtonRow(
-//		tgbotapi.NewKeyboardButton(buttons.Left),
-//		tgbotapi.NewKeyboardButton("❇️"),
-//		tgbotapi.NewKeyboardButton(buttons.Right),
-//	),
-//	tgbotapi.NewKeyboardButtonRow(
-//		tgbotapi.NewKeyboardButton("⬛"),
-//		tgbotapi.NewKeyboardButton(buttons.Down),
-//		tgbotapi.NewKeyboardButton("Меню"),
-//	),
-//)
-//return moveKeyboard
-//}
+func Keyboard(buttons ...[]string) tgbotapi.ReplyKeyboardMarkup {
+	var moveKeyboard = tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(buttons[1][1]),
+			tgbotapi.NewKeyboardButton(buttons[1][2]),
+			tgbotapi.NewKeyboardButton(buttons[1][3]),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(buttons[2][1]),
+			tgbotapi.NewKeyboardButton(buttons[2][2]),
+			tgbotapi.NewKeyboardButton(buttons[2][3]),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(buttons[3][1]),
+			tgbotapi.NewKeyboardButton(buttons[3][2]),
+			tgbotapi.NewKeyboardButton(buttons[3][3]),
+		),
+	)
+	return moveKeyboard
+}
 
 var deleteBotMsg = tgbotapi.DeleteMessageConfig{}
 
@@ -136,7 +133,7 @@ func GetMessage(telegramApiToken string) {
 		//DeleteMessage(deleteBotMsg, telegramApiToken)
 		SendMessage(msg, telegramApiToken)
 		//msg.ReplyToMessageID = update.Message.MessageID
-
+		fmt.Println(tgbotapi.MessageConfig{Entities: update.Message.Entities})
 	}
 
 }

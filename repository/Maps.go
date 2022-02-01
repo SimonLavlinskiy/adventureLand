@@ -8,25 +8,29 @@ import (
 )
 
 type Map struct {
-	ID    uint   `gorm:"primaryKey"`
-	Name  string `gorm:"embedded"`
-	SizeX int    `gorm:"embedded"`
-	SizeY int    `gorm:"embedded"`
+	ID     uint   `gorm:"primaryKey"`
+	Name   string `gorm:"embedded"`
+	SizeX  int    `gorm:"embedded"`
+	SizeY  int    `gorm:"embedded"`
+	StartX int    `gorm:"embedded"`
+	StartY int    `gorm:"embedded"`
 }
 
 type MapButtons struct {
-	Up    string
-	Left  string
-	Right string
-	Down  string
+	Up     string
+	Left   string
+	Right  string
+	Down   string
+	Center string
 }
 
-func DefaultButtons() MapButtons {
+func DefaultButtons(center string) MapButtons {
 	return MapButtons{
-		Up:    "🔼",
-		Left:  "◀️",
-		Right: "▶️",
-		Down:  "🔽",
+		Up:     "🔼",
+		Left:   "◀️",
+		Right:  "▶️",
+		Down:   "🔽",
+		Center: center,
 	}
 }
 
@@ -37,7 +41,7 @@ type UserMap struct {
 	downIndent  int
 }
 
-var displayMapSize = 5
+var displayMapSize = 6
 
 func DefaultUserMap(location Location) UserMap {
 	return UserMap{
@@ -65,7 +69,7 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons MapButtons) {
 	resUser := GetOrCreateUser(update)
 	resLocation := GetOrCreateMyLocation(update)
 	resMap := GetMap(update)
-	buttons = DefaultButtons()
+	buttons = DefaultButtons(resUser.Avatar)
 	mapSize := CalculateUserMapBorder(resLocation, resMap)
 
 	var result []Cellule
