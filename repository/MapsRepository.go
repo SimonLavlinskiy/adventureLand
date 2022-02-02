@@ -41,14 +41,14 @@ type UserMap struct {
 	downIndent  int
 }
 
-var displayMapSize = 6
+var displaySize = 6
 
-func DefaultUserMap(location Location) UserMap {
+func DefaultUserMap(location Location, displaySize int) UserMap {
 	return UserMap{
-		leftIndent:  location.AxisX - displayMapSize,
-		rightIndent: location.AxisX + displayMapSize,
-		upperIndent: location.AxisY + displayMapSize,
-		downIndent:  location.AxisY - displayMapSize,
+		leftIndent:  *location.AxisX - displaySize,
+		rightIndent: *location.AxisX + displaySize,
+		upperIndent: *location.AxisY + displaySize,
+		downIndent:  *location.AxisY - displaySize,
 	}
 }
 
@@ -100,7 +100,7 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons MapButtons) {
 		m[Point{cell.AxisX, cell.AxisY}] = cell
 	}
 
-	if cell := m[Point{resLocation.AxisX, resLocation.AxisY + 1}]; !cell.CanStep {
+	if cell := m[Point{*resLocation.AxisX, *resLocation.AxisY + 1}]; !cell.CanStep {
 		if cell.View == "" {
 			buttons.Up = "🚫"
 		} else if cell.Type == "teleport" {
@@ -109,7 +109,7 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons MapButtons) {
 			buttons.Up = cell.View
 		}
 	}
-	if cell := m[Point{resLocation.AxisX, resLocation.AxisY - 1}]; !cell.CanStep {
+	if cell := m[Point{*resLocation.AxisX, *resLocation.AxisY - 1}]; !cell.CanStep {
 		if cell.View == "" {
 			buttons.Down = "🚫"
 		} else if cell.Type == "teleport" {
@@ -118,14 +118,14 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons MapButtons) {
 			buttons.Down = cell.View
 		}
 	}
-	if cell := m[Point{resLocation.AxisX + 1, resLocation.AxisY}]; !cell.CanStep {
+	if cell := m[Point{*resLocation.AxisX + 1, *resLocation.AxisY}]; !cell.CanStep {
 		if cell.View == "" {
 			buttons.Right = "🚫"
 		} else {
 			buttons.Right = cell.View
 		}
 	}
-	if cell := m[Point{resLocation.AxisX - 1, resLocation.AxisY}]; !cell.CanStep {
+	if cell := m[Point{*resLocation.AxisX - 1, *resLocation.AxisY}]; !cell.CanStep {
 		if cell.View == "" {
 			buttons.Left = "🚫"
 		} else {
@@ -133,11 +133,11 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons MapButtons) {
 		}
 	}
 
-	m[Point{resLocation.AxisX, resLocation.AxisY}] = Cellule{View: resUser.Avatar}
+	m[Point{*resLocation.AxisX, *resLocation.AxisY}] = Cellule{View: resUser.Avatar}
 
 	for i := range Maps {
 		for x := mapSize.leftIndent; x <= mapSize.rightIndent; x++ {
-			if m[Point{x, i}].ID != 0 || m[Point{x, i}] == m[Point{resLocation.AxisX, resLocation.AxisY}] {
+			if m[Point{x, i}].ID != 0 || m[Point{x, i}] == m[Point{*resLocation.AxisX, *resLocation.AxisY}] {
 				Maps[i] = append(Maps[i], m[Point{x, i}].View)
 			} else {
 				Maps[i] = append(Maps[i], "\U0001FAA8")
@@ -145,7 +145,7 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons MapButtons) {
 		}
 	}
 
-	messageMap := "*Карта*: _" + resLocation.Map + "_ *X*: _" + ToString(resLocation.AxisX) + "_  *Y*: _" + ToString(resLocation.AxisY) + "_"
+	messageMap := "*Карта*: _" + resLocation.Map + "_ *X*: _" + ToString(*resLocation.AxisX) + "_  *Y*: _" + ToString(*resLocation.AxisY) + "_"
 
 	for i, row := range Maps {
 		if i >= mapSize.downIndent && i <= mapSize.upperIndent {
@@ -161,30 +161,30 @@ func ToString(int int) string {
 }
 
 func CalculateUserMapBorder(resLocation Location, resMap Map) UserMap {
-	if displayMapSize*2 > resMap.SizeX && displayMapSize*2 > resMap.SizeY {
+	d := displaySize
+	if d*2 > resMap.SizeX || d*2 > resMap.SizeY {
 		if resMap.SizeX-resMap.SizeY > 0 {
-			displayMapSize = resMap.SizeY / 2
+			d = resMap.SizeY / 2
 		} else {
-			displayMapSize = resMap.SizeX / 2
+			d = resMap.SizeX / 2
 		}
 	}
+	mapSize := DefaultUserMap(resLocation, d)
 
-	mapSize := DefaultUserMap(resLocation)
-
-	if resLocation.AxisX < displayMapSize {
+	if *resLocation.AxisX < d {
 		mapSize.leftIndent = 0
-		mapSize.rightIndent = displayMapSize * 2
+		mapSize.rightIndent = d * 2
 	}
-	if resLocation.AxisY < displayMapSize {
+	if *resLocation.AxisY < d {
 		mapSize.downIndent = 0
-		mapSize.upperIndent = displayMapSize * 2
+		mapSize.upperIndent = d * 2
 	}
-	if mapSize.rightIndent > resMap.SizeX && resLocation.AxisX > displayMapSize {
-		mapSize.leftIndent = resMap.SizeX - displayMapSize*2
+	if mapSize.rightIndent >= resMap.SizeX && *resLocation.AxisX > d {
+		mapSize.leftIndent = resMap.SizeX - d*2
 		mapSize.rightIndent = resMap.SizeX
 	}
-	if mapSize.upperIndent > resMap.SizeY && resLocation.AxisY > displayMapSize {
-		mapSize.downIndent = resMap.SizeY - displayMapSize*2
+	if mapSize.upperIndent >= resMap.SizeY && *resLocation.AxisY > d {
+		mapSize.downIndent = resMap.SizeY - d*2
 		mapSize.upperIndent = resMap.SizeY
 	}
 

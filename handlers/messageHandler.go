@@ -54,25 +54,29 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 			msg.ReplyMarkup = backpackKeyboard
 		case "🔼":
 			res := repository.GetOrCreateMyLocation(update)
-			repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: res.AxisY + 1})
+			y := *res.AxisY + 1
+			repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: &y})
 			msg.Text, buttons = repository.GetMyMap(update)
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
 			msg.ReplyMarkup = createMoveKeyboard(buttons)
 		case "◀️":
 			res := repository.GetOrCreateMyLocation(update)
-			repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: res.AxisX - 1, AxisY: res.AxisY})
+			x := *res.AxisX - 1
+			repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: &x, AxisY: res.AxisY})
 			msg.Text, buttons = repository.GetMyMap(update)
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
 			msg.ReplyMarkup = createMoveKeyboard(buttons)
 		case "▶️":
 			res := repository.GetOrCreateMyLocation(update)
-			repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: res.AxisX + 1, AxisY: res.AxisY})
+			x := *res.AxisX + 1
+			repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: &x, AxisY: res.AxisY})
 			msg.Text, buttons = repository.GetMyMap(update)
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
 			msg.ReplyMarkup = createMoveKeyboard(buttons)
 		case "🔽":
 			res := repository.GetOrCreateMyLocation(update)
-			repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: res.AxisY - 1})
+			y := *res.AxisY - 1
+			repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: &y})
 			msg.Text, buttons = repository.GetMyMap(update)
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
 			msg.ReplyMarkup = createMoveKeyboard(buttons)
@@ -84,13 +88,29 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.GetUserInfo(update))
 		case "🔼🏪🚶‍♂️":
 			res := repository.GetOrCreateMyLocation(update)
-			repository.UpdateLocation(update, repository.Location{Map: "🏪 Shop", AxisX: res.AxisX, AxisY: res.AxisY + 1})
+			y := *res.AxisY + 1
+			repository.UpdateLocation(update, repository.Location{Map: "🏪 Shop", AxisX: res.AxisX, AxisY: &y})
+			msg.Text, buttons = repository.GetMyMap(update)
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
+			msg.ReplyMarkup = createMoveKeyboard(buttons)
+		case "🔼⛩🚶‍♂️":
+			res := repository.GetOrCreateMyLocation(update)
+			y := *res.AxisY + 1
+			repository.UpdateLocation(update, repository.Location{Map: "Ekaterensky", AxisX: res.AxisX, AxisY: &y})
 			msg.Text, buttons = repository.GetMyMap(update)
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
 			msg.ReplyMarkup = createMoveKeyboard(buttons)
 		case "🔽🚪🚶‍♂️":
 			res := repository.GetOrCreateMyLocation(update)
-			repository.UpdateLocation(update, repository.Location{Map: "Main Place", AxisX: res.AxisX, AxisY: res.AxisY - 1})
+			y := *res.AxisY - 1
+			repository.UpdateLocation(update, repository.Location{Map: "Main Place", AxisX: res.AxisX, AxisY: &y})
+			msg.Text, buttons = repository.GetMyMap(update)
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
+			msg.ReplyMarkup = createMoveKeyboard(buttons)
+		case "🔽⛩🚶‍♂️":
+			res := repository.GetOrCreateMyLocation(update)
+			y := *res.AxisY - 1
+			repository.UpdateLocation(update, repository.Location{Map: "Main Place", AxisX: res.AxisX, AxisY: &y})
 			msg.Text, buttons = repository.GetMyMap(update)
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
 			msg.ReplyMarkup = createMoveKeyboard(buttons)

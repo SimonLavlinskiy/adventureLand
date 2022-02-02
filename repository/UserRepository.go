@@ -54,7 +54,7 @@ func GetUserInfo(update tgbotapi.Update) string {
 	resUser := GetOrCreateUser(update)
 	resLocation := GetOrCreateMyLocation(update)
 
-	messageMap := "*Карта*: _" + resLocation.Map + "_ *X*: _" + strconv.FormatUint(uint64(resLocation.AxisX), 10) + "_  *Y*: _" + strconv.FormatUint(uint64(resLocation.AxisY), 10) + "_\n_Имя_ " + resUser.Username + "\nАватар:" + resUser.Avatar
+	messageMap := "*Карта*: _" + resLocation.Map + "_ *X*: _" + strconv.FormatUint(uint64(*resLocation.AxisX), 10) + "_  *Y*: _" + strconv.FormatUint(uint64(*resLocation.AxisY), 10) + "_\n_Имя_ " + resUser.Username + "\nАватар:" + resUser.Avatar
 
 	return messageMap
 }
