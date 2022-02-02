@@ -21,7 +21,7 @@ func InitMySQL() bool {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", mysqlUserName, mysqlPassword, mysqlHots, mysqlPort, mysqlDbName)
 	Db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 
-	Db = Db.Debug()
+	//Db = Db.Debug()
 
 	if err != nil {
 		fmt.Println("DB initialization failed")

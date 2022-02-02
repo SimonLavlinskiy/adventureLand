@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
 	"strconv"
@@ -65,23 +66,15 @@ func GetUserMap(update tgbotapi.Update) Map {
 	return result
 }
 
-func GetMap(m Map) Map {
-	result := Map{}
-	err := config.Db.Where(&m).FirstOrCreate(&result).Error
-
-	if err != nil {
-		panic(err)
-	}
-
-	return result
-}
-
 func GetMyMap(update tgbotapi.Update) (textMessage string, buttons MapButtons) {
 	resUser := GetOrCreateUser(update)
 	resLocation := GetOrCreateMyLocation(update)
 	resMap := GetUserMap(update)
-	buttons = DefaultButtons(resUser.Avatar)
 	mapSize := CalculateUserMapBorder(resLocation, resMap)
+	messageMap := "*Карта*: _" + resLocation.Map + "_ *X*: _" + ToString(*resLocation.AxisX) + "_  *Y*: _" + ToString(*resLocation.AxisY) + "_"
+
+	type Point = [2]int
+	m := map[Point]Cellule{}
 
 	var result []Cellule
 
@@ -90,48 +83,14 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons MapButtons) {
 		panic(err)
 	}
 
-	var Maps [][]string
-	Maps = make([][]string, resMap.SizeY+1)
-
-	type Point = [2]int
-	m := map[Point]Cellule{}
-
 	for _, cell := range result {
 		m[Point{cell.AxisX, cell.AxisY}] = cell
 	}
 
-	if cell := m[Point{*resLocation.AxisX, *resLocation.AxisY + 1}]; !cell.CanStep {
-		if cell.View == "" {
-			buttons.Up = "🚫"
-		} else if cell.Type == "teleport" {
-			buttons.Up += cell.View + "🚶‍♂️"
-		} else {
-			buttons.Up = cell.View
-		}
-	}
-	if cell := m[Point{*resLocation.AxisX, *resLocation.AxisY - 1}]; !cell.CanStep {
-		if cell.View == "" {
-			buttons.Down = "🚫"
-		} else if cell.Type == "teleport" {
-			buttons.Down += cell.View + "🚶‍♂️"
-		} else {
-			buttons.Down = cell.View
-		}
-	}
-	if cell := m[Point{*resLocation.AxisX + 1, *resLocation.AxisY}]; !cell.CanStep {
-		if cell.View == "" {
-			buttons.Right = "🚫"
-		} else {
-			buttons.Right = cell.View
-		}
-	}
-	if cell := m[Point{*resLocation.AxisX - 1, *resLocation.AxisY}]; !cell.CanStep {
-		if cell.View == "" {
-			buttons.Left = "🚫"
-		} else {
-			buttons.Left = cell.View
-		}
-	}
+	buttons = CalculateButtonMap(resLocation, resUser, m)
+
+	var Maps [][]string
+	Maps = make([][]string, resMap.SizeY+1)
 
 	m[Point{*resLocation.AxisX, *resLocation.AxisY}] = Cellule{View: resUser.Avatar}
 
@@ -144,8 +103,6 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons MapButtons) {
 			}
 		}
 	}
-
-	messageMap := "*Карта*: _" + resLocation.Map + "_ *X*: _" + ToString(*resLocation.AxisX) + "_  *Y*: _" + ToString(*resLocation.AxisY) + "_"
 
 	for i, row := range Maps {
 		if i >= mapSize.downIndent && i <= mapSize.upperIndent {
@@ -189,4 +146,67 @@ func CalculateUserMapBorder(resLocation Location, resMap Map) UserMap {
 	}
 
 	return mapSize
+}
+
+func CalculateButtonMap(resLocation Location, resUser User, m map[[2]int]Cellule) MapButtons {
+	type Point = [2]int
+
+	buttons := DefaultButtons(resUser.Avatar)
+
+	fmt.Println(*resLocation.AxisX)
+
+	if cell := m[Point{*resLocation.AxisX, *resLocation.AxisY + 1}]; !cell.CanStep {
+		if cell.View == "" {
+			buttons.Up = "🚫"
+		} else if cell.Type == "teleport" {
+			buttons.Up += cell.View + "🚶‍♂️"
+		} else {
+			buttons.Up = cell.View
+		}
+	}
+	if cell := m[Point{*resLocation.AxisX, *resLocation.AxisY - 1}]; !cell.CanStep {
+		if cell.View == "" {
+			buttons.Down = "🚫"
+		} else if cell.Type == "teleport" {
+			buttons.Down += cell.View + "🚶‍♂️"
+		} else {
+			buttons.Down = cell.View
+		}
+	}
+	if cell := m[Point{*resLocation.AxisX + 1, *resLocation.AxisY}]; !cell.CanStep {
+		if cell.View == "" {
+			buttons.Right = "🚫"
+		} else {
+			buttons.Right = cell.View
+		}
+	}
+	if cell := m[Point{*resLocation.AxisX - 1, *resLocation.AxisY}]; !cell.CanStep {
+		if cell.View == "" {
+			buttons.Left = "🚫"
+		} else {
+			buttons.Left = cell.View
+		}
+	}
+
+	return buttons
+}
+
+func CreateMoveKeyboard(buttons MapButtons) tgbotapi.ReplyKeyboardMarkup {
+	return tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("⬛"),
+			tgbotapi.NewKeyboardButton(buttons.Up),
+			tgbotapi.NewKeyboardButton("⬛"),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(buttons.Left),
+			tgbotapi.NewKeyboardButton(buttons.Center),
+			tgbotapi.NewKeyboardButton(buttons.Right),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("⬛"),
+			tgbotapi.NewKeyboardButton(buttons.Down),
+			tgbotapi.NewKeyboardButton("Меню"),
+		),
+	)
 }

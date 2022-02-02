@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
 )
@@ -50,7 +49,6 @@ func UpdateLocation(update tgbotapi.Update, LocationStruct Location) Location {
 		}
 	}
 
-	fmt.Println(LocationStruct)
 	var result Cellule
 	var err error
 
@@ -61,8 +59,6 @@ func UpdateLocation(update tgbotapi.Update, LocationStruct Location) Location {
 		}
 		panic(err)
 	}
-
-	fmt.Println("Result location: ", result, "LocaStruct: ", LocationStruct)
 
 	if !result.CanStep && result.Type == "teleport" {
 		err = config.Db.Where(&Location{UserTgId: uint(update.Message.From.ID)}).Updates(LocationStruct).Error
