@@ -52,7 +52,7 @@ func DefaultUserMap(location Location) UserMap {
 	}
 }
 
-func GetMap(update tgbotapi.Update) Map {
+func GetUserMap(update tgbotapi.Update) Map {
 	resLocation := GetOrCreateMyLocation(update)
 	result := Map{}
 
@@ -65,10 +65,21 @@ func GetMap(update tgbotapi.Update) Map {
 	return result
 }
 
+func GetMap(m Map) Map {
+	result := Map{}
+	err := config.Db.Where(&m).FirstOrCreate(&result).Error
+
+	if err != nil {
+		panic(err)
+	}
+
+	return result
+}
+
 func GetMyMap(update tgbotapi.Update) (textMessage string, buttons MapButtons) {
 	resUser := GetOrCreateUser(update)
 	resLocation := GetOrCreateMyLocation(update)
-	resMap := GetMap(update)
+	resMap := GetUserMap(update)
 	buttons = DefaultButtons(resUser.Avatar)
 	mapSize := CalculateUserMapBorder(resLocation, resMap)
 
@@ -92,6 +103,8 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons MapButtons) {
 	if cell := m[Point{resLocation.AxisX, resLocation.AxisY + 1}]; !cell.CanStep {
 		if cell.View == "" {
 			buttons.Up = "🚫"
+		} else if cell.Type == "teleport" {
+			buttons.Up += cell.View + "🚶‍♂️"
 		} else {
 			buttons.Up = cell.View
 		}
@@ -99,6 +112,8 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons MapButtons) {
 	if cell := m[Point{resLocation.AxisX, resLocation.AxisY - 1}]; !cell.CanStep {
 		if cell.View == "" {
 			buttons.Down = "🚫"
+		} else if cell.Type == "teleport" {
+			buttons.Down += cell.View + "🚶‍♂️"
 		} else {
 			buttons.Down = cell.View
 		}
@@ -146,6 +161,14 @@ func ToString(int int) string {
 }
 
 func CalculateUserMapBorder(resLocation Location, resMap Map) UserMap {
+	if displayMapSize*2 > resMap.SizeX && displayMapSize*2 > resMap.SizeY {
+		if resMap.SizeX-resMap.SizeY > 0 {
+			displayMapSize = resMap.SizeY / 2
+		} else {
+			displayMapSize = resMap.SizeX / 2
+		}
+	}
+
 	mapSize := DefaultUserMap(resLocation)
 
 	if resLocation.AxisX < displayMapSize {

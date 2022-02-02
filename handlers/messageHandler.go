@@ -7,7 +7,6 @@ import (
 )
 
 var msg tgbotapi.MessageConfig
-var delmsg tgbotapi.DeleteMessageConfig
 
 func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 	resUser := repository.GetOrCreateUser(update)
@@ -42,7 +41,6 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 			res := repository.GetOrCreateUser(update)
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "*Профиль*:\n_Твое имя_ *"+res.Username+"*!\n_Аватар_:"+res.Avatar)
 			msg.ReplyMarkup = profileKeyboard
-			//msg.Entities = tgbotapi.MessageConfig{}
 		case "📝 Изменить имя? 📝":
 			repository.UpdateUser(update, repository.User{Username: "waiting"})
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "‼️ *ВНИМАНИЕ*: ‼️‼\nТы должен вписать новое имя?\n‼️‼️‼️‼️‼️‼️‼️")
@@ -82,8 +80,20 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Ты не похож на Jesus! 👮‍♂️")
 		case "🕦":
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, currentTime.Format("3:4:5")+"\nЧасики тикают...")
-		case "❇️":
+		case resUser.Avatar:
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.GetUserInfo(update))
+		case "🔼🏪🚶‍♂️":
+			res := repository.GetOrCreateMyLocation(update)
+			repository.UpdateLocation(update, repository.Location{Map: "🏪 Shop", AxisX: res.AxisX, AxisY: res.AxisY + 1})
+			msg.Text, buttons = repository.GetMyMap(update)
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
+			msg.ReplyMarkup = createMoveKeyboard(buttons)
+		case "🔽🚪🚶‍♂️":
+			res := repository.GetOrCreateMyLocation(update)
+			repository.UpdateLocation(update, repository.Location{Map: "Main Place", AxisX: res.AxisX, AxisY: res.AxisY - 1})
+			msg.Text, buttons = repository.GetMyMap(update)
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
+			msg.ReplyMarkup = createMoveKeyboard(buttons)
 		default:
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Сам ты "+newMessage)
 		}

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/repository"
 )
@@ -133,7 +132,9 @@ func GetMessage(telegramApiToken string) {
 		//DeleteMessage(deleteBotMsg, telegramApiToken)
 		SendMessage(msg, telegramApiToken)
 		//msg.ReplyToMessageID = update.Message.MessageID
-		fmt.Println(tgbotapi.MessageConfig{Entities: update.Message.Entities})
+
+		//ents := update.Message.Entities
+		//fmt.Println(tgbotapi.MessageConfig{Entities: ents})
 	}
 
 }

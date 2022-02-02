@@ -7,7 +7,7 @@ import (
 )
 
 func Migrate() bool {
-	err := config.Db.AutoMigrate(repository.User{}, repository.Location{}, repository.Cellule{}, repository.Map{})
+	err := config.Db.AutoMigrate(repository.User{}, repository.Location{}, repository.Cellule{}, repository.Map{}, repository.Teleport{})
 	if err != nil {
 		fmt.Println("Migration failed")
 		panic(err)
