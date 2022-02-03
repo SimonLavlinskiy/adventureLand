@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
 	"strconv"
@@ -28,7 +27,7 @@ type MapButtons struct {
 func DefaultButtons(center string) MapButtons {
 	return MapButtons{
 		Up:     "🔼",
-		Left:   "◀️",
+		Left:   "◀️️",
 		Right:  "▶️",
 		Down:   "🔽",
 		Center: center,
@@ -66,7 +65,7 @@ func GetUserMap(update tgbotapi.Update) Map {
 	return result
 }
 
-func GetMyMap(update tgbotapi.Update) (textMessage string, buttons MapButtons) {
+func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.ReplyKeyboardMarkup) {
 	resUser := GetOrCreateUser(update)
 	resLocation := GetOrCreateMyLocation(update)
 	resMap := GetUserMap(update)
@@ -148,18 +147,16 @@ func CalculateUserMapBorder(resLocation Location, resMap Map) UserMap {
 	return mapSize
 }
 
-func CalculateButtonMap(resLocation Location, resUser User, m map[[2]int]Cellule) MapButtons {
+func CalculateButtonMap(resLocation Location, resUser User, m map[[2]int]Cellule) tgbotapi.ReplyKeyboardMarkup {
 	type Point = [2]int
 
 	buttons := DefaultButtons(resUser.Avatar)
-
-	fmt.Println(*resLocation.AxisX)
 
 	if cell := m[Point{*resLocation.AxisX, *resLocation.AxisY + 1}]; !cell.CanStep {
 		if cell.View == "" {
 			buttons.Up = "🚫"
 		} else if cell.Type == "teleport" {
-			buttons.Up += cell.View + "🚶‍♂️"
+			buttons.Up += " " + resUser.Avatar + " " + cell.View
 		} else {
 			buttons.Up = cell.View
 		}
@@ -168,7 +165,7 @@ func CalculateButtonMap(resLocation Location, resUser User, m map[[2]int]Cellule
 		if cell.View == "" {
 			buttons.Down = "🚫"
 		} else if cell.Type == "teleport" {
-			buttons.Down += cell.View + "🚶‍♂️"
+			buttons.Down += " " + resUser.Avatar + " " + cell.View
 		} else {
 			buttons.Down = cell.View
 		}
@@ -176,6 +173,8 @@ func CalculateButtonMap(resLocation Location, resUser User, m map[[2]int]Cellule
 	if cell := m[Point{*resLocation.AxisX + 1, *resLocation.AxisY}]; !cell.CanStep {
 		if cell.View == "" {
 			buttons.Right = "🚫"
+		} else if cell.Type == "teleport" {
+			buttons.Right += " " + resUser.Avatar + " " + cell.View
 		} else {
 			buttons.Right = cell.View
 		}
@@ -183,12 +182,14 @@ func CalculateButtonMap(resLocation Location, resUser User, m map[[2]int]Cellule
 	if cell := m[Point{*resLocation.AxisX - 1, *resLocation.AxisY}]; !cell.CanStep {
 		if cell.View == "" {
 			buttons.Left = "🚫"
+		} else if cell.Type == "teleport" {
+			buttons.Left += " " + resUser.Avatar + " " + cell.View
 		} else {
 			buttons.Left = cell.View
 		}
 	}
 
-	return buttons
+	return CreateMoveKeyboard(buttons)
 }
 
 func CreateMoveKeyboard(buttons MapButtons) tgbotapi.ReplyKeyboardMarkup {

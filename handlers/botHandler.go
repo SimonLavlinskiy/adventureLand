@@ -36,27 +36,6 @@ var profileKeyboard = tgbotapi.NewReplyKeyboard(
 	),
 )
 
-//func Keyboard(buttons ...[]string) tgbotapi.ReplyKeyboardMarkup {
-//	var moveKeyboard = tgbotapi.NewReplyKeyboard(
-//		tgbotapi.NewKeyboardButtonRow(
-//			tgbotapi.NewKeyboardButton(buttons[1][1]),
-//			tgbotapi.NewKeyboardButton(buttons[1][2]),
-//			tgbotapi.NewKeyboardButton(buttons[1][3]),
-//		),
-//		tgbotapi.NewKeyboardButtonRow(
-//			tgbotapi.NewKeyboardButton(buttons[2][1]),
-//			tgbotapi.NewKeyboardButton(buttons[2][2]),
-//			tgbotapi.NewKeyboardButton(buttons[2][3]),
-//		),
-//		tgbotapi.NewKeyboardButtonRow(
-//			tgbotapi.NewKeyboardButton(buttons[3][1]),
-//			tgbotapi.NewKeyboardButton(buttons[3][2]),
-//			tgbotapi.NewKeyboardButton(buttons[3][3]),
-//		),
-//	)
-//	return moveKeyboard
-//}
-
 //var deleteBotMsg = tgbotapi.DeleteMessageConfig{}
 
 //var updateMsg = tgbotapi.EditMessageTextConfig{}
@@ -92,7 +71,6 @@ func GetMessage(telegramApiToken string) {
 		//msg.ReplyToMessageID = update.Message.MessageID
 
 		//ents := update.Message.Entities
-		//fmt.Println(tgbotapi.MessageConfig{Entities: ents})
 	}
 
 }

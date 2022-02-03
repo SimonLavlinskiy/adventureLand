@@ -16,7 +16,7 @@ type Cellule struct {
 func GetCellule(cellule Cellule) Cellule {
 	result := Cellule{}
 
-	err := config.Db.Where(cellule).FirstOrCreate(&result).Error
+	err := config.Db.Where(cellule).First(&result).Error
 
 	if err != nil {
 		panic(err)
