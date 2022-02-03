@@ -2,30 +2,9 @@ package handlers
 
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"project0/repository"
 )
 
 // TODO вынести костантные названия кнопок в отдельный файл(Можно даже в yml)
-
-//var mainKeyboardNames = []string{
-//	"Карта", "👜 Инвентарь 👜",
-//}
-//
-//var menuButtons = []string{
-//	"/menu",
-//}
-//
-//var backpackKeyboardNames = [][]string{
-//	{"\U0001F9BA Шмот \U0001F9BA", "\"🍕 Еда 🍕\""},
-//}
-//
-//func names2buttons(names []string) []tgbotapi.KeyboardButton {
-//	var row []tgbotapi.KeyboardButton
-//	for _, l := range names {
-//		row = append(row, tgbotapi.NewKeyboardButton(l))
-//	}
-//	return row
-//}
 
 var mainKeyboard = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
@@ -57,53 +36,7 @@ var profileKeyboard = tgbotapi.NewReplyKeyboard(
 	),
 )
 
-func createMoveKeyboard(buttons repository.MapButtons) tgbotapi.ReplyKeyboardMarkup {
-	var moveKeyboard = tgbotapi.NewReplyKeyboard(
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("⬛"),
-			tgbotapi.NewKeyboardButton(buttons.Up),
-			tgbotapi.NewKeyboardButton("⬛"),
-		),
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton(buttons.Left),
-			tgbotapi.NewKeyboardButton("❇️"),
-			tgbotapi.NewKeyboardButton(buttons.Right),
-		),
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("⬛"),
-			tgbotapi.NewKeyboardButton(buttons.Down),
-			tgbotapi.NewKeyboardButton("Меню"),
-		),
-	)
-	return moveKeyboard
-}
-
-//func Keyboard(buttons [][]string) tgbotapi.ReplyKeyboardMarkup {
-//	buttons = make([][]string, 3)
-
-//m := map[[3]int][]
-
-//var moveKeyboard = tgbotapi.NewReplyKeyboard(
-//	tgbotapi.NewKeyboardButtonRow(
-//		tgbotapi.NewKeyboardButton(buttons[]),
-//		tgbotapi.NewKeyboardButton(buttons.Up),
-//		tgbotapi.NewKeyboardButton("⬛"),
-//	),
-//	tgbotapi.NewKeyboardButtonRow(
-//		tgbotapi.NewKeyboardButton(buttons.Left),
-//		tgbotapi.NewKeyboardButton("❇️"),
-//		tgbotapi.NewKeyboardButton(buttons.Right),
-//	),
-//	tgbotapi.NewKeyboardButtonRow(
-//		tgbotapi.NewKeyboardButton("⬛"),
-//		tgbotapi.NewKeyboardButton(buttons.Down),
-//		tgbotapi.NewKeyboardButton("Меню"),
-//	),
-//)
-//return moveKeyboard
-//}
-
-var deleteBotMsg = tgbotapi.DeleteMessageConfig{}
+//var deleteBotMsg = tgbotapi.DeleteMessageConfig{}
 
 //var updateMsg = tgbotapi.EditMessageTextConfig{}
 
@@ -125,7 +58,7 @@ func GetMessage(telegramApiToken string) {
 			continue
 		}
 
-		deleteBotMsg = tgbotapi.NewDeleteMessage(update.Message.Chat.ID, update.Message.MessageID-1)
+		//deleteBotMsg = tgbotapi.NewDeleteMessage(update.Message.Chat.ID, update.Message.MessageID-1)
 		msg = messageResolver(update)
 
 		//updateMsg = tgbotapi.NewEditMessageText(366780332, 6304, "пипися")
@@ -137,19 +70,20 @@ func GetMessage(telegramApiToken string) {
 		SendMessage(msg, telegramApiToken)
 		//msg.ReplyToMessageID = update.Message.MessageID
 
+		//ents := update.Message.Entities
 	}
 
 }
 
-func DeleteMessage(message tgbotapi.DeleteMessageConfig, telegramApiToken string) {
-	bot, err := tgbotapi.NewBotAPI(telegramApiToken)
-	if err != nil {
-		panic(err)
-	}
-	if _, err := bot.Request(message); err != nil {
-		panic("Error delete msg: " + err.Error())
-	}
-}
+//func DeleteMessage(message tgbotapi.DeleteMessageConfig, telegramApiToken string) {
+//	bot, err := tgbotapi.NewBotAPI(telegramApiToken)
+//	if err != nil {
+//		panic(err)
+//	}
+//	if _, err := bot.Request(message); err != nil {
+//		panic("Error delete msg: " + err.Error())
+//	}
+//}
 
 func SendMessage(message tgbotapi.MessageConfig, telegramApiToken string) {
 	bot, err := tgbotapi.NewBotAPI(telegramApiToken)

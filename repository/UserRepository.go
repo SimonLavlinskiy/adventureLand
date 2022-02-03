@@ -8,14 +8,15 @@ import (
 )
 
 type User struct {
-	ID        uint      `gorm:"primaryKey"`
-	TgId      uint      `gorm:"embedded"`
-	Username  string    `gorm:"embedded"`
-	Avatar    string    `gorm:"embedded"`
-	FirstName string    `gorm:"embedded"`
-	LastName  string    `gorm:"embedded"`
-	CreatedAt time.Time `gorm:"autoCreateTime"`
-	Deleted   bool      `gorm:"embedded"`
+	ID           uint      `gorm:"primaryKey"`
+	TgId         uint      `gorm:"embedded"`
+	Username     string    `gorm:"embedded"`
+	Avatar       string    `gorm:"embedded"`
+	FirstName    string    `gorm:"embedded"`
+	LastName     string    `gorm:"embedded"`
+	MenuLocation string    `gorm:"embedded"`
+	CreatedAt    time.Time `gorm:"autoCreateTime"`
+	Deleted      bool      `gorm:"embedded"`
 }
 
 type UserInfo struct {
@@ -54,7 +55,7 @@ func GetUserInfo(update tgbotapi.Update) string {
 	resUser := GetOrCreateUser(update)
 	resLocation := GetOrCreateMyLocation(update)
 
-	messageMap := "*Карта*: _" + resLocation.Map + "_ *X*: _" + strconv.FormatUint(uint64(resLocation.AxisX), 10) + "_  *Y*: _" + strconv.FormatUint(uint64(resLocation.AxisY), 10) + "_\n_Имя_ " + resUser.Username + "\nАватар:" + resUser.Avatar
+	messageMap := "*Карта*: _" + resLocation.Map + "_ *X*: _" + strconv.FormatUint(uint64(*resLocation.AxisX), 10) + "_  *Y*: _" + strconv.FormatUint(uint64(*resLocation.AxisY), 10) + "_\n_Имя_ " + resUser.Username + "\nАватар:" + resUser.Avatar
 
 	return messageMap
 }

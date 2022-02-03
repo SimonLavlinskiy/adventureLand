@@ -9,22 +9,25 @@ type Location struct {
 	ID       uint `gorm:"primaryKey"`
 	UserTgId uint
 	UserID   uint
-	AxisX    int    `gorm:"embedded"`
-	AxisY    int    `gorm:"embedded"`
+	AxisX    *int
+	AxisY    *int
 	Map      string `gorm:"embedded"`
 }
 
 func GetOrCreateMyLocation(update tgbotapi.Update) Location {
-	res := GetOrCreateUser(update)
+	resUser := GetOrCreateUser(update)
+
+	AsX := 7
+	AsY := 2
 
 	result := Location{
 		UserTgId: uint(update.Message.From.ID),
-		AxisX:    1,
-		AxisY:    1,
-		Map:      "Ekaterensky",
+		AxisX:    &AsX,
+		AxisY:    &AsY,
+		Map:      "Main Place",
 	}
 
-	err := config.Db.Where(&Location{UserID: res.ID}).FirstOrCreate(&result).Error
+	err := config.Db.Where(&Location{UserID: resUser.ID}).FirstOrCreate(&result).Error
 	if err != nil {
 		panic(err)
 	}
@@ -34,12 +37,21 @@ func GetOrCreateMyLocation(update tgbotapi.Update) Location {
 
 func UpdateLocation(update tgbotapi.Update, LocationStruct Location) Location {
 	myLocation := GetOrCreateMyLocation(update)
+	resCellule := GetCellule(Cellule{Map: myLocation.Map, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY})
+
+	if resCellule.TeleportId != 0 {
+		resTeleport := GetTeleport(Teleport{ID: resCellule.TeleportId})
+		LocationStruct = Location{
+			AxisX: &resTeleport.StartX,
+			AxisY: &resTeleport.StartY,
+			Map:   resTeleport.Map,
+		}
+	}
 
 	var result Cellule
-
 	var err error
 
-	err = config.Db.First(&result, &Cellule{Map: LocationStruct.Map, AxisX: LocationStruct.AxisX, AxisY: LocationStruct.AxisY}).Error
+	err = config.Db.First(&result, &Cellule{Map: LocationStruct.Map, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY}).Error
 	if err != nil {
 		if err.Error() == "record not found" {
 			return myLocation
@@ -47,13 +59,18 @@ func UpdateLocation(update tgbotapi.Update, LocationStruct Location) Location {
 		panic(err)
 	}
 
-	if !result.CanStep {
+	if !result.CanStep && result.Type == "teleport" {
+		err = config.Db.Where(&Location{UserTgId: uint(update.Message.From.ID)}).Updates(LocationStruct).Error
+		if err != nil {
+			panic(err)
+		}
+	} else if !result.CanStep {
 		return myLocation
-	}
-
-	err = config.Db.Where(&Location{UserTgId: uint(update.Message.From.ID)}).Updates(LocationStruct).Error
-	if err != nil {
-		panic(err)
+	} else {
+		err = config.Db.Where(&Location{UserTgId: uint(update.Message.From.ID)}).Updates(LocationStruct).Error
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	myLocation = GetOrCreateMyLocation(update)
