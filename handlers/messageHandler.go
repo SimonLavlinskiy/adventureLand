@@ -90,13 +90,15 @@ func userMapLocation(update tgbotapi.Update, user repository.User) tgbotapi.Mess
 		case "\U0001F7E6":
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Ты не похож на Jesus! 👮‍♂️")
 		case "🕦":
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, currentTime.Format("3:4:5")+"\nЧасики тикают...")
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, currentTime.Format("\"15:04:05\"")+"\nЧасики тикают...")
 		case user.Avatar:
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.GetUserInfo(update))
 		case "/menu", "Меню":
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Меню")
 			msg.ReplyMarkup = mainKeyboard
 			repository.UpdateUser(update, repository.User{MenuLocation: "Меню"})
+		case "🎰":
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "💰💵🤑 Ставки на JOY CASINO дот COM! 🤑💵💰 ")
 		default:
 			msg.Text, buttons = repository.GetMyMap(update)
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
