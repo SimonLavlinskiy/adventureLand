@@ -37,9 +37,9 @@ func GetOrCreateMyLocation(update tgbotapi.Update) Location {
 
 func UpdateLocation(update tgbotapi.Update, LocationStruct Location) Location {
 	myLocation := GetOrCreateMyLocation(update)
-	resCellule := GetCellule(Cellule{Map: myLocation.Map, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY})
+	resCellule := GetCellule(Cellule{Map: LocationStruct.Map, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY})
 
-	if resCellule.TeleportId != 0 {
+	if resCellule.Type == "teleport" && resCellule.TeleportId != 0 {
 		resTeleport := GetTeleport(Teleport{ID: resCellule.TeleportId})
 		LocationStruct = Location{
 			AxisX: &resTeleport.StartX,

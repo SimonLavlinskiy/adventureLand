@@ -40,12 +40,10 @@ func userMenuLocation(update tgbotapi.Update, user repository.User) tgbotapi.Mes
 		repository.UpdateUser(update, repository.User{MenuLocation: "Карта"})
 	case "👤 Профиль 👔":
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "*Профиль*:\n_Твое имя_ *"+user.Username+"*!\n_Аватар_:"+user.Avatar)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
 		msg.ReplyMarkup = profileKeyboard
 		repository.UpdateUser(update, repository.User{MenuLocation: "Профиль"})
 	case "👜 Инвентарь 👜":
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Инвентарь")
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, newMessage)
 		msg.ReplyMarkup = backpackKeyboard
 		repository.UpdateUser(update, repository.User{MenuLocation: "Инвентарь"})
 	default:
@@ -59,46 +57,12 @@ func userMenuLocation(update tgbotapi.Update, user repository.User) tgbotapi.Mes
 
 func userMapLocation(update tgbotapi.Update, user repository.User) tgbotapi.MessageConfig {
 	newMessage := update.Message.Text
-	buttons := tgbotapi.ReplyKeyboardMarkup{}
-	currentTime := time.Now()
 	char := strings.Fields(newMessage)
 
 	if len(char) != 1 {
-		msg = changeLocation(update, char[0])
+		msg = useItems(update, char)
 	} else {
-		switch newMessage {
-		case "🔼":
-			moveUp(update)
-		case "🔽":
-			moveDown(update)
-		case "◀️️":
-			moveLeft(update)
-		case "▶️":
-			moveRight(update)
-		}
-
-		msg.Text, buttons = repository.GetMyMap(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
-		msg.ReplyMarkup = buttons
-
-		switch newMessage {
-		case "\U0001F7E6":
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Ты не похож на Jesus! 👮‍♂️")
-		case "🕦":
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, currentTime.Format("\"15:04:05\"")+"\nЧасики тикают...")
-		case user.Avatar:
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.GetUserInfo(update))
-		case "/menu", "Меню":
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Меню")
-			msg.ReplyMarkup = mainKeyboard
-			repository.UpdateUser(update, repository.User{MenuLocation: "Меню"})
-		case "🎰":
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "💰💵🤑 Ставки на JOY CASINO дот COM! 🤑💵💰 ")
-		default:
-			msg.Text, buttons = repository.GetMyMap(update)
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
-			msg.ReplyMarkup = buttons
-		}
+		msg = useDefaultItems(update, user)
 	}
 
 	return msg
@@ -134,47 +98,67 @@ func userProfileLocation(update tgbotapi.Update, user repository.User) tgbotapi.
 	return msg
 }
 
-func changeLocation(update tgbotapi.Update, char string) tgbotapi.MessageConfig {
-	buttons := tgbotapi.ReplyKeyboardMarkup{}
+func directionMovement(update tgbotapi.Update, direction string) {
+	res := repository.GetOrCreateMyLocation(update)
 
-	switch char {
+	switch direction {
 	case "🔼":
-		moveUp(update)
+		y := *res.AxisY + 1
+		repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: &y})
 	case "🔽":
-		moveDown(update)
+		y := *res.AxisY - 1
+		repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: &y})
 	case "◀️️":
-		moveLeft(update)
+		x := *res.AxisX - 1
+		repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: &x, AxisY: res.AxisY})
 	case "▶️":
-		moveRight(update)
+		x := *res.AxisX + 1
+		repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: &x, AxisY: res.AxisY})
 	}
+}
 
-	msg.Text, buttons = repository.GetMyMap(update)
-	msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
-	msg.ReplyMarkup = buttons
+func useDefaultItems(update tgbotapi.Update, user repository.User) tgbotapi.MessageConfig {
+	newMessage := update.Message.Text
+	buttons := tgbotapi.ReplyKeyboardMarkup{}
+	currentTime := time.Now()
+
+	switch newMessage {
+	case "🔼", "🔽", "◀️️", "▶️":
+		directionMovement(update, newMessage)
+		msg.Text, buttons = repository.GetMyMap(update)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
+		msg.ReplyMarkup = buttons
+	case "\U0001F7E6": // Вода
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Ты не похож на Jesus! 👮‍♂️")
+	case "🕦":
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, currentTime.Format("15:04:05")+"\nЧасики тикают...")
+	case user.Avatar:
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.GetUserInfo(update))
+	case "/menu", "Меню":
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Меню")
+		msg.ReplyMarkup = mainKeyboard
+		repository.UpdateUser(update, repository.User{MenuLocation: "Меню"})
+	case "🎰":
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "💰💵🤑 Ставки на JOY CASINO дот COM! 🤑💵💰 ")
+	default:
+		msg.Text, buttons = repository.GetMyMap(update)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
+		msg.ReplyMarkup = buttons
+	}
 
 	return msg
 }
 
-func moveUp(update tgbotapi.Update) {
-	res := repository.GetOrCreateMyLocation(update)
-	y := *res.AxisY + 1
-	repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: &y})
-}
+func useItems(update tgbotapi.Update, char []string) tgbotapi.MessageConfig {
+	buttons := tgbotapi.ReplyKeyboardMarkup{}
 
-func moveDown(update tgbotapi.Update) {
-	res := repository.GetOrCreateMyLocation(update)
-	y := *res.AxisY - 1
-	repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: &y})
-}
+	switch char[0] {
+	case "🔼", "🔽", "◀️️", "▶️":
+		directionMovement(update, char[0])
+		msg.Text, buttons = repository.GetMyMap(update)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
+		msg.ReplyMarkup = buttons
+	}
 
-func moveLeft(update tgbotapi.Update) {
-	res := repository.GetOrCreateMyLocation(update)
-	x := *res.AxisX - 1
-	repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: &x, AxisY: res.AxisY})
-}
-
-func moveRight(update tgbotapi.Update) {
-	res := repository.GetOrCreateMyLocation(update)
-	x := *res.AxisX + 1
-	repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: &x, AxisY: res.AxisY})
+	return msg
 }
