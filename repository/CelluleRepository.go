@@ -1,6 +1,9 @@
 package repository
 
-import "project0/config"
+import (
+	"fmt"
+	"project0/config"
+)
 
 type Cellule struct {
 	ID         uint   `gorm:"primaryKey"`
@@ -19,7 +22,7 @@ func GetCellule(cellule Cellule) Cellule {
 	err := config.Db.Where(cellule).First(&result).Error
 
 	if err != nil {
-		panic(err)
+		fmt.Println("Походу юзер вышел за границу.")
 	}
 
 	return result

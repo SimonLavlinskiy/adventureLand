@@ -91,6 +91,6 @@ func SendMessage(message tgbotapi.MessageConfig, telegramApiToken string) {
 		panic(err)
 	}
 	if _, err := bot.Send(message); err != nil {
-		panic("Error send msg: " + err.Error())
+		panic("Error send msg: (Походу кто то спамит)" + err.Error())
 	}
 }

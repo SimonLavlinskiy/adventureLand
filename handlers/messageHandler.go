@@ -69,24 +69,19 @@ func userMapLocation(update tgbotapi.Update, user repository.User) tgbotapi.Mess
 		switch newMessage {
 		case "🔼":
 			moveUp(update)
-			msg.Text, buttons = repository.GetMyMap(update)
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
-			msg.ReplyMarkup = buttons
-		case "◀️️":
-			moveLeft(update)
-			msg.Text, buttons = repository.GetMyMap(update)
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
-			msg.ReplyMarkup = buttons
-		case "▶️":
-			moveRight(update)
-			msg.Text, buttons = repository.GetMyMap(update)
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
-			msg.ReplyMarkup = buttons
 		case "🔽":
 			moveDown(update)
-			msg.Text, buttons = repository.GetMyMap(update)
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
-			msg.ReplyMarkup = buttons
+		case "◀️️":
+			moveLeft(update)
+		case "▶️":
+			moveRight(update)
+		}
+
+		msg.Text, buttons = repository.GetMyMap(update)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
+		msg.ReplyMarkup = buttons
+
+		switch newMessage {
 		case "\U0001F7E6":
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Ты не похож на Jesus! 👮‍♂️")
 		case "🕦":
