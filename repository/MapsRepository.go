@@ -5,6 +5,7 @@ import (
 	"project0/config"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Map struct {
@@ -66,6 +67,9 @@ func GetUserMap(update tgbotapi.Update) Map {
 }
 
 func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.ReplyKeyboardMarkup) {
+	currentTime := time.Now()
+	day := "06" <= currentTime.Format("15") && currentTime.Format("15") <= "23"
+
 	resUser := GetOrCreateUser(update)
 	resLocation := GetOrCreateMyLocation(update)
 	resMap := GetUserMap(update)
@@ -91,21 +95,33 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.Repl
 	var Maps [][]string
 	Maps = make([][]string, resMap.SizeY+1)
 
-	m[Point{*resLocation.AxisX, *resLocation.AxisY}] = Cellule{View: resUser.Avatar}
+	m[Point{*resLocation.AxisX, *resLocation.AxisY}] = Cellule{View: resUser.Avatar, ID: m[Point{*resLocation.AxisX, *resLocation.AxisY}].ID}
 
-	for i := range Maps {
+	for y := range Maps {
 		for x := mapSize.leftIndent; x <= mapSize.rightIndent; x++ {
-			if m[Point{x, i}].ID != 0 || m[Point{x, i}] == m[Point{*resLocation.AxisX, *resLocation.AxisY}] {
-				Maps[i] = append(Maps[i], m[Point{x, i}].View)
+			if day || resLocation.Map != "Main Place" {
+				if m[Point{x, y}].ID != 0 || m[Point{x, y}] == m[Point{*resLocation.AxisX, *resLocation.AxisY}] {
+					Maps[y] = append(Maps[y], m[Point{x, y}].View)
+				} else {
+					Maps[y] = append(Maps[y], "\U0001FAA8")
+				}
 			} else {
-				Maps[i] = append(Maps[i], "\U0001FAA8")
+				if calculateNightMap(resLocation, x, y) && m[Point{x, y}].ID != 0 {
+					Maps[y] = append(Maps[y], m[Point{x, y}].View)
+				} else if (y+x)%2 == 1 || m[Point{x, y}].ID != 0 && (y+x)%2 == 1 {
+					Maps[y] = append(Maps[y], "⬛️")
+				} else if (y+x)%2 == 0 || m[Point{x, y}].ID != 0 && (y+x)%2 == 0 {
+					Maps[y] = append(Maps[y], "✨")
+				} else {
+					Maps[y] = append(Maps[y], "\U0001FAA8")
+				}
 			}
 		}
 	}
 
 	for i, row := range Maps {
 		if i >= mapSize.downIndent && i <= mapSize.upperIndent {
-			messageMap = strings.Join(row, ``) + "\n" + messageMap
+			messageMap = strings.Join(row, "") + "\n" + messageMap
 		}
 	}
 
@@ -210,4 +226,23 @@ func CreateMoveKeyboard(buttons MapButtons) tgbotapi.ReplyKeyboardMarkup {
 			tgbotapi.NewKeyboardButton("Меню"),
 		),
 	)
+}
+
+func calculateNightMap(location Location, x int, y int) bool {
+	if *location.AxisX == x-2 && (*location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1) {
+		return true
+	}
+	if *location.AxisX == x-1 && (*location.AxisY == y-2 || *location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1 || *location.AxisY == y+2) {
+		return true
+	}
+	if *location.AxisX == x && (*location.AxisY == y-2 || *location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1 || *location.AxisY == y+2) {
+		return true
+	}
+	if *location.AxisX == x+1 && (*location.AxisY == y-2 || *location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1 || *location.AxisY == y+2) {
+		return true
+	}
+	if *location.AxisX == x+2 && (*location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1) {
+		return true
+	}
+	return false
 }
