@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"encoding/json"
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
 	"strconv"
@@ -79,16 +81,23 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.Repl
 	type Point = [2]int
 	m := map[Point]Cellule{}
 
-	var result []Cellule
+	var result []Test
 
-	err := config.Db.Where("map = '" + resLocation.Map + "' and axis_x >= " + ToString(mapSize.leftIndent) + " and axis_x <= " + ToString(mapSize.rightIndent) + " and axis_y >= " + ToString(mapSize.downIndent) + " and axis_y <= " + ToString(mapSize.upperIndent)).Order("axis_x ASC").Order("axis_y ASC").Find(&result).Error
+	//err := config.Db.Where("map = '" + resLocation.Map + "' and axis_x >= " + ToString(mapSize.leftIndent) + " and axis_x <= " + ToString(mapSize.rightIndent) + " and axis_y >= " + ToString(mapSize.downIndent) + " and axis_y <= " + ToString(mapSize.upperIndent)).Order("axis_x ASC").Order("axis_y ASC").Find(&result).Error
+
+	err := config.Db.Model(&Test{}).Select("*").
+		Where("id = 1").
+		Find(&result).Error
+
 	if err != nil {
 		panic(err)
 	}
+	j, _ := json.Marshal(result)
+	fmt.Println(string(j))
 
-	for _, cell := range result {
-		m[Point{cell.AxisX, cell.AxisY}] = cell
-	}
+	//for _, cell := range result {
+	//	m[Point{cell.AxisX, cell.AxisY}] = cell
+	//}
 
 	buttons = CalculateButtonMap(resLocation, resUser, m)
 
