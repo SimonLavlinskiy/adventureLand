@@ -3,6 +3,7 @@ package repository
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
+	"strings"
 )
 
 type Location struct {
@@ -36,15 +37,15 @@ func GetOrCreateMyLocation(update tgbotapi.Update) Location {
 }
 
 func UpdateLocation(update tgbotapi.Update, LocationStruct Location) Location {
+	char := strings.Fields(update.Message.Text)
 	myLocation := GetOrCreateMyLocation(update)
 	resCellule := GetCellule(Cellule{Map: LocationStruct.Map, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY})
 
-	if resCellule.Type == "teleport" && resCellule.TeleportId != 0 {
-		resTeleport := GetTeleport(Teleport{ID: resCellule.TeleportId})
+	if len(char) != 1 && *resCellule.Type == "teleport" && resCellule.TeleportID != nil {
 		LocationStruct = Location{
-			AxisX: &resTeleport.StartX,
-			AxisY: &resTeleport.StartY,
-			Map:   resTeleport.Map,
+			AxisX: &resCellule.Teleport.StartX,
+			AxisY: &resCellule.Teleport.StartY,
+			Map:   resCellule.Teleport.Map,
 		}
 	}
 
@@ -59,7 +60,7 @@ func UpdateLocation(update tgbotapi.Update, LocationStruct Location) Location {
 		panic(err)
 	}
 
-	if !result.CanStep && result.Type == "teleport" {
+	if !result.CanStep && result.Type != nil && len(char) != 1 {
 		err = config.Db.Where(&Location{UserTgId: uint(update.Message.From.ID)}).Updates(LocationStruct).Error
 		if err != nil {
 			panic(err)

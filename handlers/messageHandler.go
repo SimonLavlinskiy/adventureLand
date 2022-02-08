@@ -98,23 +98,24 @@ func userProfileLocation(update tgbotapi.Update, user repository.User) tgbotapi.
 	return msg
 }
 
-func directionMovement(update tgbotapi.Update, direction string) {
+func directionMovement(update tgbotapi.Update, direction string) repository.Location {
 	res := repository.GetOrCreateMyLocation(update)
 
 	switch direction {
 	case "🔼":
 		y := *res.AxisY + 1
-		repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: &y})
+		return repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: &y}
 	case "🔽":
 		y := *res.AxisY - 1
-		repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: &y})
+		return repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: &y}
 	case "◀️️":
 		x := *res.AxisX - 1
-		repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: &x, AxisY: res.AxisY})
+		return repository.Location{Map: res.Map, AxisX: &x, AxisY: res.AxisY}
 	case "▶️":
 		x := *res.AxisX + 1
-		repository.UpdateLocation(update, repository.Location{Map: res.Map, AxisX: &x, AxisY: res.AxisY})
+		return repository.Location{Map: res.Map, AxisX: &x, AxisY: res.AxisY}
 	}
+	return res
 }
 
 func useDefaultItems(update tgbotapi.Update, user repository.User) tgbotapi.MessageConfig {
@@ -124,7 +125,8 @@ func useDefaultItems(update tgbotapi.Update, user repository.User) tgbotapi.Mess
 
 	switch newMessage {
 	case "🔼", "🔽", "◀️️", "▶️":
-		directionMovement(update, newMessage)
+		res := directionMovement(update, newMessage)
+		repository.UpdateLocation(update, res)
 		msg.Text, buttons = repository.GetMyMap(update)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
 		msg.ReplyMarkup = buttons
@@ -154,9 +156,16 @@ func useItems(update tgbotapi.Update, char []string) tgbotapi.MessageConfig {
 
 	switch char[0] {
 	case "🔼", "🔽", "◀️️", "▶️":
-		directionMovement(update, char[0])
+		res := directionMovement(update, char[0])
+		repository.UpdateLocation(update, res)
 		msg.Text, buttons = repository.GetMyMap(update)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
+		msg.ReplyMarkup = buttons
+	case "👋":
+		res := directionMovement(update, char[1])
+		countItem := repository.UserGetItem(res)
+		msg.Text, buttons = repository.GetMyMap(update)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\nТы взял: "+repository.ToString(countItem)+" шт "+char[2])
 		msg.ReplyMarkup = buttons
 	}
 

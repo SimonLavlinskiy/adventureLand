@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"encoding/json"
-	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
 	"strconv"
@@ -59,7 +57,7 @@ func GetUserMap(update tgbotapi.Update) Map {
 	resLocation := GetOrCreateMyLocation(update)
 	result := Map{}
 
-	err := config.Db.Where(&Map{Name: resLocation.Map}).FirstOrCreate(&result).Error
+	err := config.Db.Where(&Map{Name: resLocation.Map}).First(&result).Error
 
 	if err != nil {
 		panic(err)
@@ -69,9 +67,6 @@ func GetUserMap(update tgbotapi.Update) Map {
 }
 
 func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.ReplyKeyboardMarkup) {
-	currentTime := time.Now()
-	day := "06" <= currentTime.Format("15") && currentTime.Format("15") <= "23"
-
 	resUser := GetOrCreateUser(update)
 	resLocation := GetOrCreateMyLocation(update)
 	resMap := GetUserMap(update)
@@ -81,52 +76,33 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.Repl
 	type Point = [2]int
 	m := map[Point]Cellule{}
 
-	var result []Test
+	var result []Cellule
 
-	//err := config.Db.Where("map = '" + resLocation.Map + "' and axis_x >= " + ToString(mapSize.leftIndent) + " and axis_x <= " + ToString(mapSize.rightIndent) + " and axis_y >= " + ToString(mapSize.downIndent) + " and axis_y <= " + ToString(mapSize.upperIndent)).Order("axis_x ASC").Order("axis_y ASC").Find(&result).Error
-
-	err := config.Db.Model(&Test{}).Select("*").
-		Where("id = 1").
+	err := config.Db.
+		Preload("Item").
+		Preload("Teleport").
+		Where(Cellule{Map: resLocation.Map}).
+		Where("axis_x >= " + ToString(mapSize.leftIndent)).
+		Where("axis_x <= " + ToString(mapSize.rightIndent)).
+		Where("axis_y >= " + ToString(mapSize.downIndent)).
+		Where("axis_y <= " + ToString(mapSize.upperIndent)).
+		Order("axis_x ASC").
+		Order("axis_y ASC").
 		Find(&result).Error
 
 	if err != nil {
 		panic(err)
 	}
-	j, _ := json.Marshal(result)
-	fmt.Println(string(j))
 
-	//for _, cell := range result {
-	//	m[Point{cell.AxisX, cell.AxisY}] = cell
-	//}
+	for _, cell := range result {
+		m[Point{cell.AxisX, cell.AxisY}] = cell
+	}
 
 	buttons = CalculateButtonMap(resLocation, resUser, m)
 
-	var Maps [][]string
-	Maps = make([][]string, resMap.SizeY+1)
-
 	m[Point{*resLocation.AxisX, *resLocation.AxisY}] = Cellule{View: resUser.Avatar, ID: m[Point{*resLocation.AxisX, *resLocation.AxisY}].ID}
 
-	for y := range Maps {
-		for x := mapSize.leftIndent; x <= mapSize.rightIndent; x++ {
-			if day || resLocation.Map != "Main Place" {
-				if m[Point{x, y}].ID != 0 || m[Point{x, y}] == m[Point{*resLocation.AxisX, *resLocation.AxisY}] {
-					Maps[y] = append(Maps[y], m[Point{x, y}].View)
-				} else {
-					Maps[y] = append(Maps[y], "\U0001FAA8")
-				}
-			} else {
-				if calculateNightMap(resLocation, x, y) && m[Point{x, y}].ID != 0 {
-					Maps[y] = append(Maps[y], m[Point{x, y}].View)
-				} else if (y+x)%2 == 1 || m[Point{x, y}].ID != 0 && (y+x)%2 == 1 {
-					Maps[y] = append(Maps[y], "⬛️")
-				} else if (y+x)%2 == 0 || m[Point{x, y}].ID != 0 && (y+x)%2 == 0 {
-					Maps[y] = append(Maps[y], "✨")
-				} else {
-					Maps[y] = append(Maps[y], "\U0001FAA8")
-				}
-			}
-		}
-	}
+	Maps := configurationMap(mapSize, resMap, resLocation, m)
 
 	for i, row := range Maps {
 		if i >= mapSize.downIndent && i <= mapSize.upperIndent {
@@ -177,41 +153,52 @@ func CalculateButtonMap(resLocation Location, resUser User, m map[[2]int]Cellule
 
 	buttons := DefaultButtons(resUser.Avatar)
 
-	if cell := m[Point{*resLocation.AxisX, *resLocation.AxisY + 1}]; !cell.CanStep {
-		if cell.View == "" {
-			buttons.Up = "🚫"
-		} else if cell.Type == "teleport" {
+	if cell := m[Point{*resLocation.AxisX, *resLocation.AxisY + 1}]; cell.Type != nil {
+		if *cell.Type == "teleport" && cell.TeleportID != nil {
 			buttons.Up += " " + resUser.Avatar + " " + cell.View
-		} else {
-			buttons.Up = cell.View
+		} else if *cell.Type == "item" && cell.ItemID != nil && *cell.Item.Count > 0 {
+			buttons.Up = "👋 " + buttons.Up + " " + cell.Item.View
 		}
+	} else if cell.View == "" {
+		buttons.Up = "🚫"
+	} else if !cell.CanStep {
+		buttons.Up = cell.View
 	}
-	if cell := m[Point{*resLocation.AxisX, *resLocation.AxisY - 1}]; !cell.CanStep {
-		if cell.View == "" {
-			buttons.Down = "🚫"
-		} else if cell.Type == "teleport" {
+
+	if cell := m[Point{*resLocation.AxisX, *resLocation.AxisY - 1}]; cell.Type != nil {
+		if *cell.Type == "teleport" && cell.TeleportID != nil {
 			buttons.Down += " " + resUser.Avatar + " " + cell.View
-		} else {
-			buttons.Down = cell.View
+		} else if *cell.Type == "item" && cell.ItemID != nil && *cell.Item.Count > 0 {
+			buttons.Down = "👋 " + buttons.Down + " " + cell.Item.View
 		}
+	} else if cell.View == "" {
+		buttons.Down = "🚫"
+	} else if !cell.CanStep {
+		buttons.Down = cell.View
 	}
-	if cell := m[Point{*resLocation.AxisX + 1, *resLocation.AxisY}]; !cell.CanStep {
-		if cell.View == "" {
-			buttons.Right = "🚫"
-		} else if cell.Type == "teleport" {
-			buttons.Right += " " + resUser.Avatar + " " + cell.View
-		} else {
-			buttons.Right = cell.View
-		}
-	}
-	if cell := m[Point{*resLocation.AxisX - 1, *resLocation.AxisY}]; !cell.CanStep {
-		if cell.View == "" {
-			buttons.Left = "🚫"
-		} else if cell.Type == "teleport" {
+
+	if cell := m[Point{*resLocation.AxisX - 1, *resLocation.AxisY}]; cell.Type != nil {
+		if *cell.Type == "teleport" && cell.TeleportID != nil {
 			buttons.Left += " " + resUser.Avatar + " " + cell.View
-		} else {
-			buttons.Left = cell.View
+		} else if *cell.Type == "item" && cell.ItemID != nil && *cell.Item.Count > 0 {
+			buttons.Left = "👋 " + buttons.Left + " " + cell.Item.View
 		}
+	} else if cell.View == "" {
+		buttons.Left = "🚫"
+	} else if !cell.CanStep {
+		buttons.Left = cell.View
+	}
+
+	if cell := m[Point{*resLocation.AxisX + 1, *resLocation.AxisY}]; cell.Type != nil {
+		if *cell.Type == "teleport" && cell.TeleportID != nil {
+			buttons.Right += " " + resUser.Avatar + " " + cell.View
+		} else if *cell.Type == "item" && cell.ItemID != nil && *cell.Item.Count > 0 {
+			buttons.Right = "👋 " + buttons.Right + " " + cell.Item.View
+		}
+	} else if cell.View == "" {
+		buttons.Right = "🚫"
+	} else if !cell.CanStep {
+		buttons.Right = cell.View
 	}
 
 	return CreateMoveKeyboard(buttons)
@@ -254,4 +241,44 @@ func calculateNightMap(location Location, x int, y int) bool {
 		return true
 	}
 	return false
+}
+
+func configurationMap(mapSize UserMap, resMap Map, resLocation Location, m map[[2]int]Cellule) [][]string {
+	currentTime := time.Now()
+	day := "06" <= currentTime.Format("15") && currentTime.Format("15") <= "23"
+	type Point [2]int
+	Maps := make([][]string, resMap.SizeY+1)
+
+	for y := range Maps {
+		for x := mapSize.leftIndent; x <= mapSize.rightIndent; x++ {
+			if day || resLocation.Map != "Main Place" {
+				if m[Point{x, y}].ID != 0 || m[Point{x, y}] == m[Point{*resLocation.AxisX, *resLocation.AxisY}] {
+					appendVisibleUserZone(m, x, y, Maps)
+				} else {
+					Maps[y] = append(Maps[y], "\U0001FAA8")
+				}
+			} else {
+				if calculateNightMap(resLocation, x, y) && m[Point{x, y}].ID != 0 {
+					appendVisibleUserZone(m, x, y, Maps)
+				} else if (y+x)%2 == 1 || m[Point{x, y}].ID != 0 && (y+x)%2 == 1 {
+					Maps[y] = append(Maps[y], "⬛️")
+				} else if (y+x)%2 == 0 || m[Point{x, y}].ID != 0 && (y+x)%2 == 0 {
+					Maps[y] = append(Maps[y], "✨")
+				} else {
+					Maps[y] = append(Maps[y], "\U0001FAA8")
+				}
+			}
+		}
+	}
+	return Maps
+}
+
+func appendVisibleUserZone(m map[[2]int]Cellule, x int, y int, Maps [][]string) {
+	type Point [2]int
+
+	if m[Point{x, y}].Type != nil && *m[Point{x, y}].Type == "item" && *m[Point{x, y}].Item.Count != 0 {
+		Maps[y] = append(Maps[y], m[Point{x, y}].Item.View)
+	} else {
+		Maps[y] = append(Maps[y], m[Point{x, y}].View)
+	}
 }

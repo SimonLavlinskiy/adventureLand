@@ -13,8 +13,6 @@ func Migrate() bool {
 		repository.Cellule{},
 		repository.Map{},
 		repository.Teleport{},
-		repository.Test{},
-		repository.Sectest{},
 	)
 	if err != nil {
 		fmt.Println("Migration failed")
