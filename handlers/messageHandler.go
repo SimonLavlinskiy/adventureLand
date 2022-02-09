@@ -130,6 +130,9 @@ func useDefaultItems(update tgbotapi.Update, user repository.User) tgbotapi.Mess
 		msg.Text, buttons = repository.GetMyMap(update)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
 		msg.ReplyMarkup = buttons
+	case "🎒":
+		res := OpenUserItems(update)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, res)
 	case "\U0001F7E6": // Вода
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Ты не похож на Jesus! 👮‍♂️")
 	case "🕦":
@@ -163,11 +166,22 @@ func useItems(update tgbotapi.Update, char []string) tgbotapi.MessageConfig {
 		msg.ReplyMarkup = buttons
 	case "👋":
 		res := directionMovement(update, char[1])
-		countItem := repository.UserGetItem(res)
+		countItem := repository.UserGetItem(update, res)
 		msg.Text, buttons = repository.GetMyMap(update)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\nТы взял: "+repository.ToString(countItem)+" шт "+char[2])
 		msg.ReplyMarkup = buttons
 	}
 
 	return msg
+}
+
+func OpenUserItems(update tgbotapi.Update) string {
+	var userItemMsg string
+	res := repository.GetUserItems(update)
+
+	for _, item := range res {
+		userItemMsg += item.Item.View + " - " + repository.ToString(*item.Count) + "шт.\n"
+	}
+
+	return userItemMsg
 }

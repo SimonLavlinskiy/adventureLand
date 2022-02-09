@@ -10,9 +10,11 @@ func Migrate() bool {
 	err := config.Db.AutoMigrate(
 		repository.User{},
 		repository.Location{},
+		repository.Teleport{},
+		repository.Item{},
 		repository.Cellule{},
 		repository.Map{},
-		repository.Teleport{},
+		repository.UserItem{},
 	)
 	if err != nil {
 		fmt.Println("Migration failed")

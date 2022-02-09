@@ -70,7 +70,6 @@ func GetMessage(telegramApiToken string) {
 		SendMessage(msg, telegramApiToken)
 		//msg.ReplyToMessageID = update.Message.MessageID
 
-		//ents := update.Message.Entities
 	}
 
 }

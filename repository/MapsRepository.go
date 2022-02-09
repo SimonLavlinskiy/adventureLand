@@ -201,15 +201,15 @@ func CalculateButtonMap(resLocation Location, resUser User, m map[[2]int]Cellule
 		buttons.Right = cell.View
 	}
 
-	return CreateMoveKeyboard(buttons)
+	return CreateMapKeyboard(buttons)
 }
 
-func CreateMoveKeyboard(buttons MapButtons) tgbotapi.ReplyKeyboardMarkup {
+func CreateMapKeyboard(buttons MapButtons) tgbotapi.ReplyKeyboardMarkup {
 	return tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton("⬛"),
 			tgbotapi.NewKeyboardButton(buttons.Up),
-			tgbotapi.NewKeyboardButton("⬛"),
+			tgbotapi.NewKeyboardButton("🎒"),
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(buttons.Left),

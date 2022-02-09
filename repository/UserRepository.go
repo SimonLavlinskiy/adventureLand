@@ -19,9 +19,6 @@ type User struct {
 	Deleted      bool      `gorm:"embedded"`
 }
 
-type UserInfo struct {
-}
-
 func GetOrCreateUser(update tgbotapi.Update) User {
 	result := User{
 		TgId:      uint(update.Message.From.ID),
