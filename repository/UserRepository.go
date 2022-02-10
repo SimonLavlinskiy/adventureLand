@@ -8,12 +8,20 @@ import (
 )
 
 type User struct {
-	ID           uint      `gorm:"primaryKey"`
-	TgId         uint      `gorm:"embedded"`
-	Username     string    `gorm:"embedded"`
-	Avatar       string    `gorm:"embedded"`
-	FirstName    string    `gorm:"embedded"`
-	LastName     string    `gorm:"embedded"`
+	ID           uint   `gorm:"primaryKey"`
+	TgId         uint   `gorm:"embedded"`
+	Username     string `gorm:"embedded"`
+	Avatar       string `gorm:"embedded"`
+	FirstName    string `gorm:"embedded"`
+	LastName     string `gorm:"embedded"`
+	Head         *Item
+	HeadId       *int
+	Hand         *Item
+	HandId       *int
+	Body         *Item
+	BodyId       *int
+	Foot         *Item
+	FootId       *int
 	MenuLocation string    `gorm:"embedded"`
 	CreatedAt    time.Time `gorm:"autoCreateTime"`
 	Deleted      bool      `gorm:"embedded"`

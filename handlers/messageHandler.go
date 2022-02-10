@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/repository"
 	"strings"
@@ -8,9 +9,14 @@ import (
 )
 
 var msg tgbotapi.MessageConfig
+var updateMsg tgbotapi.EditMessageTextConfig
 
 func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 	resUser := repository.GetOrCreateUser(update)
+
+	if update.CallbackQuery != nil {
+		fmt.Println("jajaja", update.CallbackQuery.Data)
+	}
 
 	switch resUser.MenuLocation {
 	case "Меню":
@@ -133,6 +139,7 @@ func useDefaultItems(update tgbotapi.Update, user repository.User) tgbotapi.Mess
 	case "🎒":
 		res := OpenUserItems(update)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, res)
+		msg.ReplyMarkup = repository.InlineKeyboardBackpack()
 	case "\U0001F7E6": // Вода
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Ты не похож на Jesus! 👮‍♂️")
 	case "🕦":

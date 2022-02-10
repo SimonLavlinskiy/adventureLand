@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -38,8 +39,6 @@ var profileKeyboard = tgbotapi.NewReplyKeyboard(
 
 //var deleteBotMsg = tgbotapi.DeleteMessageConfig{}
 
-//var updateMsg = tgbotapi.EditMessageTextConfig{}
-
 func GetMessage(telegramApiToken string) {
 	bot, err := tgbotapi.NewBotAPI(telegramApiToken)
 	if err != nil {
@@ -54,17 +53,16 @@ func GetMessage(telegramApiToken string) {
 
 	for update := range updates {
 
+		if update.CallbackQuery != nil {
+			fmt.Println(update.CallbackQuery.Data, update.CallbackQuery.Message.MessageID)
+		}
+
 		if update.Message == nil {
 			continue
 		}
 
 		//deleteBotMsg = tgbotapi.NewDeleteMessage(update.Message.Chat.ID, update.Message.MessageID-1)
 		msg = messageResolver(update)
-
-		//updateMsg = tgbotapi.NewEditMessageText(366780332, 6304, "пипися")
-		//if _, err := bot.Send(updateMsg); err != nil
-		//	panic("Error update msg: " + err.Error())
-		//}
 
 		//DeleteMessage(deleteBotMsg, telegramApiToken)
 		SendMessage(msg, telegramApiToken)
@@ -91,5 +89,17 @@ func SendMessage(message tgbotapi.MessageConfig, telegramApiToken string) {
 	}
 	if _, err := bot.Send(message); err != nil {
 		panic("Error send msg: (Походу кто то спамит)" + err.Error())
+	}
+}
+
+func UpdateMessage(updateMsg tgbotapi.EditMessageTextConfig, telegramApiToken string) {
+	bot, err := tgbotapi.NewBotAPI(telegramApiToken)
+	if err != nil {
+		panic(err)
+	}
+
+	//updateMsg = tgbotapi.NewEditMessageText(update.Message.Chat.ID, 13255, "пипися")
+	if _, err := bot.Send(updateMsg); err != nil {
+		panic("Error update msg: " + err.Error())
 	}
 }
