@@ -153,53 +153,15 @@ func CalculateButtonMap(resLocation Location, resUser User, m map[[2]int]Cellule
 
 	buttons := DefaultButtons(resUser.Avatar)
 
-	if cell := m[Point{*resLocation.AxisX, *resLocation.AxisY + 1}]; cell.Type != nil {
-		if *cell.Type == "teleport" && cell.TeleportID != nil {
-			buttons.Up += " " + resUser.Avatar + " " + cell.View
-		} else if *cell.Type == "item" && cell.ItemID != nil && *cell.Item.Count > 0 {
-			buttons.Up = "👋 " + buttons.Up + " " + cell.Item.View
-		}
-	} else if cell.View == "" {
-		buttons.Up = "🚫"
-	} else if !cell.CanStep {
-		buttons.Up = cell.View
-	}
+	var CellsAroundUser = []Cellule{}
+	CellsAroundUser = append(CellsAroundUser,
+		m[Point{*resLocation.AxisX, *resLocation.AxisY + 1}],
+		m[Point{*resLocation.AxisX, *resLocation.AxisY - 1}],
+		m[Point{*resLocation.AxisX + 1, *resLocation.AxisY}],
+		m[Point{*resLocation.AxisX - 1, *resLocation.AxisY}],
+	)
 
-	if cell := m[Point{*resLocation.AxisX, *resLocation.AxisY - 1}]; cell.Type != nil {
-		if *cell.Type == "teleport" && cell.TeleportID != nil {
-			buttons.Down += " " + resUser.Avatar + " " + cell.View
-		} else if *cell.Type == "item" && cell.ItemID != nil && *cell.Item.Count > 0 {
-			buttons.Down = "👋 " + buttons.Down + " " + cell.Item.View
-		}
-	} else if cell.View == "" {
-		buttons.Down = "🚫"
-	} else if !cell.CanStep {
-		buttons.Down = cell.View
-	}
-
-	if cell := m[Point{*resLocation.AxisX - 1, *resLocation.AxisY}]; cell.Type != nil {
-		if *cell.Type == "teleport" && cell.TeleportID != nil {
-			buttons.Left += " " + resUser.Avatar + " " + cell.View
-		} else if *cell.Type == "item" && cell.ItemID != nil && *cell.Item.Count > 0 {
-			buttons.Left = "👋 " + buttons.Left + " " + cell.Item.View
-		}
-	} else if cell.View == "" {
-		buttons.Left = "🚫"
-	} else if !cell.CanStep {
-		buttons.Left = cell.View
-	}
-
-	if cell := m[Point{*resLocation.AxisX + 1, *resLocation.AxisY}]; cell.Type != nil {
-		if *cell.Type == "teleport" && cell.TeleportID != nil {
-			buttons.Right += " " + resUser.Avatar + " " + cell.View
-		} else if *cell.Type == "item" && cell.ItemID != nil && *cell.Item.Count > 0 {
-			buttons.Right = "👋 " + buttons.Right + " " + cell.Item.View
-		}
-	} else if cell.View == "" {
-		buttons.Right = "🚫"
-	} else if !cell.CanStep {
-		buttons.Right = cell.View
-	}
+	buttons = PutButton(CellsAroundUser, buttons, resUser)
 
 	return CreateMapKeyboard(buttons)
 }
@@ -224,6 +186,52 @@ func CreateMapKeyboard(buttons MapButtons) tgbotapi.ReplyKeyboardMarkup {
 	)
 }
 
+func configurationMap(mapSize UserMap, resMap Map, resLocation Location, m map[[2]int]Cellule) [][]string {
+	currentTime := time.Now()
+	day := "06" <= currentTime.Format("15") && currentTime.Format("15") <= "23"
+	type Point [2]int
+	Maps := make([][]string, resMap.SizeY+1)
+
+	if day || resLocation.Map != "Main Place" {
+		DayMap(Maps, mapSize, m, resLocation)
+	} else {
+		NigthMap(Maps, mapSize, m, resLocation)
+	}
+	return Maps
+}
+
+func DayMap(Maps [][]string, mapSize UserMap, m map[[2]int]Cellule, resLocation Location) {
+	type Point [2]int
+
+	for y := range Maps {
+		for x := mapSize.leftIndent; x <= mapSize.rightIndent; x++ {
+			if m[Point{x, y}].ID != 0 || m[Point{x, y}] == m[Point{*resLocation.AxisX, *resLocation.AxisY}] {
+				appendVisibleUserZone(m, x, y, Maps)
+			} else {
+				Maps[y] = append(Maps[y], "\U0001FAA8")
+			}
+		}
+	}
+}
+
+func NigthMap(Maps [][]string, mapSize UserMap, m map[[2]int]Cellule, resLocation Location) {
+	type Point [2]int
+
+	for y := range Maps {
+		for x := mapSize.leftIndent; x <= mapSize.rightIndent; x++ {
+			if calculateNightMap(resLocation, x, y) && m[Point{x, y}].ID != 0 {
+				appendVisibleUserZone(m, x, y, Maps)
+			} else if (y+x)%2 == 1 || m[Point{x, y}].ID != 0 && (y+x)%2 == 1 {
+				Maps[y] = append(Maps[y], "⬛️")
+			} else if (y+x)%2 == 0 || m[Point{x, y}].ID != 0 && (y+x)%2 == 0 {
+				Maps[y] = append(Maps[y], "✨")
+			} else {
+				Maps[y] = append(Maps[y], "\U0001FAA8")
+			}
+		}
+	}
+}
+
 func calculateNightMap(location Location, x int, y int) bool {
 	if *location.AxisX == x-2 && (*location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1) {
 		return true
@@ -243,36 +251,6 @@ func calculateNightMap(location Location, x int, y int) bool {
 	return false
 }
 
-func configurationMap(mapSize UserMap, resMap Map, resLocation Location, m map[[2]int]Cellule) [][]string {
-	currentTime := time.Now()
-	day := "06" <= currentTime.Format("15") && currentTime.Format("15") <= "23"
-	type Point [2]int
-	Maps := make([][]string, resMap.SizeY+1)
-
-	for y := range Maps {
-		for x := mapSize.leftIndent; x <= mapSize.rightIndent; x++ {
-			if day || resLocation.Map != "Main Place" {
-				if m[Point{x, y}].ID != 0 || m[Point{x, y}] == m[Point{*resLocation.AxisX, *resLocation.AxisY}] {
-					appendVisibleUserZone(m, x, y, Maps)
-				} else {
-					Maps[y] = append(Maps[y], "\U0001FAA8")
-				}
-			} else {
-				if calculateNightMap(resLocation, x, y) && m[Point{x, y}].ID != 0 {
-					appendVisibleUserZone(m, x, y, Maps)
-				} else if (y+x)%2 == 1 || m[Point{x, y}].ID != 0 && (y+x)%2 == 1 {
-					Maps[y] = append(Maps[y], "⬛️")
-				} else if (y+x)%2 == 0 || m[Point{x, y}].ID != 0 && (y+x)%2 == 0 {
-					Maps[y] = append(Maps[y], "✨")
-				} else {
-					Maps[y] = append(Maps[y], "\U0001FAA8")
-				}
-			}
-		}
-	}
-	return Maps
-}
-
 func appendVisibleUserZone(m map[[2]int]Cellule, x int, y int, Maps [][]string) {
 	type Point [2]int
 
@@ -281,4 +259,73 @@ func appendVisibleUserZone(m map[[2]int]Cellule, x int, y int, Maps [][]string) 
 	} else {
 		Maps[y] = append(Maps[y], m[Point{x, y}].View)
 	}
+}
+
+func PutButton(CellsAroundUser []Cellule, buttons MapButtons, resUser User) MapButtons {
+	switch true {
+	case IsDefaultCell(CellsAroundUser[0]):
+		buttons.Up = CellsAroundUser[0].View
+	case IsTeleport(CellsAroundUser[0]):
+		buttons.Up += " " + resUser.Avatar + " " + CellsAroundUser[0].View
+	case IsItem(CellsAroundUser[0]):
+		buttons.Up = "👋 " + buttons.Up + " " + CellsAroundUser[0].Item.View
+	case &CellsAroundUser[0].Type == nil:
+		buttons.Up = "🚫"
+	}
+
+	switch true {
+	case IsDefaultCell(CellsAroundUser[1]):
+		buttons.Down = CellsAroundUser[1].View
+	case IsTeleport(CellsAroundUser[1]):
+		buttons.Down += " " + resUser.Avatar + " " + CellsAroundUser[1].View
+	case IsItem(CellsAroundUser[1]):
+		buttons.Down = "👋 " + buttons.Down + " " + CellsAroundUser[1].Item.View
+	case &CellsAroundUser[1].Type == nil:
+		buttons.Down = "🚫"
+	}
+
+	switch true {
+	case IsDefaultCell(CellsAroundUser[2]):
+		buttons.Right = CellsAroundUser[2].View
+	case IsTeleport(CellsAroundUser[2]):
+		buttons.Right += " " + resUser.Avatar + " " + CellsAroundUser[2].View
+	case IsItem(CellsAroundUser[2]):
+		buttons.Right = "👋 " + buttons.Right + " " + CellsAroundUser[2].Item.View
+	case &CellsAroundUser[2].Type == nil:
+		buttons.Right = "🚫"
+	}
+
+	switch true {
+	case IsDefaultCell(CellsAroundUser[3]):
+		buttons.Left = CellsAroundUser[3].View
+	case IsTeleport(CellsAroundUser[3]):
+		buttons.Left += " " + resUser.Avatar + " " + CellsAroundUser[3].View
+	case IsItem(CellsAroundUser[3]):
+		buttons.Left = "👋 " + buttons.Left + " " + CellsAroundUser[3].Item.View
+	case &CellsAroundUser[3].Type == nil:
+		buttons.Left = "🚫"
+	}
+
+	return buttons
+}
+
+func IsDefaultCell(cell Cellule) bool {
+	if cell.Type != nil && *cell.Type == "cell" && !cell.CanStep {
+		return true
+	}
+	return false
+}
+
+func IsTeleport(cell Cellule) bool {
+	if cell.Type != nil && *cell.Type == "teleport" && cell.TeleportID != nil {
+		return true
+	}
+	return false
+}
+
+func IsItem(cell Cellule) bool {
+	if cell.Type != nil && *cell.Type == "item" && cell.ItemID != nil && *cell.Item.Count > 0 {
+		return true
+	}
+	return false
 }
