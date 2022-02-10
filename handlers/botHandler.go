@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -54,7 +53,7 @@ func GetMessage(telegramApiToken string) {
 	for update := range updates {
 
 		if update.CallbackQuery != nil {
-			fmt.Println(update.CallbackQuery.Data, update.CallbackQuery.Message.MessageID)
+			msg = CallbackResolver()
 		}
 
 		if update.Message == nil {

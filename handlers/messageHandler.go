@@ -137,9 +137,8 @@ func useDefaultItems(update tgbotapi.Update, user repository.User) tgbotapi.Mess
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
 		msg.ReplyMarkup = buttons
 	case "🎒":
-		res := OpenUserItems(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, res)
-		msg.ReplyMarkup = repository.InlineKeyboardBackpack()
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "🎒 Рюкзачок 🎒")
+		msg.ReplyMarkup = InlineKeyboardBackpack(update)
 	case "\U0001F7E6": // Вода
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Ты не похож на Jesus! 👮‍♂️")
 	case "🕦":
@@ -182,7 +181,7 @@ func useItems(update tgbotapi.Update, char []string) tgbotapi.MessageConfig {
 	return msg
 }
 
-func OpenUserItems(update tgbotapi.Update) string {
+func MessageUserItems(update tgbotapi.Update) string {
 	var userItemMsg string
 	res := repository.GetUserItems(update)
 
@@ -192,3 +191,25 @@ func OpenUserItems(update tgbotapi.Update) string {
 
 	return userItemMsg
 }
+
+func InlineKeyboardBackpack(update tgbotapi.Update) tgbotapi.InlineKeyboardMarkup {
+	resUserItem := repository.GetUserItems(update)
+	rowsButton := tgbotapi.InlineKeyboardMarkup{}
+	buttons := rowsButton.InlineKeyboard
+
+	for _, item := range resUserItem {
+		if item.Item.Type == "food" {
+			buttons = append(buttons,
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData(item.Item.View+"\n"+repository.ToString(*item.Count)+" шт.", item.Item.Type),
+					tgbotapi.NewInlineKeyboardButtonData("🍽 Съесть 1шт "+item.Item.View, "EatOneFood"),
+					tgbotapi.NewInlineKeyboardButtonData("🗑 Выкинуть все "+item.Item.View, "throwOutFood"),
+				),
+			)
+		}
+	}
+
+	return tgbotapi.NewInlineKeyboardMarkup(buttons...)
+}
+
+func CallbackResolver() {}

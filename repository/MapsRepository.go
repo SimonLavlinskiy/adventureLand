@@ -329,18 +329,3 @@ func IsItem(cell Cellule) bool {
 	}
 	return false
 }
-
-func InlineKeyboardBackpack() tgbotapi.InlineKeyboardMarkup {
-	return tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonURL("1.com", "http://1.com"),
-			tgbotapi.NewInlineKeyboardButtonData("2", "Меню"),
-			tgbotapi.NewInlineKeyboardButtonData("3", "3"),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("4", "4"),
-			tgbotapi.NewInlineKeyboardButtonData("5", "5"),
-			tgbotapi.NewInlineKeyboardButtonData("6", "6"),
-		),
-	)
-}
