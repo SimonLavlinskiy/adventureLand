@@ -26,20 +26,27 @@ func UserGetItem(update tgbotapi.Update, LocationStruct Location) int {
 		panic(err)
 	}
 
-	if resultCell.ItemID != nil && resultCell.Item.Type == "food" {
-		countAfterUserGetItem := 0
-
-		res := GetOrCreateUserItem(update, *resultCell.Item)
-
-		AddUserItemCount(update, res, *resultCell.Item)
-
-		err = config.Db.Where(&Item{ID: uint(*resultCell.ItemID)}).Updates(Item{Count: &countAfterUserGetItem}).Error
-		if err != nil {
-			panic(err)
+	if resultCell.ItemID != nil {
+		switch resultCell.Item.Type {
+		case "food":
+			UserGetFood(update, resultCell)
 		}
 	} else {
 		return 0
 	}
 
 	return *resultCell.Item.Count
+}
+
+func UserGetFood(update tgbotapi.Update, resultCell Cellule) {
+	countAfterUserGetItem := 0
+
+	res := GetOrCreateUserItem(update, *resultCell.Item)
+
+	AddUserItemCount(update, res, *resultCell.Item)
+
+	err := config.Db.Where(&Item{ID: uint(*resultCell.ItemID)}).Updates(Item{Count: &countAfterUserGetItem}).Error
+	if err != nil {
+		panic(err)
+	}
 }
