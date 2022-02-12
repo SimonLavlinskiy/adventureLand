@@ -6,14 +6,15 @@ import (
 )
 
 type Item struct {
-	ID      uint   `gorm:"primaryKey"`
-	Name    string `gorm:"embedded"`
-	View    string `gorm:"embedded"`
-	Type    string `gorm:"embedded"`
-	CanUse  bool   `gorm:"embedded"`
-	Healing *int   `gorm:"embedded"`
-	Damage  *int   `gorm:"embedded"`
-	Satiety *int   `gorm:"embedded"`
+	ID          uint     `gorm:"primaryKey"`
+	Name        string   `gorm:"embedded"`
+	View        string   `gorm:"embedded"`
+	Type        string   `gorm:"embedded"`
+	CanTake     bool     `gorm:"embedded"`
+	CanTakeWith []string `gorm:"type:text[]"`
+	Healing     *int     `gorm:"embedded"`
+	Damage      *int     `gorm:"embedded"`
+	Satiety     *int     `gorm:"embedded"`
 }
 
 func UserGetItem(update tgbotapi.Update, LocationStruct Location) int {
@@ -41,7 +42,7 @@ func UserGetItem(update tgbotapi.Update, LocationStruct Location) int {
 }
 
 func UserGetFood(update tgbotapi.Update, resultCell Cellule) {
-	countAfterUserGetItem := 0
+	countAfterUserGetItem := *resultCell.CountItem - 1
 
 	res := GetOrCreateUserItem(update, *resultCell.Item)
 

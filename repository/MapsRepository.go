@@ -259,7 +259,10 @@ func calculateNightMap(location Location, x int, y int) bool {
 func appendVisibleUserZone(m map[[2]int]Cellule, x int, y int, Maps [][]string) {
 	type Point [2]int
 
-	if m[Point{x, y}].Type != nil && *m[Point{x, y}].Type == "item" && *m[Point{x, y}].CountItem != 0 {
+	if m[Point{x, y}].Type != nil &&
+		*m[Point{x, y}].Type == "item" &&
+		m[Point{x, y}].ItemID != nil &&
+		*m[Point{x, y}].CountItem != 0 {
 		Maps[y] = append(Maps[y], m[Point{x, y}].Item.View)
 	} else {
 		Maps[y] = append(Maps[y], m[Point{x, y}].View)

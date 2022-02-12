@@ -45,10 +45,6 @@ func userMenuLocation(update tgbotapi.Update, user repository.User) tgbotapi.Mes
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.GetUserInfo(update))
 		msg.ReplyMarkup = profileKeyboard(user)
 		repository.UpdateUser(update, repository.User{MenuLocation: "Профиль"})
-	case "👜 Инвентарь 👜":
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, newMessage)
-		msg.ReplyMarkup = backpackKeyboard
-		repository.UpdateUser(update, repository.User{MenuLocation: "Инвентарь"})
 	default:
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Меню")
 		msg.ReplyMarkup = mainKeyboard(user)
@@ -172,7 +168,8 @@ func useItems(update tgbotapi.Update, char []string) tgbotapi.MessageConfig {
 		res := directionMovement(update, char[1])
 		countItem := repository.UserGetItem(update, res)
 		msg.Text, buttons = repository.GetMyMap(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\nТы взял: "+repository.ToString(countItem)+" шт "+char[2])
+		countItem = countItem - 1
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\nТы взял 1шт. "+char[2]+"\n В ячейке: "+repository.ToString(countItem)+" шт.")
 		msg.ReplyMarkup = buttons
 	default:
 		msg.Text, buttons = repository.GetMyMap(update)
@@ -192,6 +189,8 @@ func CallbackResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 			msg = BackPackMoving(charData, update)
 		case "eatFood":
 			UserEatItem(update, charData)
+		case "throwOutFood":
+			UserThrowOutFood(update, charData)
 		case "changeAvatar":
 			res := repository.UpdateUser(update, repository.User{Avatar: charData[1]})
 			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, repository.GetUserInfo(update))
@@ -281,15 +280,40 @@ func UserEatItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConf
 	userTgId := uint(update.CallbackQuery.From.ID)
 
 	user := repository.GetUser(repository.User{TgId: userTgId})
-	item, err := repository.GetUserItem(repository.UserItem{ID: userItemId})
+	userItem, err := repository.GetUserItem(repository.UserItem{ID: userItemId})
 	if err != nil {
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Еда магически исчезла из твоих рук! и ты ее больше не нашел)")
 	}
 
-	res := repository.EatItem(update, user, item)
+	res := repository.EatItem(update, user, userItem)
 	charDataForOpenBackPack := strings.Fields("backpackMoving " + charData[2])
 	msg = BackPackMoving(charDataForOpenBackPack, update)
-	msg.Text = res + "\n\n" + msg.Text
+	msg.Text = msg.Text + "\n\n" + res
+
+	return msg
+}
+
+func UserThrowOutFood(update tgbotapi.Update, charData []string) tgbotapi.MessageConfig {
+	userItemId := repository.ToInt(charData[1])
+	userTgId := uint(update.CallbackQuery.From.ID)
+
+	user := repository.GetUser(repository.User{TgId: userTgId})
+	userItem, err := repository.GetUserItem(repository.UserItem{ID: userItemId})
+
+	countAfterUserThrowOutItem := 0
+	var updateUserItemStruct = repository.UserItem{
+		ID:    userItemId,
+		Count: &countAfterUserThrowOutItem,
+	}
+
+	repository.UpdateUserItem(user, updateUserItemStruct)
+	if err != nil {
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Еда магически исчезла из твоих рук! и ты ее больше не нашел)")
+	}
+
+	charDataForOpenBackPack := strings.Fields("backpackMoving " + charData[2])
+	msg = BackPackMoving(charDataForOpenBackPack, update)
+	msg.Text = msg.Text + "\n\n" + "🗑 Вы выкинули все " + repository.ToString(*userItem.Count) + " " + userItem.Item.View
 
 	return msg
 }
@@ -330,9 +354,6 @@ func mainKeyboard(user repository.User) tgbotapi.ReplyKeyboardMarkup {
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton("🗺 Карта 🗺"),
 			tgbotapi.NewKeyboardButton(user.Avatar+" Профиль 👔"),
-		),
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("👜 Инвентарь 👜"),
 		),
 	)
 }

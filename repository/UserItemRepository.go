@@ -71,7 +71,7 @@ func AddUserItemCount(update tgbotapi.Update, userItem UserItem, cellule Cellule
 	resUser := GetOrCreateUser(update)
 	userId := int(resUser.ID)
 
-	sumCount := *userItem.Count + *cellule.CountItem
+	sumCount := *userItem.Count + 1
 
 	err := config.Db.
 		Preload("Item").
@@ -85,8 +85,6 @@ func AddUserItemCount(update tgbotapi.Update, userItem UserItem, cellule Cellule
 
 func EatItem(update tgbotapi.Update, user User, userItem UserItem) string {
 	userItemCount := userItem.Count
-
-	fmt.Println("UserItem: ", userItem)
 
 	if *userItemCount > 0 {
 		itemHeal := userItem.Item.Healing
@@ -110,6 +108,6 @@ func EatItem(update tgbotapi.Update, user User, userItem UserItem) string {
 		UpdateUser(update, userUpdate)
 		UpdateUserItem(user, userItemUpdate)
 	}
-	message := "Ты съел " + userItem.Item.View + "!!!"
+	message := "🍽 Ты съел 1 " + userItem.Item.View + ""
 	return message
 }
