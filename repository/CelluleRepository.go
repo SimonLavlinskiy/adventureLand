@@ -17,6 +17,7 @@ type Cellule struct {
 	Teleport   *Teleport
 	ItemID     *int
 	Item       *Item
+	CountItem  *int `gorm:"embedded"`
 }
 
 func GetCellule(cellule Cellule) Cellule {

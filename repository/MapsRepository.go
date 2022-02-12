@@ -118,8 +118,8 @@ func ToString(int int) string {
 }
 
 func ToInt(string string) int {
-	int64, _ := strconv.ParseUint(string, 10, 32)
-	return int(int64)
+	numInt64, _ := strconv.ParseUint(string, 10, 32)
+	return int(numInt64)
 }
 
 func CalculateUserMapBorder(resLocation Location, resMap Map) UserMap {
@@ -259,7 +259,7 @@ func calculateNightMap(location Location, x int, y int) bool {
 func appendVisibleUserZone(m map[[2]int]Cellule, x int, y int, Maps [][]string) {
 	type Point [2]int
 
-	if m[Point{x, y}].Type != nil && *m[Point{x, y}].Type == "item" && *m[Point{x, y}].Item.Count != 0 {
+	if m[Point{x, y}].Type != nil && *m[Point{x, y}].Type == "item" && *m[Point{x, y}].CountItem != 0 {
 		Maps[y] = append(Maps[y], m[Point{x, y}].Item.View)
 	} else {
 		Maps[y] = append(Maps[y], m[Point{x, y}].View)
@@ -329,7 +329,7 @@ func IsTeleport(cell Cellule) bool {
 }
 
 func IsItem(cell Cellule) bool {
-	if cell.Type != nil && *cell.Type == "item" && cell.ItemID != nil && *cell.Item.Count > 0 {
+	if cell.Type != nil && *cell.Type == "item" && cell.ItemID != nil && *cell.CountItem > 0 {
 		return true
 	}
 	return false

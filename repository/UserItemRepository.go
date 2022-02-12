@@ -67,15 +67,15 @@ func UpdateUserItem(user User, userItem UserItem) {
 	}
 }
 
-func AddUserItemCount(update tgbotapi.Update, userItem UserItem, item Item) {
+func AddUserItemCount(update tgbotapi.Update, userItem UserItem, cellule Cellule) {
 	resUser := GetOrCreateUser(update)
 	userId := int(resUser.ID)
 
-	sumCount := *userItem.Count + *item.Count
+	sumCount := *userItem.Count + *cellule.CountItem
 
 	err := config.Db.
 		Preload("Item").
-		Where(UserItem{UserId: userId, ItemId: int(item.ID)}).
+		Where(UserItem{UserId: userId, ItemId: *cellule.ItemID}).
 		Updates(UserItem{Count: &sumCount}).
 		Error
 	if err != nil {

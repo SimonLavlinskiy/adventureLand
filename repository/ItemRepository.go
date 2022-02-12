@@ -11,7 +11,6 @@ type Item struct {
 	View    string `gorm:"embedded"`
 	Type    string `gorm:"embedded"`
 	CanUse  bool   `gorm:"embedded"`
-	Count   *int   `gorm:"embedded"`
 	Healing *int   `gorm:"embedded"`
 	Damage  *int   `gorm:"embedded"`
 	Satiety *int   `gorm:"embedded"`
@@ -38,7 +37,7 @@ func UserGetItem(update tgbotapi.Update, LocationStruct Location) int {
 		return 0
 	}
 
-	return *resultCell.Item.Count
+	return *resultCell.CountItem
 }
 
 func UserGetFood(update tgbotapi.Update, resultCell Cellule) {
@@ -46,9 +45,9 @@ func UserGetFood(update tgbotapi.Update, resultCell Cellule) {
 
 	res := GetOrCreateUserItem(update, *resultCell.Item)
 
-	AddUserItemCount(update, res, *resultCell.Item)
+	AddUserItemCount(update, res, resultCell)
 
-	err := config.Db.Where(&Item{ID: uint(*resultCell.ItemID)}).Updates(Item{Count: &countAfterUserGetItem}).Error
+	err := config.Db.Where(&Cellule{ID: resultCell.ID}).Updates(Cellule{CountItem: &countAfterUserGetItem}).Error
 	if err != nil {
 		panic(err)
 	}
