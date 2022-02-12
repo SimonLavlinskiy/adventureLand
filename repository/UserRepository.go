@@ -3,7 +3,6 @@ package repository
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
-	"strconv"
 	"time"
 )
 
@@ -14,6 +13,8 @@ type User struct {
 	Avatar       string `gorm:"embedded"`
 	FirstName    string `gorm:"embedded"`
 	LastName     string `gorm:"embedded"`
+	Health       uint   `gorm:"embedded"`
+	Satiety      uint   `gorm:"embedded"`
 	Head         *Item
 	HeadId       *int
 	Hand         *Item
@@ -28,14 +29,18 @@ type User struct {
 }
 
 func GetOrCreateUser(update tgbotapi.Update) User {
+	userId := uint(update.Message.From.ID)
+
 	result := User{
 		TgId:      uint(update.Message.From.ID),
 		Username:  update.Message.From.UserName,
 		FirstName: update.Message.From.FirstName,
 		LastName:  update.Message.From.LastName,
 		Avatar:    "👤",
+		Satiety:   100,
+		Health:    100,
 	}
-	err := config.Db.Where(&User{TgId: uint(update.Message.From.ID)}).FirstOrCreate(&result).Error
+	err := config.Db.Where(&User{TgId: userId}).FirstOrCreate(&result).Error
 
 	if err != nil {
 		panic(err)
@@ -44,23 +49,48 @@ func GetOrCreateUser(update tgbotapi.Update) User {
 	return result
 }
 
+func GetUser(user User) User {
+	var result User
+	err := config.Db.Where(user).First(&result).Error
+	if err != nil {
+		panic(err)
+	}
+	return result
+}
+
 func UpdateUser(update tgbotapi.Update, UserStruct User) User {
 	var err error
+	var userTgId uint
+	if update.CallbackQuery != nil {
+		userTgId = uint(update.CallbackQuery.From.ID)
+	} else {
+		userTgId = uint(update.Message.From.ID)
+	}
 
-	err = config.Db.Where(&User{TgId: uint(update.Message.From.ID)}).Updates(UserStruct).Error
+	err = config.Db.Where(&User{TgId: userTgId}).Updates(UserStruct).Error
 	if err != nil {
 		panic(err)
 	}
 
-	res := GetOrCreateUser(update)
+	res := GetUser(User{TgId: userTgId})
 	return res
 }
 
 func GetUserInfo(update tgbotapi.Update) string {
-	resUser := GetOrCreateUser(update)
-	resLocation := GetOrCreateMyLocation(update)
+	var tgId uint
+	if update.CallbackQuery != nil {
+		tgId = uint(update.CallbackQuery.From.ID)
+	} else {
+		tgId = uint(update.Message.From.ID)
+	}
 
-	messageMap := "*Карта*: _" + resLocation.Map + "_ *X*: _" + strconv.FormatUint(uint64(*resLocation.AxisX), 10) + "_  *Y*: _" + strconv.FormatUint(uint64(*resLocation.AxisY), 10) + "_\n_Имя_ " + resUser.Username + "\nАватар:" + resUser.Avatar
+	resUser := GetUser(User{TgId: tgId})
+
+	messageMap := "🔅 🔆 *Профиль* 🔆 🔅\n" +
+		"\n*Твое имя* _" + resUser.Username +
+		"_!\n*Аватар*: " + resUser.Avatar +
+		"\n*Здоровье*: _" + ToString(int(resUser.Health)) + "_ ❤️" +
+		"\n*Сытость*: _" + ToString(int(resUser.Satiety)) + "_ 😋️"
 
 	return messageMap
 }

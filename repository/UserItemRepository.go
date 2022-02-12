@@ -15,11 +15,9 @@ type UserItem struct {
 	Item   Item
 }
 
-func GetUserItem(update tgbotapi.Update, item Item) (UserItem, error) {
-	resUser := GetOrCreateUser(update)
-	userId := int(resUser.ID)
+func GetUserItem(userItem UserItem) (UserItem, error) {
 	var result UserItem
-	err := config.Db.Where(UserItem{UserId: userId, ItemId: int(item.ID)}).First(&result).Error
+	err := config.Db.Preload("Item").Where(userItem).First(&result).Error
 
 	if err != nil {
 		fmt.Println("Item not found")
@@ -45,14 +43,13 @@ func GetOrCreateUserItem(update tgbotapi.Update, item Item) UserItem {
 	return result
 }
 
-func GetUserItems(update tgbotapi.Update) []UserItem {
-	resUser := GetOrCreateUser(update)
-	userId := int(resUser.ID)
+func GetUserItems(userId uint) []UserItem {
 	var result []UserItem
 
 	err := config.Db.
 		Preload("Item").
-		Where(UserItem{UserId: userId}).
+		Preload("User").
+		Where(UserItem{UserId: int(userId)}).
 		Where("count > 0").
 		Find(&result).
 		Error
@@ -61,6 +58,13 @@ func GetUserItems(update tgbotapi.Update) []UserItem {
 	}
 
 	return result
+}
+
+func UpdateUserItem(user User, userItem UserItem) {
+	err := config.Db.Where(UserItem{UserId: int(user.ID), ID: userItem.ID}).Updates(userItem).Error
+	if err != nil {
+		panic(err)
+	}
 }
 
 func AddUserItemCount(update tgbotapi.Update, userItem UserItem, item Item) {
@@ -77,4 +81,35 @@ func AddUserItemCount(update tgbotapi.Update, userItem UserItem, item Item) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func EatItem(update tgbotapi.Update, user User, userItem UserItem) string {
+	userItemCount := userItem.Count
+
+	fmt.Println("UserItem: ", userItem)
+
+	if *userItemCount > 0 {
+		itemHeal := userItem.Item.Healing
+		itemSatiety := userItem.Item.Satiety
+		itemDamage := userItem.Item.Damage
+		*userItemCount = *userItemCount - 1
+
+		userHealth := user.Health + uint(*itemHeal) - uint(*itemDamage)
+		userSatiety := user.Satiety + uint(*itemSatiety)
+
+		userUpdate := User{
+			Health:  userHealth,
+			Satiety: userSatiety,
+		}
+
+		userItemUpdate := UserItem{
+			ID:    userItem.ID,
+			Count: userItemCount,
+		}
+
+		UpdateUser(update, userUpdate)
+		UpdateUserItem(user, userItemUpdate)
+	}
+	message := "Ты съел " + userItem.Item.View + "!!!"
+	return message
 }

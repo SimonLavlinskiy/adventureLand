@@ -117,6 +117,11 @@ func ToString(int int) string {
 	return strconv.FormatInt(int64(int), 10)
 }
 
+func ToInt(string string) int {
+	int64, _ := strconv.ParseUint(string, 10, 32)
+	return int(int64)
+}
+
 func CalculateUserMapBorder(resLocation Location, resMap Map) UserMap {
 	d := displaySize
 	if d*2 > resMap.SizeX || d*2 > resMap.SizeY {

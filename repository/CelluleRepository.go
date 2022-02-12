@@ -29,9 +29,6 @@ func GetCellule(cellule Cellule) Cellule {
 		First(&result).
 		Error
 
-	//j, _ := json.Marshal(result)
-	//fmt.Println(string(j))
-
 	if err != nil {
 		fmt.Println("Походу юзер вышел за границу.")
 	}
