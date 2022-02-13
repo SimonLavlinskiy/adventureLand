@@ -35,7 +35,7 @@ func GetOrCreateUserItem(update tgbotapi.Update, item Item) UserItem {
 		UserId: userId,
 		ItemId: int(item.ID),
 	}
-	err := config.Db.Where(UserItem{UserId: userId, ItemId: int(item.ID)}).FirstOrCreate(&result).Error
+	err := config.Db.Preload("Item").Where(UserItem{UserId: userId, ItemId: int(item.ID)}).FirstOrCreate(&result).Error
 	if err != nil {
 		panic(err)
 	}
@@ -67,20 +67,23 @@ func UpdateUserItem(user User, userItem UserItem) {
 	}
 }
 
-func AddUserItemCount(update tgbotapi.Update, userItem UserItem, cellule Cellule) {
+func AddUserItemCount(update tgbotapi.Update, userItem UserItem, cellule Cellule, updateUserMoney int) {
 	resUser := GetOrCreateUser(update)
 	userId := int(resUser.ID)
 
 	sumCount := *userItem.Count + 1
 
 	err := config.Db.
-		Preload("Item").
+		//Preload("Item").
 		Where(UserItem{UserId: userId, ItemId: *cellule.ItemID}).
 		Updates(UserItem{Count: &sumCount}).
 		Error
 	if err != nil {
 		panic(err)
 	}
+
+	UpdateUser(update, User{Money: &updateUserMoney})
+
 }
 
 func EatItem(update tgbotapi.Update, user User, userItem UserItem) string {

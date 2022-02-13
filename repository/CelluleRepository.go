@@ -36,3 +36,10 @@ func GetCellule(cellule Cellule) Cellule {
 
 	return result
 }
+
+func UpdateCellule(cellId uint, updateCellule Cellule) {
+	err := config.Db.Where(&Cellule{ID: cellId}).Updates(updateCellule).Error
+	if err != nil {
+		panic(err)
+	}
+}

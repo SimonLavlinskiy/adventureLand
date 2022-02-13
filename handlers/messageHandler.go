@@ -141,6 +141,7 @@ func useDefaultItems(update tgbotapi.Update, user repository.User) tgbotapi.Mess
 	case user.Avatar:
 		msg.Text, buttons = repository.GetMyMap(update)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.GetUserInfo(update)+"\n \n"+msg.Text)
+		msg.ReplyMarkup = buttons
 	case "/menu", "Меню":
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Меню")
 		msg.ReplyMarkup = mainKeyboard(user)
@@ -170,10 +171,9 @@ func useItems(update tgbotapi.Update, char []string, user repository.User) tgbot
 		msg.ReplyMarkup = buttons
 	case "👋", viewItemLeftHand, viewItemRightHand:
 		res := directionMovement(update, char[1])
-		countItem := repository.UserGetItem(update, res)
+		resultOfGetItem := repository.UserGetItem(update, res, char)
 		msg.Text, buttons = repository.GetMyMap(update)
-		countItem = countItem - 1
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\nТы взял 1шт. "+char[2]+"\n В ячейке: "+repository.ToString(countItem)+" шт.")
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\n"+resultOfGetItem)
 		msg.ReplyMarkup = buttons
 	case "🚷":
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Нельзя взять без инструмента в руке")

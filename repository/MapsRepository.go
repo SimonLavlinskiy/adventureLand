@@ -277,12 +277,7 @@ func PutButton(CellsAroundUser []Cellule, buttons MapButtons, resUser User) MapB
 	case IsTeleport(CellsAroundUser[0]):
 		buttons.Up += " " + resUser.Avatar + " " + CellsAroundUser[0].View
 	case IsItem(CellsAroundUser[0]):
-		if CellsAroundUser[0].Item.CanTakeWith != nil {
-			res := IsSpecialItem(CellsAroundUser[0], resUser)
-			buttons.Up = res + " " + buttons.Up + " " + CellsAroundUser[0].Item.View
-		} else {
-			buttons.Up = "👋 " + buttons.Up + " " + CellsAroundUser[0].Item.View
-		}
+		buttons.Up = isItemCost(CellsAroundUser[0], buttons.Up, resUser)
 	case &CellsAroundUser[0].Type == nil:
 		buttons.Up = "🚫"
 	}
@@ -293,12 +288,7 @@ func PutButton(CellsAroundUser []Cellule, buttons MapButtons, resUser User) MapB
 	case IsTeleport(CellsAroundUser[1]):
 		buttons.Down += " " + resUser.Avatar + " " + CellsAroundUser[1].View
 	case IsItem(CellsAroundUser[1]):
-		if CellsAroundUser[1].Item.CanTakeWith != nil {
-			res := IsSpecialItem(CellsAroundUser[1], resUser)
-			buttons.Down = res + " " + buttons.Down + " " + CellsAroundUser[1].Item.View
-		} else {
-			buttons.Down = "👋 " + buttons.Down + " " + CellsAroundUser[1].Item.View
-		}
+		buttons.Down = isItemCost(CellsAroundUser[1], buttons.Down, resUser)
 	case &CellsAroundUser[1].Type == nil:
 		buttons.Down = "🚫"
 	}
@@ -309,12 +299,7 @@ func PutButton(CellsAroundUser []Cellule, buttons MapButtons, resUser User) MapB
 	case IsTeleport(CellsAroundUser[2]):
 		buttons.Right += " " + resUser.Avatar + " " + CellsAroundUser[2].View
 	case IsItem(CellsAroundUser[2]):
-		if CellsAroundUser[2].Item.CanTakeWith != nil {
-			res := IsSpecialItem(CellsAroundUser[2], resUser)
-			buttons.Right = res + " " + buttons.Right + " " + CellsAroundUser[2].Item.View
-		} else {
-			buttons.Right = "👋 " + buttons.Right + " " + CellsAroundUser[2].Item.View
-		}
+		buttons.Right = isItemCost(CellsAroundUser[2], buttons.Right, resUser)
 	case &CellsAroundUser[2].Type == nil:
 		buttons.Right = "🚫"
 	}
@@ -325,12 +310,7 @@ func PutButton(CellsAroundUser []Cellule, buttons MapButtons, resUser User) MapB
 	case IsTeleport(CellsAroundUser[3]):
 		buttons.Left += " " + resUser.Avatar + " " + CellsAroundUser[3].View
 	case IsItem(CellsAroundUser[3]):
-		if CellsAroundUser[3].Item.CanTakeWith != nil {
-			res := IsSpecialItem(CellsAroundUser[3], resUser)
-			buttons.Left = res + " " + buttons.Left + " " + CellsAroundUser[3].Item.View
-		} else {
-			buttons.Left = "👋 " + buttons.Left + " " + CellsAroundUser[3].Item.View
-		}
+		buttons.Left = isItemCost(CellsAroundUser[3], buttons.Left, resUser)
 	case &CellsAroundUser[3].Type == nil:
 		buttons.Left = "🚫"
 	}
@@ -358,14 +338,31 @@ func IsItem(cell Cellule) bool {
 	}
 	return false
 }
-func IsSpecialItem(cell Cellule, user User) string {
 
-	//for _, CanTakeWithItem := range cell.Item.CanTakeWith {
+func IsSpecialItem(cell Cellule, user User) string {
 	if user.LeftHand != nil && user.LeftHand.Type == cell.Item.CanTakeWith.Type {
 		return user.LeftHand.View
 	} else if user.RightHand != nil && user.RightHand.Type == cell.Item.CanTakeWith.Type {
 		return user.RightHand.View
 	}
-	//}
 	return "🚷"
+}
+
+func isItemCost(cell Cellule, button string, resUser User) string {
+	if cell.Item.Cost != nil && *cell.Item.Cost > 0 {
+		if cell.Item.CanTakeWith != nil {
+			res := IsSpecialItem(cell, resUser)
+			button = res + " " + button + " " + cell.Item.View + " (" + ToString(*cell.Item.Cost) + "💰)"
+		} else {
+			button = "👋 " + button + " " + cell.Item.View + " ( " + ToString(*cell.Item.Cost) + "💰 )"
+		}
+	} else {
+		if cell.Item.CanTakeWith != nil {
+			res := IsSpecialItem(cell, resUser)
+			button = res + " " + button + " " + cell.Item.View
+		} else {
+			button = "👋 " + button + " " + cell.Item.View
+		}
+	}
+	return button
 }

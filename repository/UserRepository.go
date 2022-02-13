@@ -15,6 +15,7 @@ type User struct {
 	LastName     string `gorm:"embedded"`
 	Health       uint   `gorm:"embedded"`
 	Satiety      uint   `gorm:"embedded"`
+	Money        *int   `gorm:"embedded"`
 	Head         *Item
 	HeadId       *int
 	LeftHand     *Item
@@ -32,6 +33,7 @@ type User struct {
 
 func GetOrCreateUser(update tgbotapi.Update) User {
 	userId := uint(update.Message.From.ID)
+	MoneyUserStart := 0
 
 	result := User{
 		TgId:      uint(update.Message.From.ID),
@@ -41,6 +43,7 @@ func GetOrCreateUser(update tgbotapi.Update) User {
 		Avatar:    "👤",
 		Satiety:   100,
 		Health:    100,
+		Money:     &MoneyUserStart,
 	}
 	err := config.Db.
 		Preload("LeftHand").
@@ -92,8 +95,9 @@ func GetUserInfo(update tgbotapi.Update) string {
 	resUser := GetUser(User{TgId: tgId})
 
 	messageMap := "🔅 🔆 *Профиль* 🔆 🔅\n" +
-		"\n*Твое имя* _" + resUser.Username +
-		"_!\n*Аватар*: " + resUser.Avatar +
+		"\n*Твое имя* " + resUser.Username +
+		"\n*Золото*: " + ToString(*resUser.Money) + "💰" +
+		"\n*Аватар*: " + resUser.Avatar +
 		"\n*Здоровье*: _" + ToString(int(resUser.Health)) + "_ ❤️" +
 		"\n*Сытость*: _" + ToString(int(resUser.Satiety)) + "_ 😋️"
 
