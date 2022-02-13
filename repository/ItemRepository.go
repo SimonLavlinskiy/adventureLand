@@ -6,15 +6,16 @@ import (
 )
 
 type Item struct {
-	ID          uint     `gorm:"primaryKey"`
-	Name        string   `gorm:"embedded"`
-	View        string   `gorm:"embedded"`
-	Type        string   `gorm:"embedded"`
-	CanTake     bool     `gorm:"embedded"`
-	CanTakeWith []string `gorm:"type:text[]"`
-	Healing     *int     `gorm:"embedded"`
-	Damage      *int     `gorm:"embedded"`
-	Satiety     *int     `gorm:"embedded"`
+	ID            uint   `gorm:"primaryKey"`
+	Name          string `gorm:"embedded"`
+	View          string `gorm:"embedded"`
+	Type          string `gorm:"embedded"`
+	CanTake       bool   `gorm:"embedded"`
+	CanTakeWith   *Item  `gorm:"foreignKey:CanTakeWithId"`
+	CanTakeWithId *int   `gorm:"embedded"`
+	Healing       *int   `gorm:"embedded"`
+	Damage        *int   `gorm:"embedded"`
+	Satiety       *int   `gorm:"embedded"`
 }
 
 func UserGetItem(update tgbotapi.Update, LocationStruct Location) int {

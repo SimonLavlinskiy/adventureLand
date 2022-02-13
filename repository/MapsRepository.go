@@ -81,6 +81,7 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.Repl
 	err := config.Db.
 		Preload("Item").
 		Preload("Teleport").
+		Preload("Item.CanTakeWith").
 		Where(Cellule{Map: resLocation.Map}).
 		Where("axis_x >= " + ToString(mapSize.leftIndent)).
 		Where("axis_x <= " + ToString(mapSize.rightIndent)).
@@ -174,7 +175,7 @@ func CalculateButtonMap(resLocation Location, resUser User, m map[[2]int]Cellule
 func CreateMapKeyboard(buttons MapButtons) tgbotapi.ReplyKeyboardMarkup {
 	return tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("⬛"),
+			tgbotapi.NewKeyboardButton("🧥🎒"),
 			tgbotapi.NewKeyboardButton(buttons.Up),
 			tgbotapi.NewKeyboardButton("🎒"),
 		),
@@ -276,7 +277,12 @@ func PutButton(CellsAroundUser []Cellule, buttons MapButtons, resUser User) MapB
 	case IsTeleport(CellsAroundUser[0]):
 		buttons.Up += " " + resUser.Avatar + " " + CellsAroundUser[0].View
 	case IsItem(CellsAroundUser[0]):
-		buttons.Up = "👋 " + buttons.Up + " " + CellsAroundUser[0].Item.View
+		if CellsAroundUser[0].Item.CanTakeWith != nil {
+			res := IsSpecialItem(CellsAroundUser[0], resUser)
+			buttons.Up = res + " " + buttons.Up + " " + CellsAroundUser[0].Item.View
+		} else {
+			buttons.Up = "👋 " + buttons.Up + " " + CellsAroundUser[0].Item.View
+		}
 	case &CellsAroundUser[0].Type == nil:
 		buttons.Up = "🚫"
 	}
@@ -287,7 +293,12 @@ func PutButton(CellsAroundUser []Cellule, buttons MapButtons, resUser User) MapB
 	case IsTeleport(CellsAroundUser[1]):
 		buttons.Down += " " + resUser.Avatar + " " + CellsAroundUser[1].View
 	case IsItem(CellsAroundUser[1]):
-		buttons.Down = "👋 " + buttons.Down + " " + CellsAroundUser[1].Item.View
+		if CellsAroundUser[1].Item.CanTakeWith != nil {
+			res := IsSpecialItem(CellsAroundUser[1], resUser)
+			buttons.Down = res + " " + buttons.Down + " " + CellsAroundUser[1].Item.View
+		} else {
+			buttons.Down = "👋 " + buttons.Down + " " + CellsAroundUser[1].Item.View
+		}
 	case &CellsAroundUser[1].Type == nil:
 		buttons.Down = "🚫"
 	}
@@ -298,7 +309,12 @@ func PutButton(CellsAroundUser []Cellule, buttons MapButtons, resUser User) MapB
 	case IsTeleport(CellsAroundUser[2]):
 		buttons.Right += " " + resUser.Avatar + " " + CellsAroundUser[2].View
 	case IsItem(CellsAroundUser[2]):
-		buttons.Right = "👋 " + buttons.Right + " " + CellsAroundUser[2].Item.View
+		if CellsAroundUser[2].Item.CanTakeWith != nil {
+			res := IsSpecialItem(CellsAroundUser[2], resUser)
+			buttons.Right = res + " " + buttons.Right + " " + CellsAroundUser[2].Item.View
+		} else {
+			buttons.Right = "👋 " + buttons.Right + " " + CellsAroundUser[2].Item.View
+		}
 	case &CellsAroundUser[2].Type == nil:
 		buttons.Right = "🚫"
 	}
@@ -309,7 +325,12 @@ func PutButton(CellsAroundUser []Cellule, buttons MapButtons, resUser User) MapB
 	case IsTeleport(CellsAroundUser[3]):
 		buttons.Left += " " + resUser.Avatar + " " + CellsAroundUser[3].View
 	case IsItem(CellsAroundUser[3]):
-		buttons.Left = "👋 " + buttons.Left + " " + CellsAroundUser[3].Item.View
+		if CellsAroundUser[3].Item.CanTakeWith != nil {
+			res := IsSpecialItem(CellsAroundUser[3], resUser)
+			buttons.Left = res + " " + buttons.Left + " " + CellsAroundUser[3].Item.View
+		} else {
+			buttons.Left = "👋 " + buttons.Left + " " + CellsAroundUser[3].Item.View
+		}
 	case &CellsAroundUser[3].Type == nil:
 		buttons.Left = "🚫"
 	}
@@ -336,4 +357,15 @@ func IsItem(cell Cellule) bool {
 		return true
 	}
 	return false
+}
+func IsSpecialItem(cell Cellule, user User) string {
+
+	//for _, CanTakeWithItem := range cell.Item.CanTakeWith {
+	if user.LeftHand != nil && user.LeftHand.Type == cell.Item.CanTakeWith.Type {
+		return user.LeftHand.View
+	} else if user.RightHand != nil && user.RightHand.Type == cell.Item.CanTakeWith.Type {
+		return user.RightHand.View
+	}
+	//}
+	return "🚷"
 }

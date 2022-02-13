@@ -17,8 +17,10 @@ type User struct {
 	Satiety      uint   `gorm:"embedded"`
 	Head         *Item
 	HeadId       *int
-	Hand         *Item
-	HandId       *int
+	LeftHand     *Item
+	LeftHandId   *int
+	RightHand    *Item
+	RightHandId  *int
 	Body         *Item
 	BodyId       *int
 	Foot         *Item
@@ -40,7 +42,10 @@ func GetOrCreateUser(update tgbotapi.Update) User {
 		Satiety:   100,
 		Health:    100,
 	}
-	err := config.Db.Where(&User{TgId: userId}).FirstOrCreate(&result).Error
+	err := config.Db.
+		Preload("LeftHand").
+		Preload("RightHand").
+		Where(&User{TgId: userId}).FirstOrCreate(&result).Error
 
 	if err != nil {
 		panic(err)

@@ -59,7 +59,7 @@ func userMapLocation(update tgbotapi.Update, user repository.User) tgbotapi.Mess
 	char := strings.Fields(newMessage)
 
 	if len(char) != 1 {
-		msg = useItems(update, char)
+		msg = useItems(update, char, user)
 	} else {
 		msg = useDefaultItems(update, user)
 	}
@@ -132,6 +132,8 @@ func useDefaultItems(update tgbotapi.Update, user repository.User) tgbotapi.Mess
 		resUserItems := repository.GetUserItems(resUser.ID)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, MessageBackpackUserItems(resUserItems, 0))
 		msg.ReplyMarkup = backpackInlineKeyboard(resUserItems, 0)
+	case "🧥🎒":
+
 	case "\U0001F7E6": // Вода
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Ты не похож на Jesus! 👮‍♂️")
 	case "🕦":
@@ -154,8 +156,10 @@ func useDefaultItems(update tgbotapi.Update, user repository.User) tgbotapi.Mess
 	return msg
 }
 
-func useItems(update tgbotapi.Update, char []string) tgbotapi.MessageConfig {
+func useItems(update tgbotapi.Update, char []string, user repository.User) tgbotapi.MessageConfig {
 	buttons := tgbotapi.ReplyKeyboardMarkup{}
+
+	viewItemLeftHand, viewItemRightHand := usersHandsItemsView(user)
 
 	switch char[0] {
 	case "🔼", "🔽", "◀️️", "▶️":
@@ -164,13 +168,15 @@ func useItems(update tgbotapi.Update, char []string) tgbotapi.MessageConfig {
 		msg.Text, buttons = repository.GetMyMap(update)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
 		msg.ReplyMarkup = buttons
-	case "👋":
+	case "👋", viewItemLeftHand, viewItemRightHand:
 		res := directionMovement(update, char[1])
 		countItem := repository.UserGetItem(update, res)
 		msg.Text, buttons = repository.GetMyMap(update)
 		countItem = countItem - 1
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\nТы взял 1шт. "+char[2]+"\n В ячейке: "+repository.ToString(countItem)+" шт.")
 		msg.ReplyMarkup = buttons
+	case "🚷":
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Нельзя взять без инструмента в руке")
 	default:
 		msg.Text, buttons = repository.GetMyMap(update)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
@@ -356,4 +362,17 @@ func mainKeyboard(user repository.User) tgbotapi.ReplyKeyboardMarkup {
 			tgbotapi.NewKeyboardButton(user.Avatar+" Профиль 👔"),
 		),
 	)
+}
+
+func usersHandsItemsView(user repository.User) (string, string) {
+	viewItemLeftHand := "👋"
+	viewItemRightHand := "👋"
+	if user.LeftHand != nil {
+		viewItemLeftHand = user.LeftHand.View
+	}
+	if user.RightHand != nil {
+		viewItemRightHand = user.RightHand.View
+	}
+
+	return viewItemLeftHand, viewItemRightHand
 }
