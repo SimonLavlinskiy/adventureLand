@@ -43,9 +43,10 @@ func GetOrCreateUserItem(update tgbotapi.Update, item Item) UserItem {
 	return result
 }
 
-func GetUserItems(userId uint) []UserItem {
+func GetUserItems(userId uint, itemType string) []UserItem {
 	var result []UserItem
 
+	fmt.Println("СЮДААААА!!!")
 	err := config.Db.
 		Preload("Item").
 		Preload("User").
@@ -57,7 +58,15 @@ func GetUserItems(userId uint) []UserItem {
 		panic(err)
 	}
 
-	return result
+	var resultItemType []UserItem
+
+	for _, userItem := range result {
+		if userItem.Item.Type == itemType {
+			resultItemType = append(resultItemType, userItem)
+		}
+	}
+
+	return resultItemType
 }
 
 func UpdateUserItem(user User, userItem UserItem) {

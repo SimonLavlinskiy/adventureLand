@@ -7,16 +7,6 @@ import (
 
 // TODO вынести костантные названия кнопок в отдельный файл(Можно даже в yml)
 
-var backpackKeyboard = tgbotapi.NewReplyKeyboard(
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("\U0001F9BA Шмот \U0001F9BA"),
-		tgbotapi.NewKeyboardButton("🍕 Еда 🍕"),
-	),
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("Меню"),
-	),
-)
-
 var deleteBotMsg tgbotapi.DeleteMessageConfig
 
 func GetMessage(telegramApiToken string) {

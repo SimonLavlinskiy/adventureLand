@@ -3,14 +3,13 @@ package handlers
 import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"project0/helpers"
 	"project0/repository"
 	"strings"
 	"time"
 )
 
 var msg tgbotapi.MessageConfig
-
-//var updateMsg tgbotapi.EditMessageTextConfig
 
 func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 	resUser := repository.GetOrCreateUser(update)
@@ -31,133 +30,7 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 	return msg
 }
 
-func userMenuLocation(update tgbotapi.Update, user repository.User) tgbotapi.MessageConfig {
-	buttons := tgbotapi.ReplyKeyboardMarkup{}
-	newMessage := update.Message.Text
-
-	switch newMessage {
-	case "🗺 Карта 🗺":
-		msg.Text, buttons = repository.GetMyMap(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
-		msg.ReplyMarkup = buttons
-		repository.UpdateUser(update, repository.User{MenuLocation: "Карта"})
-	case user.Avatar + " Профиль 👔":
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.GetUserInfo(update))
-		msg.ReplyMarkup = profileKeyboard(user)
-		repository.UpdateUser(update, repository.User{MenuLocation: "Профиль"})
-	default:
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Меню")
-		msg.ReplyMarkup = mainKeyboard(user)
-		repository.UpdateUser(update, repository.User{MenuLocation: "Меню"})
-	}
-
-	return msg
-}
-
-func userMapLocation(update tgbotapi.Update, user repository.User) tgbotapi.MessageConfig {
-	newMessage := update.Message.Text
-	char := strings.Fields(newMessage)
-
-	if len(char) != 1 {
-		msg = useItems(update, char, user)
-	} else {
-		msg = useDefaultItems(update, user)
-	}
-
-	return msg
-}
-
-func userProfileLocation(update tgbotapi.Update, user repository.User) tgbotapi.MessageConfig {
-	newMessage := update.Message.Text
-
-	if user.Username == "waiting" {
-		repository.UpdateUser(update, repository.User{Username: newMessage})
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.GetUserInfo(update))
-		msg.ReplyMarkup = profileKeyboard(user)
-	} else {
-		switch newMessage {
-		case "📝 Изменить имя? 📝":
-			repository.UpdateUser(update, repository.User{Username: "waiting"})
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "‼️ *ВНИМАНИЕ*: ‼️‼\nТы должен вписать новое имя?\n‼️‼️‼️‼️‼️‼️‼️")
-			msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
-		case user.Avatar + " Изменить аватар? " + user.Avatar:
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "‼️ *ВНИМАНИЕ*: ‼️‼\nВыбери себе аватар...")
-			msg.ReplyMarkup = EmodjiInlineKeyboard()
-		case "/menu", "Меню":
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Меню")
-			msg.ReplyMarkup = mainKeyboard(user)
-			repository.UpdateUser(update, repository.User{MenuLocation: "Меню"})
-		default:
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.GetUserInfo(update))
-			msg.ReplyMarkup = profileKeyboard(user)
-		}
-	}
-	return msg
-}
-
-func directionMovement(update tgbotapi.Update, direction string) repository.Location {
-	res := repository.GetOrCreateMyLocation(update)
-
-	switch direction {
-	case "🔼":
-		y := *res.AxisY + 1
-		return repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: &y}
-	case "🔽":
-		y := *res.AxisY - 1
-		return repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: &y}
-	case "◀️️":
-		x := *res.AxisX - 1
-		return repository.Location{Map: res.Map, AxisX: &x, AxisY: res.AxisY}
-	case "▶️":
-		x := *res.AxisX + 1
-		return repository.Location{Map: res.Map, AxisX: &x, AxisY: res.AxisY}
-	}
-	return res
-}
-
-func useDefaultItems(update tgbotapi.Update, user repository.User) tgbotapi.MessageConfig {
-	newMessage := update.Message.Text
-	buttons := tgbotapi.ReplyKeyboardMarkup{}
-	currentTime := time.Now()
-
-	switch newMessage {
-	case "🔼", "🔽", "◀️️", "▶️":
-		res := directionMovement(update, newMessage)
-		repository.UpdateLocation(update, res)
-		msg.Text, buttons = repository.GetMyMap(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
-		msg.ReplyMarkup = buttons
-	case "🎒":
-		resUser := repository.GetOrCreateUser(update)
-		resUserItems := repository.GetUserItems(resUser.ID)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, MessageBackpackUserItems(resUserItems, 0))
-		msg.ReplyMarkup = backpackInlineKeyboard(resUserItems, 0)
-	case "🧥🎒":
-
-	case "\U0001F7E6": // Вода
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Ты не похож на Jesus! 👮‍♂️")
-	case "🕦":
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, currentTime.Format("15:04:05")+"\nЧасики тикают...")
-	case user.Avatar:
-		msg.Text, buttons = repository.GetMyMap(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.GetUserInfo(update)+"\n \n"+msg.Text)
-		msg.ReplyMarkup = buttons
-	case "/menu", "Меню":
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Меню")
-		msg.ReplyMarkup = mainKeyboard(user)
-		repository.UpdateUser(update, repository.User{MenuLocation: "Меню"})
-	case "🎰":
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "💰💵🤑 Ставки на JOY CASINO дот COM! 🤑💵💰 ")
-	default:
-		msg.Text, buttons = repository.GetMyMap(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
-		msg.ReplyMarkup = buttons
-	}
-
-	return msg
-}
-
-func useItems(update tgbotapi.Update, char []string, user repository.User) tgbotapi.MessageConfig {
+func useSpecialCell(update tgbotapi.Update, char []string, user repository.User) tgbotapi.MessageConfig {
 	buttons := tgbotapi.ReplyKeyboardMarkup{}
 
 	viewItemLeftHand, viewItemRightHand := usersHandsItemsView(user)
@@ -186,6 +59,132 @@ func useItems(update tgbotapi.Update, char []string, user repository.User) tgbot
 	return msg
 }
 
+func userMenuLocation(update tgbotapi.Update, user repository.User) tgbotapi.MessageConfig {
+	buttons := tgbotapi.ReplyKeyboardMarkup{}
+	newMessage := update.Message.Text
+
+	switch newMessage {
+	case "🗺 Карта 🗺":
+		msg.Text, buttons = repository.GetMyMap(update)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
+		msg.ReplyMarkup = buttons
+		repository.UpdateUser(update, repository.User{MenuLocation: "Карта"})
+	case user.Avatar + " Профиль 👔":
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.GetUserInfo(update))
+		msg.ReplyMarkup = helpers.ProfileKeyboard(user)
+		repository.UpdateUser(update, repository.User{MenuLocation: "Профиль"})
+	default:
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Меню")
+		msg.ReplyMarkup = helpers.MainKeyboard(user)
+		repository.UpdateUser(update, repository.User{MenuLocation: "Меню"})
+	}
+
+	return msg
+}
+
+func userMapLocation(update tgbotapi.Update, user repository.User) tgbotapi.MessageConfig {
+	newMessage := update.Message.Text
+	char := strings.Fields(newMessage)
+
+	if len(char) != 1 {
+		msg = useSpecialCell(update, char, user)
+	} else {
+		msg = useDefaultCell(update, user)
+	}
+
+	return msg
+}
+
+func userProfileLocation(update tgbotapi.Update, user repository.User) tgbotapi.MessageConfig {
+	newMessage := update.Message.Text
+
+	if user.Username == "waiting" {
+		repository.UpdateUser(update, repository.User{Username: newMessage})
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.GetUserInfo(update))
+		msg.ReplyMarkup = helpers.ProfileKeyboard(user)
+	} else {
+		switch newMessage {
+		case "📝 Изменить имя? 📝":
+			repository.UpdateUser(update, repository.User{Username: "waiting"})
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "‼️ *ВНИМАНИЕ*: ‼️‼\nТы должен вписать новое имя?\n‼️‼️‼️‼️‼️‼️‼️")
+			msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+		case user.Avatar + " Изменить аватар? " + user.Avatar:
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "‼️ *ВНИМАНИЕ*: ‼️‼\nВыбери себе аватар...")
+			msg.ReplyMarkup = helpers.EmodjiInlineKeyboard()
+		case "/menu", "Меню":
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Меню")
+			msg.ReplyMarkup = helpers.MainKeyboard(user)
+			repository.UpdateUser(update, repository.User{MenuLocation: "Меню"})
+		default:
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.GetUserInfo(update))
+			msg.ReplyMarkup = helpers.ProfileKeyboard(user)
+		}
+	}
+	return msg
+}
+
+func directionMovement(update tgbotapi.Update, direction string) repository.Location {
+	res := repository.GetOrCreateMyLocation(update)
+
+	switch direction {
+	case "🔼":
+		y := *res.AxisY + 1
+		return repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: &y}
+	case "🔽":
+		y := *res.AxisY - 1
+		return repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: &y}
+	case "◀️️":
+		x := *res.AxisX - 1
+		return repository.Location{Map: res.Map, AxisX: &x, AxisY: res.AxisY}
+	case "▶️":
+		x := *res.AxisX + 1
+		return repository.Location{Map: res.Map, AxisX: &x, AxisY: res.AxisY}
+	}
+	return res
+}
+
+func useDefaultCell(update tgbotapi.Update, user repository.User) tgbotapi.MessageConfig {
+	newMessage := update.Message.Text
+	buttons := tgbotapi.ReplyKeyboardMarkup{}
+	currentTime := time.Now()
+
+	switch newMessage {
+	case "🔼", "🔽", "◀️️", "▶️":
+		res := directionMovement(update, newMessage)
+		repository.UpdateLocation(update, res)
+		msg.Text, buttons = repository.GetMyMap(update)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
+		msg.ReplyMarkup = buttons
+	case "🎒":
+		resUser := repository.GetOrCreateUser(update)
+		resUserItems := repository.GetUserItems(resUser.ID, "food")
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, MessageBackpackUserItems(resUserItems, 0))
+		msg.ReplyMarkup = helpers.BackpackInlineKeyboard(resUserItems, 0)
+	case "🧥🎒":
+
+	case "\U0001F7E6": // Вода
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Ты не похож на Jesus! 👮‍♂️")
+	case "🕦":
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, currentTime.Format("15:04:05")+"\nЧасики тикают...")
+	case user.Avatar:
+		msg.Text, buttons = repository.GetMyMap(update)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.GetUserInfo(update)+"\n \n"+msg.Text)
+		msg.ReplyMarkup = buttons
+	case "/menu", "Меню":
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Меню")
+		msg.ReplyMarkup = helpers.MainKeyboard(user)
+		repository.UpdateUser(update, repository.User{MenuLocation: "Меню"})
+	case "🎰":
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "💰💵🤑 Ставки на JOY CASINO дот COM! 🤑💵💰 ")
+	default:
+		msg.Text, buttons = repository.GetMyMap(update)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
+		msg.ReplyMarkup = buttons
+	}
+
+	return msg
+}
+
 func CallbackResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 	charData := strings.Fields(update.CallbackQuery.Data)
 
@@ -200,7 +199,7 @@ func CallbackResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 		case "changeAvatar":
 			res := repository.UpdateUser(update, repository.User{Avatar: charData[1]})
 			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, repository.GetUserInfo(update))
-			msg.ReplyMarkup = profileKeyboard(res)
+			msg.ReplyMarkup = helpers.ProfileKeyboard(res)
 		}
 	} else {
 		fmt.Println("callbackQuery содержит 1 элемент")
@@ -229,46 +228,20 @@ func MessageBackpackUserItems(userItems []repository.UserItem, rowUser int) stri
 		default:
 			firstCell += "▫️"
 		}
-		userItemMsg += firstCell + "   " + repository.ToString(*item.Count) + item.Item.View +
-			"     *HP*:  _+" + repository.ToString(*item.Item.Healing) + "_ ♥️️" +
-			"     *ST*:  _+" + repository.ToString(*item.Item.Satiety) + "_\U0001F9C3 ️\n"
+		userItemMsg += firstCell + "   " + helpers.ToString(*item.Count) + item.Item.View +
+			"     *HP*:  _+" + helpers.ToString(*item.Item.Healing) + "_ ♥️️" +
+			"     *ST*:  _+" + helpers.ToString(*item.Item.Satiety) + "_\U0001F9C3 ️\n"
 
 	}
 
 	return userItemMsg
 }
 
-func backpackInlineKeyboard(items []repository.UserItem, i int) tgbotapi.InlineKeyboardMarkup {
-	if len(items) == 0 {
-		return tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("Пусто...(", "emptyBackPack"),
-			),
-		)
-	}
-	return tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(items[i].Item.View+" "+
-				repository.ToString(*items[i].Count)+"шт."+
-				"   +"+repository.ToString(*items[i].Item.Healing)+" ♥️️"+
-				"   +"+repository.ToString(*items[i].Item.Satiety)+"\U0001F9C3", "callbackAnswerAlert"),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🍽 1шт", "eatFood "+repository.ToString(items[i].ID)+" "+repository.ToString(i)),
-			tgbotapi.NewInlineKeyboardButtonData("🔺", "backpackMoving "+repository.ToString(i-1)),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🗑 все!", "throwOutFood "+repository.ToString(items[i].ID)+" "+repository.ToString(i)),
-			tgbotapi.NewInlineKeyboardButtonData("🔻", "backpackMoving "+repository.ToString(i+1)),
-		),
-	)
-}
-
 func BackPackMoving(charData []string, update tgbotapi.Update) tgbotapi.MessageConfig {
-	i := repository.ToInt(charData[1])
+	i := helpers.ToInt(charData[1])
 
 	user := repository.GetUser(repository.User{TgId: uint(update.CallbackQuery.From.ID)})
-	userItems := repository.GetUserItems(user.ID)
+	userItems := repository.GetUserItems(user.ID, "food")
 
 	switch i {
 	case len(userItems):
@@ -276,13 +249,13 @@ func BackPackMoving(charData []string, update tgbotapi.Update) tgbotapi.MessageC
 	}
 
 	msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, MessageBackpackUserItems(userItems, i))
-	msg.ReplyMarkup = backpackInlineKeyboard(userItems, i)
+	msg.ReplyMarkup = helpers.BackpackInlineKeyboard(userItems, i)
 
 	return msg
 }
 
 func UserEatItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConfig {
-	userItemId := repository.ToInt(charData[1])
+	userItemId := helpers.ToInt(charData[1])
 	userTgId := uint(update.CallbackQuery.From.ID)
 
 	user := repository.GetUser(repository.User{TgId: userTgId})
@@ -300,7 +273,7 @@ func UserEatItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConf
 }
 
 func UserThrowOutFood(update tgbotapi.Update, charData []string) tgbotapi.MessageConfig {
-	userItemId := repository.ToInt(charData[1])
+	userItemId := helpers.ToInt(charData[1])
 	userTgId := uint(update.CallbackQuery.From.ID)
 
 	user := repository.GetUser(repository.User{TgId: userTgId})
@@ -319,49 +292,9 @@ func UserThrowOutFood(update tgbotapi.Update, charData []string) tgbotapi.Messag
 
 	charDataForOpenBackPack := strings.Fields("backpackMoving " + charData[2])
 	msg = BackPackMoving(charDataForOpenBackPack, update)
-	msg.Text = msg.Text + "\n\n" + "🗑 Вы выкинули все " + repository.ToString(*userItem.Count) + " " + userItem.Item.View
+	msg.Text = msg.Text + "\n\n" + "🗑 Вы выкинули все " + helpers.ToString(*userItem.Count) + " " + userItem.Item.View
 
 	return msg
-}
-
-func EmodjiInlineKeyboard() tgbotapi.InlineKeyboardMarkup {
-	var buttons [][]tgbotapi.InlineKeyboardButton
-	var listOfAvatar []string
-	listOfAvatar = strings.Fields("🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 ‍️🐨 🐯 🦁 🐮 🐷 🐸 🐵 🐦 🐧 🐔 🐤 🐥 🦆 🐴 🦄 🐺 🐗 🐝 🦋 🐛 🐌 🐞 🪲 🪰 🐜 🕷 🪳 🦖 🦕 🐙 🦀 🐟 🐠 🐡 🦭")
-
-	for x := 0; x < len(listOfAvatar); x = x + 8 {
-		var row []tgbotapi.InlineKeyboardButton
-		for i := 0; i < 8; i++ {
-			sum := x + i
-			if len(listOfAvatar) > sum {
-				row = append(row, tgbotapi.NewInlineKeyboardButtonData(listOfAvatar[sum], "changeAvatar "+listOfAvatar[sum]))
-			}
-		}
-		buttons = append(buttons, row)
-	}
-
-	return tgbotapi.NewInlineKeyboardMarkup(buttons...)
-}
-
-func profileKeyboard(user repository.User) tgbotapi.ReplyKeyboardMarkup {
-	return tgbotapi.NewReplyKeyboard(
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("📝 Изменить имя? 📝"),
-			tgbotapi.NewKeyboardButton(user.Avatar+" Изменить аватар? "+user.Avatar),
-		),
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("Меню"),
-		),
-	)
-}
-
-func mainKeyboard(user repository.User) tgbotapi.ReplyKeyboardMarkup {
-	return tgbotapi.NewReplyKeyboard(
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("🗺 Карта 🗺"),
-			tgbotapi.NewKeyboardButton(user.Avatar+" Профиль 👔"),
-		),
-	)
 }
 
 func usersHandsItemsView(user repository.User) (string, string) {

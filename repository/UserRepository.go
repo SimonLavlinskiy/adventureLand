@@ -3,6 +3,7 @@ package repository
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
+	"project0/helpers"
 	"time"
 )
 
@@ -96,10 +97,10 @@ func GetUserInfo(update tgbotapi.Update) string {
 
 	messageMap := "🔅 🔆 *Профиль* 🔆 🔅\n" +
 		"\n*Твое имя* " + resUser.Username +
-		"\n*Золото*: " + ToString(*resUser.Money) + "💰" +
+		"\n*Золото*: " + helpers.ToString(*resUser.Money) + "💰" +
 		"\n*Аватар*: " + resUser.Avatar +
-		"\n*Здоровье*: _" + ToString(int(resUser.Health)) + "_ ❤️" +
-		"\n*Сытость*: _" + ToString(int(resUser.Satiety)) + "_ 😋️"
+		"\n*Здоровье*: _" + helpers.ToString(int(resUser.Health)) + "_ ❤️" +
+		"\n*Сытость*: _" + helpers.ToString(int(resUser.Satiety)) + "_ 😋️"
 
 	return messageMap
 }

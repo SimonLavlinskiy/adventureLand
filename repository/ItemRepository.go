@@ -3,6 +3,7 @@ package repository
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
+	"project0/helpers"
 )
 
 type Item struct {
@@ -42,7 +43,7 @@ func UserGetItem(update tgbotapi.Update, LocationStruct Location, char []string)
 	} else {
 		return "0"
 	}
-	return "Ты взял " + char[2] + " 1шт.\nВ ячейке: " + ToString(*resultCell.CountItem-1) + " шт."
+	return "Ты взял " + char[2] + " 1шт.\nВ ячейке: " + helpers.ToString(*resultCell.CountItem-1) + " шт."
 }
 
 func UserGetItemUpdateModels(update tgbotapi.Update, resultCell Cellule) string {
