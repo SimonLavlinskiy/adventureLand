@@ -17,17 +17,44 @@ func BackpackInlineKeyboard(items []repository.UserItem, i int) tgbotapi.InlineK
 	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(items[i].Item.View+" "+
-				ToString(*items[i].Count)+"шт."+
-				"   +"+ToString(*items[i].Item.Healing)+" ♥️️"+
-				"   +"+ToString(*items[i].Item.Satiety)+"\U0001F9C3", "callbackAnswerAlert"),
+				repository.ToString(*items[i].Count)+"шт."+
+				"   +"+repository.ToString(*items[i].Item.Healing)+" ♥️️"+
+				"   +"+repository.ToString(*items[i].Item.Satiety)+"\U0001F9C3", "callbackAnswerAlert"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🍽 1шт", "eatFood "+ToString(items[i].ID)+" "+ToString(i)),
-			tgbotapi.NewInlineKeyboardButtonData("🔺", "backpackMoving "+ToString(i-1)),
+			tgbotapi.NewInlineKeyboardButtonData("🍽 1шт", "eatFood "+repository.ToString(items[i].ID)+" "+repository.ToString(i)),
+			tgbotapi.NewInlineKeyboardButtonData("🔺", "backpackMoving "+repository.ToString(i-1)),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🗑 все!", "throwOutFood "+ToString(items[i].ID)+" "+ToString(i)),
-			tgbotapi.NewInlineKeyboardButtonData("🔻", "backpackMoving "+ToString(i+1)),
+			tgbotapi.NewInlineKeyboardButtonData("🗑 все!", "throwOutFood "+repository.ToString(items[i].ID)+" "+repository.ToString(i)),
+			tgbotapi.NewInlineKeyboardButtonData("🔻", "backpackMoving "+repository.ToString(i+1)),
+		),
+	)
+}
+
+func GoodsInlineKeyboard(user repository.User, userItems []repository.UserItem, i int) tgbotapi.InlineKeyboardMarkup {
+	if len(userItems) == 0 {
+		return tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Пусто...(", "emptyGoods"),
+			),
+		)
+	}
+
+	text, data := repository.IsDressedItem(user, userItems[i])
+
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(userItems[i].Item.View+" "+
+				repository.ToString(*userItems[i].Count)+"шт.", "callbackAnswerAlert"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(text, data+" "+repository.ToString(userItems[i].ID)+" "+repository.ToString(i)),
+			tgbotapi.NewInlineKeyboardButtonData("🔺", "goodsMoving "+repository.ToString(i-1)),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🗑", "throwOutGood "+repository.ToString(userItems[i].ID)+" "+repository.ToString(i)),
+			tgbotapi.NewInlineKeyboardButtonData("🔻", "goodsMoving "+repository.ToString(i+1)),
 		),
 	)
 }

@@ -3,7 +3,6 @@ package repository
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
-	"project0/helpers"
 	"time"
 )
 
@@ -27,6 +26,8 @@ type User struct {
 	BodyId       *int
 	Foot         *Item
 	FootId       *int
+	Shoes        *Item
+	ShoesId      *int
 	MenuLocation string    `gorm:"embedded"`
 	CreatedAt    time.Time `gorm:"autoCreateTime"`
 	Deleted      bool      `gorm:"embedded"`
@@ -60,7 +61,15 @@ func GetOrCreateUser(update tgbotapi.Update) User {
 
 func GetUser(user User) User {
 	var result User
-	err := config.Db.Where(user).First(&result).Error
+	err := config.Db.
+		Preload("Head").
+		Preload("RightHand").
+		Preload("LeftHand").
+		Preload("Body").
+		Preload("Foot").
+		Preload("Shoes").
+		Where(user).
+		First(&result).Error
 	if err != nil {
 		panic(err)
 	}
@@ -85,6 +94,23 @@ func UpdateUser(update tgbotapi.Update, UserStruct User) User {
 	return res
 }
 
+func SetNullUserField(update tgbotapi.Update, queryFeild string) {
+	var err error
+	var userTgId uint
+
+	if update.CallbackQuery != nil {
+		userTgId = uint(update.CallbackQuery.From.ID)
+	} else {
+		userTgId = uint(update.Message.From.ID)
+	}
+
+	err = config.Db.Model(&User{}).Where(&User{TgId: userTgId}).Update(queryFeild, nil).Error
+
+	if err != nil {
+		panic(err)
+	}
+}
+
 func GetUserInfo(update tgbotapi.Update) string {
 	var tgId uint
 	if update.CallbackQuery != nil {
@@ -97,10 +123,27 @@ func GetUserInfo(update tgbotapi.Update) string {
 
 	messageMap := "🔅 🔆 *Профиль* 🔆 🔅\n" +
 		"\n*Твое имя* " + resUser.Username +
-		"\n*Золото*: " + helpers.ToString(*resUser.Money) + "💰" +
+		"\n*Золото*: " + ToString(*resUser.Money) + "💰" +
 		"\n*Аватар*: " + resUser.Avatar +
-		"\n*Здоровье*: _" + helpers.ToString(int(resUser.Health)) + "_ ❤️" +
-		"\n*Сытость*: _" + helpers.ToString(int(resUser.Satiety)) + "_ 😋️"
+		"\n*Здоровье*: _" + ToString(int(resUser.Health)) + "_ ❤️" +
+		"\n*Сытость*: _" + ToString(int(resUser.Satiety)) + "_ 😋️"
 
 	return messageMap
+}
+
+func IsDressedItem(user User, userItem UserItem) (string, string) {
+	dressItem := "Надеть"
+	dressItemData := "dressGood"
+
+	if user.HeadId != nil && userItem.ItemId == *user.HeadId ||
+		user.LeftHandId != nil && userItem.ItemId == *user.LeftHandId ||
+		user.RightHandId != nil && userItem.ItemId == *user.RightHandId ||
+		user.BodyId != nil && userItem.ItemId == *user.BodyId ||
+		user.FootId != nil && userItem.ItemId == *user.FootId ||
+		user.ShoesId != nil && userItem.ItemId == *user.ShoesId {
+		dressItem = "Снять"
+		dressItemData = "takeOffGood"
+	}
+
+	return dressItem, dressItemData
 }

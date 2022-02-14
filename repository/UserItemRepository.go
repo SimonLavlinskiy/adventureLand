@@ -17,7 +17,7 @@ type UserItem struct {
 
 func GetUserItem(userItem UserItem) (UserItem, error) {
 	var result UserItem
-	err := config.Db.Preload("Item").Where(userItem).First(&result).Error
+	err := config.Db.Preload("Item").Preload("User").Where(userItem).First(&result).Error
 
 	if err != nil {
 		fmt.Println("Item not found")
@@ -43,10 +43,9 @@ func GetOrCreateUserItem(update tgbotapi.Update, item Item) UserItem {
 	return result
 }
 
-func GetUserItems(userId uint, itemType string) []UserItem {
+func GetUserItems(userId uint, itemTypes ...string) []UserItem {
 	var result []UserItem
 
-	fmt.Println("СЮДААААА!!!")
 	err := config.Db.
 		Preload("Item").
 		Preload("User").
@@ -61,8 +60,10 @@ func GetUserItems(userId uint, itemType string) []UserItem {
 	var resultItemType []UserItem
 
 	for _, userItem := range result {
-		if userItem.Item.Type == itemType {
-			resultItemType = append(resultItemType, userItem)
+		for _, itemType := range itemTypes {
+			if userItem.Item.Type == itemType {
+				resultItemType = append(resultItemType, userItem)
+			}
 		}
 	}
 

@@ -3,7 +3,6 @@ package repository
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
-	"project0/helpers"
 	"strings"
 	"time"
 )
@@ -71,7 +70,7 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.Repl
 	resLocation := GetOrCreateMyLocation(update)
 	resMap := GetUserMap(update)
 	mapSize := CalculateUserMapBorder(resLocation, resMap)
-	messageMap := "*Карта*: _" + resLocation.Map + "_ *X*: _" + helpers.ToString(*resLocation.AxisX) + "_  *Y*: _" + helpers.ToString(*resLocation.AxisY) + "_"
+	messageMap := "*Карта*: _" + resLocation.Map + "_ *X*: _" + ToString(*resLocation.AxisX) + "_  *Y*: _" + ToString(*resLocation.AxisY) + "_"
 
 	type Point = [2]int
 	m := map[Point]Cellule{}
@@ -83,10 +82,10 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.Repl
 		Preload("Teleport").
 		Preload("Item.CanTakeWith").
 		Where(Cellule{Map: resLocation.Map}).
-		Where("axis_x >= " + helpers.ToString(mapSize.leftIndent)).
-		Where("axis_x <= " + helpers.ToString(mapSize.rightIndent)).
-		Where("axis_y >= " + helpers.ToString(mapSize.downIndent)).
-		Where("axis_y <= " + helpers.ToString(mapSize.upperIndent)).
+		Where("axis_x >= " + ToString(mapSize.leftIndent)).
+		Where("axis_x <= " + ToString(mapSize.rightIndent)).
+		Where("axis_y >= " + ToString(mapSize.downIndent)).
+		Where("axis_y <= " + ToString(mapSize.upperIndent)).
 		Order("axis_x ASC").
 		Order("axis_y ASC").
 		Find(&result).Error
@@ -343,9 +342,9 @@ func isItemCost(cell Cellule, button string, resUser User) string {
 	if cell.Item.Cost != nil && *cell.Item.Cost > 0 {
 		if cell.Item.CanTakeWith != nil {
 			res := IsSpecialItem(cell, resUser)
-			button = res + " " + button + " " + cell.Item.View + " (" + helpers.ToString(*cell.Item.Cost) + "💰)"
+			button = res + " " + button + " " + cell.Item.View + " (" + ToString(*cell.Item.Cost) + "💰)"
 		} else {
-			button = "👋 " + button + " " + cell.Item.View + " ( " + helpers.ToString(*cell.Item.Cost) + "💰 )"
+			button = "👋 " + button + " " + cell.Item.View + " ( " + ToString(*cell.Item.Cost) + "💰 )"
 		}
 	} else {
 		if cell.Item.CanTakeWith != nil {

@@ -53,7 +53,6 @@ func DeleteMessage(message tgbotapi.DeleteMessageConfig, telegramApiToken string
 
 func SendMessage(message tgbotapi.MessageConfig, telegramApiToken string) {
 	bot, err := tgbotapi.NewBotAPI(telegramApiToken)
-
 	if err != nil {
 		panic(err)
 	}
