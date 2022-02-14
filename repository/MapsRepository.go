@@ -66,7 +66,7 @@ func GetUserMap(update tgbotapi.Update) Map {
 }
 
 func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.ReplyKeyboardMarkup) {
-	resUser := GetOrCreateUser(update)
+	resUser := GetUser(User{TgId: uint(update.Message.From.ID)})
 	resLocation := GetOrCreateMyLocation(update)
 	resMap := GetUserMap(update)
 	mapSize := CalculateUserMapBorder(resLocation, resMap)
@@ -102,7 +102,7 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.Repl
 
 	m[Point{*resLocation.AxisX, *resLocation.AxisY}] = Cellule{View: resUser.Avatar, ID: m[Point{*resLocation.AxisX, *resLocation.AxisY}].ID}
 
-	Maps := configurationMap(mapSize, resMap, resLocation, m)
+	Maps := configurationMap(mapSize, resMap, resLocation, resUser, m)
 
 	for i, row := range Maps {
 		if i >= mapSize.downIndent && i <= mapSize.upperIndent {
@@ -182,7 +182,7 @@ func CreateMapKeyboard(buttons MapButtons) tgbotapi.ReplyKeyboardMarkup {
 	)
 }
 
-func configurationMap(mapSize UserMap, resMap Map, resLocation Location, m map[[2]int]Cellule) [][]string {
+func configurationMap(mapSize UserMap, resMap Map, resLocation Location, user User, m map[[2]int]Cellule) [][]string {
 	currentTime := time.Now()
 	day := "06" <= currentTime.Format("15") && currentTime.Format("15") <= "23"
 	type Point [2]int
@@ -191,7 +191,7 @@ func configurationMap(mapSize UserMap, resMap Map, resLocation Location, m map[[
 	if day || resLocation.Map != "Main Place" {
 		DayMap(Maps, mapSize, m, resLocation)
 	} else {
-		NigthMap(Maps, mapSize, m, resLocation)
+		NigthMap(Maps, mapSize, m, resLocation, user)
 	}
 	return Maps
 }
@@ -210,25 +210,26 @@ func DayMap(Maps [][]string, mapSize UserMap, m map[[2]int]Cellule, resLocation 
 	}
 }
 
-func NigthMap(Maps [][]string, mapSize UserMap, m map[[2]int]Cellule, resLocation Location) {
+func NigthMap(Maps [][]string, mapSize UserMap, m map[[2]int]Cellule, resLocation Location, user User) {
 	type Point [2]int
 
 	for y := range Maps {
 		for x := mapSize.leftIndent; x <= mapSize.rightIndent; x++ {
-			if calculateNightMap(resLocation, x, y) && m[Point{x, y}].ID != 0 {
+			if calculateNightMap(user, resLocation, x, y) && m[Point{x, y}].ID != 0 {
 				appendVisibleUserZone(m, x, y, Maps)
 			} else if (y+x)%2 == 1 || m[Point{x, y}].ID != 0 && (y+x)%2 == 1 {
 				Maps[y] = append(Maps[y], "⬛️")
 			} else if (y+x)%2 == 0 || m[Point{x, y}].ID != 0 && (y+x)%2 == 0 {
 				Maps[y] = append(Maps[y], "✨")
 			} else {
-				Maps[y] = append(Maps[y], "\U0001FAA8")
+				Maps[y] = append(Maps[y], "")
 			}
 		}
 	}
 }
 
-func calculateNightMap(location Location, x int, y int) bool {
+func calculateNightMap(user User, location Location, x int, y int) bool {
+
 	if *location.AxisX == x-2 && (*location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1) {
 		return true
 	}
@@ -244,6 +245,37 @@ func calculateNightMap(location Location, x int, y int) bool {
 	if *location.AxisX == x+2 && (*location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1) {
 		return true
 	}
+
+	if user.LeftHandId != nil && user.LeftHand.Type == "light" || user.RightHandId != nil && user.RightHand.Type == "light" {
+		if *location.AxisX == x-4 && (*location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1) {
+			return true
+		}
+		if *location.AxisX == x-3 && (*location.AxisY == y-2 || *location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1 || *location.AxisY == y+2) {
+			return true
+		}
+		if *location.AxisX == x-2 && (*location.AxisY == y-3 || *location.AxisY == y-2 || *location.AxisY == y+2 || *location.AxisY == y+3) {
+			return true
+		}
+		if *location.AxisX == x-1 && (*location.AxisY == y-4 || *location.AxisY == y-3 || *location.AxisY == y+3 || *location.AxisY == y+4) {
+			return true
+		}
+		if *location.AxisX == x && (*location.AxisY == y-4 || *location.AxisY == y-3 || *location.AxisY == y+3 || *location.AxisY == y+4) {
+			return true
+		}
+		if *location.AxisX == x+1 && (*location.AxisY == y-4 || *location.AxisY == y-3 || *location.AxisY == y+3 || *location.AxisY == y+4) {
+			return true
+		}
+		if *location.AxisX == x+2 && (*location.AxisY == y-3 || *location.AxisY == y-2 || *location.AxisY == y+2 || *location.AxisY == y+3) {
+			return true
+		}
+		if *location.AxisX == x+3 && (*location.AxisY == y-2 || *location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1 || *location.AxisY == y+2) {
+			return true
+		}
+		if *location.AxisX == x+4 && (*location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1) {
+			return true
+		}
+	}
+
 	return false
 }
 
@@ -261,6 +293,7 @@ func appendVisibleUserZone(m map[[2]int]Cellule, x int, y int, Maps [][]string) 
 }
 
 func PutButton(CellsAroundUser []Cellule, buttons MapButtons, resUser User) MapButtons {
+
 	switch true {
 	case IsDefaultCell(CellsAroundUser[0]):
 		buttons.Up = CellsAroundUser[0].View
@@ -268,7 +301,7 @@ func PutButton(CellsAroundUser []Cellule, buttons MapButtons, resUser User) MapB
 		buttons.Up += " " + resUser.Avatar + " " + CellsAroundUser[0].View
 	case IsItem(CellsAroundUser[0]):
 		buttons.Up = isItemCost(CellsAroundUser[0], buttons.Up, resUser)
-	case &CellsAroundUser[0].Type == nil:
+	case CellsAroundUser[0].ID == 0:
 		buttons.Up = "🚫"
 	}
 
@@ -279,7 +312,7 @@ func PutButton(CellsAroundUser []Cellule, buttons MapButtons, resUser User) MapB
 		buttons.Down += " " + resUser.Avatar + " " + CellsAroundUser[1].View
 	case IsItem(CellsAroundUser[1]):
 		buttons.Down = isItemCost(CellsAroundUser[1], buttons.Down, resUser)
-	case &CellsAroundUser[1].Type == nil:
+	case CellsAroundUser[1].ID == 0:
 		buttons.Down = "🚫"
 	}
 
@@ -290,7 +323,7 @@ func PutButton(CellsAroundUser []Cellule, buttons MapButtons, resUser User) MapB
 		buttons.Right += " " + resUser.Avatar + " " + CellsAroundUser[2].View
 	case IsItem(CellsAroundUser[2]):
 		buttons.Right = isItemCost(CellsAroundUser[2], buttons.Right, resUser)
-	case &CellsAroundUser[2].Type == nil:
+	case CellsAroundUser[2].ID == 0:
 		buttons.Right = "🚫"
 	}
 
@@ -301,7 +334,7 @@ func PutButton(CellsAroundUser []Cellule, buttons MapButtons, resUser User) MapB
 		buttons.Left += " " + resUser.Avatar + " " + CellsAroundUser[3].View
 	case IsItem(CellsAroundUser[3]):
 		buttons.Left = isItemCost(CellsAroundUser[3], buttons.Left, resUser)
-	case &CellsAroundUser[3].Type == nil:
+	case CellsAroundUser[3].ID == 0:
 		buttons.Left = "🚫"
 	}
 

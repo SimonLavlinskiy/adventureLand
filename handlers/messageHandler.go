@@ -150,6 +150,7 @@ func userProfileLocation(update tgbotapi.Update, user repository.User) tgbotapi.
 			msg.ReplyMarkup = helpers.ProfileKeyboard(user)
 		}
 	}
+
 	return msg
 }
 
@@ -192,7 +193,7 @@ func useDefaultCell(update tgbotapi.Update, user repository.User) tgbotapi.Messa
 		msg.ReplyMarkup = helpers.BackpackInlineKeyboard(resUserItems, 0)
 	case "🧥🎒":
 		user := repository.GetOrCreateUser(update)
-		userItems := repository.GetUserItems(user.ID, "pick", "axe")
+		userItems := repository.GetUserItems(user.ID, "pick", "axe", "light")
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, MessageGoodsUserItems(user, userItems, 0))
 		msg.ReplyMarkup = helpers.GoodsInlineKeyboard(user, userItems, 0)
 	case "\U0001F7E6": // Вода
@@ -209,6 +210,8 @@ func useDefaultCell(update tgbotapi.Update, user repository.User) tgbotapi.Messa
 		repository.UpdateUser(update, repository.User{MenuLocation: "Меню"})
 	case "🎰":
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "💰💵🤑 Ставки на JOY CASINO дот COM! 🤑💵💰 ")
+	case "🚫":
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "🚫 Сюда нельзя! 🚫")
 	default:
 		msg.Text, buttons = repository.GetMyMap(update)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
@@ -303,7 +306,7 @@ func GoodsMoving(charData []string, update tgbotapi.Update) tgbotapi.MessageConf
 	i := repository.ToInt(charData[1])
 
 	user := repository.GetUser(repository.User{TgId: uint(update.CallbackQuery.From.ID)})
-	userItems := repository.GetUserItems(user.ID, "pick", "axe")
+	userItems := repository.GetUserItems(user.ID, "pick", "axe", "light")
 
 	switch i {
 	case len(userItems):

@@ -3,6 +3,7 @@ package repository
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
+	"strings"
 	"time"
 )
 
@@ -35,11 +36,14 @@ type User struct {
 
 func GetOrCreateUser(update tgbotapi.Update) User {
 	userId := uint(update.Message.From.ID)
-	MoneyUserStart := 0
+	MoneyUserStart := 10
+
+	replacer := strings.NewReplacer("_", " ", "*", " ")
+	outUsername := replacer.Replace(update.Message.From.UserName)
 
 	result := User{
 		TgId:      uint(update.Message.From.ID),
-		Username:  update.Message.From.UserName,
+		Username:  outUsername,
 		FirstName: update.Message.From.FirstName,
 		LastName:  update.Message.From.LastName,
 		Avatar:    "👤",
@@ -122,7 +126,7 @@ func GetUserInfo(update tgbotapi.Update) string {
 	resUser := GetUser(User{TgId: tgId})
 
 	messageMap := "🔅 🔆 *Профиль* 🔆 🔅\n" +
-		"\n*Твое имя* " + resUser.Username +
+		"\n*Твое имя*: " + resUser.Username +
 		"\n*Золото*: " + ToString(*resUser.Money) + "💰" +
 		"\n*Аватар*: " + resUser.Avatar +
 		"\n*Здоровье*: _" + ToString(int(resUser.Health)) + "_ ❤️" +

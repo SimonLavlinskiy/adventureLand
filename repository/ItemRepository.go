@@ -33,11 +33,12 @@ func UserGetItem(update tgbotapi.Update, LocationStruct Location, char []string)
 	}
 	if resultCell.ItemID != nil {
 		switch resultCell.Item.Type {
-		case "food", "pick", "axe":
+		case "food", "pick", "axe", "light":
 			res := UserGetItemUpdateModels(update, resultCell)
 			if res != "Ok" {
 				return res
 			}
+			// case (Сундучок например):
 		}
 	} else {
 		return "0"
@@ -48,11 +49,15 @@ func UserGetItem(update tgbotapi.Update, LocationStruct Location, char []string)
 func UserGetItemUpdateModels(update tgbotapi.Update, resultCell Cellule) string {
 	countAfterUserGetItem := *resultCell.CountItem - 1
 	user := GetUser(User{TgId: uint(update.Message.From.ID)})
+	itemCost := 0
 
 	resUserItem := GetOrCreateUserItem(update, *resultCell.Item)
 	if canUserTakeItem(resUserItem) {
-		if *user.Money >= *resultCell.Item.Cost {
-			updateUserMoney := *user.Money - *resultCell.Item.Cost
+		if resultCell.Item.Cost == nil || *user.Money >= *resultCell.Item.Cost {
+			if resultCell.Item.Cost != nil {
+				itemCost = *resultCell.Item.Cost
+			}
+			updateUserMoney := *user.Money - itemCost
 			AddUserItemCount(update, resUserItem, resultCell, updateUserMoney)
 			UpdateCellule(resultCell.ID, Cellule{CountItem: &countAfterUserGetItem})
 			return "Ok"
@@ -63,10 +68,11 @@ func UserGetItemUpdateModels(update tgbotapi.Update, resultCell Cellule) string 
 }
 
 func canUserTakeItem(item UserItem) bool {
-	if (item.Item.Type == "pick" || item.Item.Type == "axe") && *item.Count < 1 {
+	if (item.Item.Type == "pick" || item.Item.Type == "axe" || item.Item.Type == "light") && *item.Count < 1 {
 		return true
 	} else if item.Item.Type == "food" {
 		return true
 	}
+	// case (Сундучок например):
 	return false
 }

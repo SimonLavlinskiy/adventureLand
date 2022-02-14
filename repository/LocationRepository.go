@@ -9,6 +9,7 @@ import (
 type Location struct {
 	ID       uint `gorm:"primaryKey"`
 	UserTgId uint
+	User     User
 	UserID   uint
 	AxisX    *int
 	AxisY    *int

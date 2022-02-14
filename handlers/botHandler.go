@@ -26,39 +26,33 @@ func GetMessage(telegramApiToken string) {
 		if update.CallbackQuery != nil {
 			deleteBotMsg = tgbotapi.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
 			msg = CallbackResolver(update)
-			SendMessage(msg, telegramApiToken)
-			DeleteMessage(deleteBotMsg, telegramApiToken)
+			SendMessage(msg, bot)
+			DeleteMessage(deleteBotMsg, bot)
 		}
 
 		if update.Message == nil {
 			continue
 		} else {
 			msg = messageResolver(update)
-			SendMessage(msg, telegramApiToken)
+			SendMessage(msg, bot)
 		}
 		//msg.ReplyToMessageID = update.Message.MessageID
 	}
 
 }
 
-func DeleteMessage(message tgbotapi.DeleteMessageConfig, telegramApiToken string) {
-	bot, err := tgbotapi.NewBotAPI(telegramApiToken)
-	if err != nil {
-		panic(err)
-	}
+func DeleteMessage(message tgbotapi.DeleteMessageConfig, bot *tgbotapi.BotAPI) {
 	if _, err := bot.Request(message); err != nil {
 		fmt.Print("Error delete msg: " + err.Error())
 	}
 }
 
-func SendMessage(message tgbotapi.MessageConfig, telegramApiToken string) {
-	bot, err := tgbotapi.NewBotAPI(telegramApiToken)
+func SendMessage(message tgbotapi.MessageConfig, bot *tgbotapi.BotAPI) {
+	_, err := bot.Send(message)
 	if err != nil {
-		panic(err)
-	}
-	if _, err := bot.Send(message); err != nil {
 		panic("Error send msg: " + err.Error())
 	}
+
 }
 
 //func UpdateMessage(updateMsg tgbotapi.EditMessageTextConfig, telegramApiToken string) {
