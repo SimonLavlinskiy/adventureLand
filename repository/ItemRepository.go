@@ -18,6 +18,7 @@ type Item struct {
 	Satiety       *int    `gorm:"embedded"`
 	Cost          *int    `gorm:"embedded"`
 	DressType     *string `gorm:"embedded"`
+	Description   *string `gorm:"embedded"`
 }
 
 func UserGetItem(update tgbotapi.Update, LocationStruct Location, char []string) string {

@@ -30,8 +30,9 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 	return msg
 }
 
-func CallbackResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
+func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 	charData := strings.Fields(update.CallbackQuery.Data)
+	deletePrevMessage := true
 
 	if len(charData) != 1 {
 		switch charData[0] {
@@ -51,13 +52,16 @@ func CallbackResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 			res := repository.UpdateUser(update, repository.User{Avatar: charData[1]})
 			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, repository.GetUserInfo(update))
 			msg.ReplyMarkup = helpers.ProfileKeyboard(res)
+		case "description":
+			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, repository.GetFullDescriptionOfUserItem(repository.UserItem{ID: repository.ToInt(charData[1])}))
+			deletePrevMessage = false
 		}
 	} else {
 		fmt.Println("callbackQuery содержит 1 элемент")
 	}
 
 	msg.ParseMode = "markdown"
-	return msg
+	return msg, deletePrevMessage
 }
 
 func useSpecialCell(update tgbotapi.Update, char []string, user repository.User) tgbotapi.MessageConfig {
@@ -278,7 +282,7 @@ func MessageGoodsUserItems(user repository.User, userItems []repository.UserItem
 			firstCell += "▫️"
 		}
 		userItemMsg += firstCell + "   " + repository.ToString(*item.Count) + " " + item.Item.View +
-			"     *DM*:  _+" + repository.ToString(*item.Item.Healing) + "_ 💥   " + res + "\n"
+			"     " + res + " " + item.Item.Name + "    " + "\n"
 
 	}
 

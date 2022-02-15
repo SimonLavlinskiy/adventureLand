@@ -230,48 +230,24 @@ func NigthMap(Maps [][]string, mapSize UserMap, m map[[2]int]Cellule, resLocatio
 
 func calculateNightMap(user User, location Location, x int, y int) bool {
 
-	if *location.AxisX == x-2 && (*location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1) {
+	if (*location.AxisX == x-2 || *location.AxisX == x+2) && (*location.AxisY >= y-1 && *location.AxisY <= y+1) {
 		return true
 	}
-	if *location.AxisX == x-1 && (*location.AxisY == y-2 || *location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1 || *location.AxisY == y+2) {
-		return true
-	}
-	if *location.AxisX == x && (*location.AxisY == y-2 || *location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1 || *location.AxisY == y+2) {
-		return true
-	}
-	if *location.AxisX == x+1 && (*location.AxisY == y-2 || *location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1 || *location.AxisY == y+2) {
-		return true
-	}
-	if *location.AxisX == x+2 && (*location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1) {
+	if (*location.AxisX >= x-1 && *location.AxisX <= x+1) && (*location.AxisY >= y-2 && *location.AxisY <= y+2) {
 		return true
 	}
 
 	if user.LeftHandId != nil && user.LeftHand.Type == "light" || user.RightHandId != nil && user.RightHand.Type == "light" {
-		if *location.AxisX == x-4 && (*location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1) {
+		if (*location.AxisX == x-4 || *location.AxisX == x+4) && (*location.AxisY >= y-1 && *location.AxisY <= y+1) {
 			return true
 		}
-		if *location.AxisX == x-3 && (*location.AxisY == y-2 || *location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1 || *location.AxisY == y+2) {
+		if (*location.AxisX == x-3 || *location.AxisX == x+3) && (*location.AxisY >= y-2 && *location.AxisY <= y+2) {
 			return true
 		}
-		if *location.AxisX == x-2 && (*location.AxisY == y-3 || *location.AxisY == y-2 || *location.AxisY == y+2 || *location.AxisY == y+3) {
+		if (*location.AxisX == x-2 || *location.AxisX == x+2) && (*location.AxisY >= y-3 && *location.AxisY <= y+3) {
 			return true
 		}
-		if *location.AxisX == x-1 && (*location.AxisY == y-4 || *location.AxisY == y-3 || *location.AxisY == y+3 || *location.AxisY == y+4) {
-			return true
-		}
-		if *location.AxisX == x && (*location.AxisY == y-4 || *location.AxisY == y-3 || *location.AxisY == y+3 || *location.AxisY == y+4) {
-			return true
-		}
-		if *location.AxisX == x+1 && (*location.AxisY == y-4 || *location.AxisY == y-3 || *location.AxisY == y+3 || *location.AxisY == y+4) {
-			return true
-		}
-		if *location.AxisX == x+2 && (*location.AxisY == y-3 || *location.AxisY == y-2 || *location.AxisY == y+2 || *location.AxisY == y+3) {
-			return true
-		}
-		if *location.AxisX == x+3 && (*location.AxisY == y-2 || *location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1 || *location.AxisY == y+2) {
-			return true
-		}
-		if *location.AxisX == x+4 && (*location.AxisY == y-1 || *location.AxisY == y || *location.AxisY == y+1) {
+		if (*location.AxisX >= x-1 && *location.AxisX <= x+1) && (*location.AxisY >= y-4 && *location.AxisY <= y+4) {
 			return true
 		}
 	}

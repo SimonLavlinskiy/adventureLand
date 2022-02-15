@@ -124,3 +124,23 @@ func EatItem(update tgbotapi.Update, user User, userItem UserItem) string {
 	message := "🍽 Ты съел 1 " + userItem.Item.View + ""
 	return message
 }
+
+func GetFullDescriptionOfUserItem(userItem UserItem) string {
+	userItem, _ = GetUserItem(userItem)
+	var fullDescriptionUserItem string
+	if userItem.Item.Type != "food" {
+		fullDescriptionUserItem = userItem.Item.View + " *" + userItem.Item.Name + "* - " + ToString(*userItem.Count) + "шт.\n" +
+			"*Сила*: " + ToString(*userItem.Item.Damage) + "💥\n"
+	} else {
+		fullDescriptionUserItem = userItem.Item.View + " *" + userItem.Item.Name + "* - " + ToString(*userItem.Count) + "шт.\n" +
+			"*Здоровье*: " + ToString(*userItem.Item.Healing) + "♥️️\n" +
+			"*Сытость*: " + ToString(*userItem.Item.Satiety) + "\U0001F9C3 \n"
+	}
+	itemDescription := "Описания нет("
+
+	if userItem.Item.Description != nil {
+		itemDescription = "*Описание*: " + *userItem.Item.Description
+	}
+
+	return fullDescriptionUserItem + itemDescription
+}

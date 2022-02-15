@@ -19,7 +19,7 @@ func BackpackInlineKeyboard(items []repository.UserItem, i int) tgbotapi.InlineK
 			tgbotapi.NewInlineKeyboardButtonData(items[i].Item.View+" "+
 				repository.ToString(*items[i].Count)+"шт."+
 				"   +"+repository.ToString(*items[i].Item.Healing)+" ♥️️"+
-				"   +"+repository.ToString(*items[i].Item.Satiety)+"\U0001F9C3", "callbackAnswerAlert"),
+				"   +"+repository.ToString(*items[i].Item.Satiety)+"\U0001F9C3", "description "+repository.ToString(items[i].ID)),
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("🍽 1шт", "eatFood "+repository.ToString(items[i].ID)+" "+repository.ToString(i)),
@@ -42,11 +42,15 @@ func GoodsInlineKeyboard(user repository.User, userItems []repository.UserItem, 
 	}
 
 	text, data := repository.IsDressedItem(user, userItems[i])
+	itemDesciption := "Описания нет("
+	if userItems[i].Item.Description != nil {
+		itemDesciption = *userItems[i].Item.Description
+	}
 
 	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(userItems[i].Item.View+" "+
-				repository.ToString(*userItems[i].Count)+"шт.", "callbackAnswerAlert"),
+			tgbotapi.NewInlineKeyboardButtonData(userItems[i].Item.View+" "+repository.ToString(*userItems[i].Count)+"шт. "+userItems[i].Item.Name+"  "+itemDesciption,
+				"description "+repository.ToString(userItems[i].ID)),
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(text, data+" "+repository.ToString(userItems[i].ID)+" "+repository.ToString(i)),

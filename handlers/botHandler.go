@@ -25,9 +25,11 @@ func GetMessage(telegramApiToken string) {
 
 		if update.CallbackQuery != nil {
 			deleteBotMsg = tgbotapi.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
-			msg = CallbackResolver(update)
+			msg, delMes := CallbackResolver(update)
 			SendMessage(msg, bot)
-			DeleteMessage(deleteBotMsg, bot)
+			if delMes {
+				DeleteMessage(deleteBotMsg, bot)
+			}
 		}
 
 		if update.Message == nil {
