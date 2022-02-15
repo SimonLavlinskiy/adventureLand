@@ -8,12 +8,13 @@ import (
 )
 
 type Map struct {
-	ID     uint   `gorm:"primaryKey"`
-	Name   string `gorm:"embedded"`
-	SizeX  int    `gorm:"embedded"`
-	SizeY  int    `gorm:"embedded"`
-	StartX int    `gorm:"embedded"`
-	StartY int    `gorm:"embedded"`
+	ID      uint   `gorm:"primaryKey"`
+	Name    string `gorm:"embedded"`
+	SizeX   int    `gorm:"embedded"`
+	SizeY   int    `gorm:"embedded"`
+	StartX  int    `gorm:"embedded"`
+	StartY  int    `gorm:"embedded"`
+	DayType string `gorm:"embedded"`
 }
 
 type MapButtons struct {
@@ -56,7 +57,7 @@ func GetUserMap(update tgbotapi.Update) Map {
 	resLocation := GetOrCreateMyLocation(update)
 	result := Map{}
 
-	err := config.Db.Where(&Map{Name: resLocation.Map}).First(&result).Error
+	err := config.Db.Where(&Map{ID: uint(*resLocation.MapsId)}).First(&result).Error
 
 	if err != nil {
 		panic(err)
@@ -70,7 +71,7 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.Repl
 	resLocation := GetOrCreateMyLocation(update)
 	resMap := GetUserMap(update)
 	mapSize := CalculateUserMapBorder(resLocation, resMap)
-	messageMap := "*Карта*: _" + resLocation.Map + "_ *X*: _" + ToString(*resLocation.AxisX) + "_  *Y*: _" + ToString(*resLocation.AxisY) + "_"
+	messageMap := "*Карта*: _" + resLocation.Maps.Name + "_ *X*: _" + ToString(*resLocation.AxisX) + "_  *Y*: _" + ToString(*resLocation.AxisY) + "_"
 
 	type Point = [2]int
 	m := map[Point]Cellule{}
@@ -81,7 +82,7 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.Repl
 		Preload("Item").
 		Preload("Teleport").
 		Preload("Item.CanTakeWith").
-		Where(Cellule{Map: resLocation.Map}).
+		Where(Cellule{MapsId: *resLocation.MapsId}).
 		Where("axis_x >= " + ToString(mapSize.leftIndent)).
 		Where("axis_x <= " + ToString(mapSize.rightIndent)).
 		Where("axis_y >= " + ToString(mapSize.downIndent)).
@@ -188,7 +189,7 @@ func configurationMap(mapSize UserMap, resMap Map, resLocation Location, user Us
 	type Point [2]int
 	Maps := make([][]string, resMap.SizeY+1)
 
-	if day || resLocation.Map != "Main Place" {
+	if (day && resLocation.Maps.DayType == "default") || resLocation.Maps.DayType == "alwaysDay" {
 		DayMap(Maps, mapSize, m, resLocation)
 	} else {
 		NigthMap(Maps, mapSize, m, resLocation, user)

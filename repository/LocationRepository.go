@@ -13,7 +13,8 @@ type Location struct {
 	UserID   uint
 	AxisX    *int
 	AxisY    *int
-	Map      string `gorm:"embedded"`
+	MapsId   *int `gorm:"embedded"`
+	Maps     Map
 }
 
 func GetOrCreateMyLocation(update tgbotapi.Update) Location {
@@ -21,15 +22,19 @@ func GetOrCreateMyLocation(update tgbotapi.Update) Location {
 
 	AsX := 7
 	AsY := 2
+	startMap := 1
 
 	result := Location{
 		UserTgId: uint(update.Message.From.ID),
 		AxisX:    &AsX,
 		AxisY:    &AsY,
-		Map:      "Main Place",
+		MapsId:   &startMap,
 	}
 
-	err := config.Db.Where(&Location{UserID: resUser.ID}).FirstOrCreate(&result).Error
+	err := config.Db.
+		Preload("Maps").
+		Where(&Location{UserID: resUser.ID}).
+		FirstOrCreate(&result).Error
 	if err != nil {
 		panic(err)
 	}
@@ -40,20 +45,20 @@ func GetOrCreateMyLocation(update tgbotapi.Update) Location {
 func UpdateLocation(update tgbotapi.Update, LocationStruct Location) Location {
 	char := strings.Fields(update.Message.Text)
 	myLocation := GetOrCreateMyLocation(update)
-	resCellule := GetCellule(Cellule{Map: LocationStruct.Map, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY})
+	resCellule := GetCellule(Cellule{MapsId: *LocationStruct.MapsId, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY})
 
 	if len(char) != 1 && *resCellule.Type == "teleport" && resCellule.TeleportID != nil {
 		LocationStruct = Location{
-			AxisX: &resCellule.Teleport.StartX,
-			AxisY: &resCellule.Teleport.StartY,
-			Map:   resCellule.Teleport.Map,
+			AxisX:  &resCellule.Teleport.StartX,
+			AxisY:  &resCellule.Teleport.StartY,
+			MapsId: &resCellule.Teleport.MapId,
 		}
 	}
 
 	var result Cellule
 	var err error
 
-	err = config.Db.First(&result, &Cellule{Map: LocationStruct.Map, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY}).Error
+	err = config.Db.First(&result, &Cellule{MapsId: *LocationStruct.MapsId, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY}).Error
 	if err != nil {
 		if err.Error() == "record not found" {
 			return myLocation

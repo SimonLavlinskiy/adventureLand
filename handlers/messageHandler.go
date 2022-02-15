@@ -164,16 +164,16 @@ func directionMovement(update tgbotapi.Update, direction string) repository.Loca
 	switch direction {
 	case "🔼":
 		y := *res.AxisY + 1
-		return repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: &y}
+		return repository.Location{MapsId: res.MapsId, AxisX: res.AxisX, AxisY: &y}
 	case "🔽":
 		y := *res.AxisY - 1
-		return repository.Location{Map: res.Map, AxisX: res.AxisX, AxisY: &y}
+		return repository.Location{MapsId: res.MapsId, AxisX: res.AxisX, AxisY: &y}
 	case "◀️️":
 		x := *res.AxisX - 1
-		return repository.Location{Map: res.Map, AxisX: &x, AxisY: res.AxisY}
+		return repository.Location{MapsId: res.MapsId, AxisX: &x, AxisY: res.AxisY}
 	case "▶️":
 		x := *res.AxisX + 1
-		return repository.Location{Map: res.Map, AxisX: &x, AxisY: res.AxisY}
+		return repository.Location{MapsId: res.MapsId, AxisX: &x, AxisY: res.AxisY}
 	}
 	return res
 }
@@ -192,12 +192,12 @@ func useDefaultCell(update tgbotapi.Update, user repository.User) tgbotapi.Messa
 		msg.ReplyMarkup = buttons
 	case "🎒":
 		resUser := repository.GetOrCreateUser(update)
-		resUserItems := repository.GetUserItems(resUser.ID, "food")
+		resUserItems := repository.GetBackpackItems(resUser.ID)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, MessageBackpackUserItems(resUserItems, 0))
 		msg.ReplyMarkup = helpers.BackpackInlineKeyboard(resUserItems, 0)
 	case "🧥🎒":
 		user := repository.GetOrCreateUser(update)
-		userItems := repository.GetUserItems(user.ID, "pick", "axe", "light")
+		userItems := repository.GetInventoryItems(user.ID)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, MessageGoodsUserItems(user, userItems, 0))
 		msg.ReplyMarkup = helpers.GoodsInlineKeyboard(user, userItems, 0)
 	case "\U0001F7E6": // Вода
@@ -281,8 +281,8 @@ func MessageGoodsUserItems(user repository.User, userItems []repository.UserItem
 		default:
 			firstCell += "▫️"
 		}
-		userItemMsg += firstCell + "   " + repository.ToString(*item.Count) + " " + item.Item.View +
-			"     " + res + " " + item.Item.Name + "    " + "\n"
+		userItemMsg += firstCell + "   " + item.Item.View + " " + repository.ToString(*item.Count) +
+			"шт.     " + res + " " + item.Item.Name + "    " + "\n"
 
 	}
 
@@ -293,7 +293,7 @@ func BackPackMoving(charData []string, update tgbotapi.Update) tgbotapi.MessageC
 	i := repository.ToInt(charData[1])
 
 	user := repository.GetUser(repository.User{TgId: uint(update.CallbackQuery.From.ID)})
-	userItems := repository.GetUserItems(user.ID, "food")
+	userItems := repository.GetBackpackItems(user.ID)
 
 	switch i {
 	case len(userItems):
@@ -310,7 +310,7 @@ func GoodsMoving(charData []string, update tgbotapi.Update) tgbotapi.MessageConf
 	i := repository.ToInt(charData[1])
 
 	user := repository.GetUser(repository.User{TgId: uint(update.CallbackQuery.From.ID)})
-	userItems := repository.GetUserItems(user.ID, "pick", "axe", "light")
+	userItems := repository.GetInventoryItems(user.ID)
 
 	switch i {
 	case len(userItems):

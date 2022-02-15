@@ -6,19 +6,22 @@ import (
 )
 
 type Item struct {
-	ID            uint    `gorm:"primaryKey"`
-	Name          string  `gorm:"embedded"`
-	View          string  `gorm:"embedded"`
-	Type          string  `gorm:"embedded"`
-	CanTake       bool    `gorm:"embedded"`
-	CanTakeWith   *Item   `gorm:"foreignKey:CanTakeWithId"`
-	CanTakeWithId *int    `gorm:"embedded"`
-	Healing       *int    `gorm:"embedded"`
-	Damage        *int    `gorm:"embedded"`
-	Satiety       *int    `gorm:"embedded"`
-	Cost          *int    `gorm:"embedded"`
-	DressType     *string `gorm:"embedded"`
-	Description   *string `gorm:"embedded"`
+	ID              uint    `gorm:"primaryKey"`
+	Name            string  `gorm:"embedded"`
+	View            string  `gorm:"embedded"`
+	Type            string  `gorm:"embedded"`
+	CanTake         bool    `gorm:"embedded"`
+	CanTakeWith     *Item   `gorm:"foreignKey:CanTakeWithId"`
+	CanTakeWithId   *int    `gorm:"embedded"`
+	Healing         *int    `gorm:"embedded"`
+	Damage          *int    `gorm:"embedded"`
+	Satiety         *int    `gorm:"embedded"`
+	Cost            *int    `gorm:"embedded"`
+	DressType       *string `gorm:"embedded"`
+	Description     *string `gorm:"embedded"`
+	IsBackpack      bool    `gorm:"embedded"`
+	IsInventory     bool    `gorm:"embedded"`
+	MaxCountUserHas *int    `gorm:"embedded"`
 }
 
 func UserGetItem(update tgbotapi.Update, LocationStruct Location, char []string) string {
@@ -27,19 +30,15 @@ func UserGetItem(update tgbotapi.Update, LocationStruct Location, char []string)
 
 	err = config.Db.
 		Preload("Item").
-		First(&resultCell, &Cellule{Map: LocationStruct.Map, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY}).
+		First(&resultCell, &Cellule{MapsId: *LocationStruct.MapsId, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY}).
 		Error
 	if err != nil {
 		panic(err)
 	}
-	if resultCell.ItemID != nil {
-		switch resultCell.Item.Type {
-		case "food", "pick", "axe", "light":
-			res := UserGetItemUpdateModels(update, resultCell)
-			if res != "Ok" {
-				return res
-			}
-			// case (Сундучок например):
+	if resultCell.ItemID != nil && (resultCell.Item.IsBackpack == true || resultCell.Item.IsInventory == true) {
+		res := UserGetItemUpdateModels(update, resultCell)
+		if res != "Ok" {
+			return res
 		}
 	} else {
 		return "0"
@@ -69,11 +68,8 @@ func UserGetItemUpdateModels(update tgbotapi.Update, resultCell Cellule) string 
 }
 
 func canUserTakeItem(item UserItem) bool {
-	if (item.Item.Type == "pick" || item.Item.Type == "axe" || item.Item.Type == "light") && *item.Count < 1 {
-		return true
-	} else if item.Item.Type == "food" {
+	if item.Item.MaxCountUserHas == nil || *item.Count < *item.Item.MaxCountUserHas {
 		return true
 	}
-	// case (Сундучок например):
 	return false
 }

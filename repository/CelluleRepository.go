@@ -6,8 +6,9 @@ import (
 )
 
 type Cellule struct {
-	ID         uint    `gorm:"primaryKey"`
-	Map        string  `gorm:"embedded"`
+	ID         uint `gorm:"primaryKey"`
+	MapsId     int  `gorm:"embedded"`
+	Maps       Map
 	AxisX      int     `gorm:"embedded"`
 	AxisY      int     `gorm:"embedded"`
 	View       string  `gorm:"embedded"`

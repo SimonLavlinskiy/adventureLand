@@ -43,7 +43,7 @@ func GetOrCreateUserItem(update tgbotapi.Update, item Item) UserItem {
 	return result
 }
 
-func GetUserItems(userId uint, itemTypes ...string) []UserItem {
+func GetUserItems(userId uint) []UserItem {
 	var result []UserItem
 
 	err := config.Db.
@@ -57,17 +57,35 @@ func GetUserItems(userId uint, itemTypes ...string) []UserItem {
 		panic(err)
 	}
 
-	var resultItemType []UserItem
+	return result
+}
 
-	for _, userItem := range result {
-		for _, itemType := range itemTypes {
-			if userItem.Item.Type == itemType {
-				resultItemType = append(resultItemType, userItem)
-			}
+func GetBackpackItems(userId uint) []UserItem {
+	userItems := GetUserItems(userId)
+
+	var backpackUserItem []UserItem
+
+	for _, userItem := range userItems {
+		if userItem.Item.IsBackpack == true {
+			backpackUserItem = append(backpackUserItem, userItem)
 		}
 	}
 
-	return resultItemType
+	return backpackUserItem
+}
+
+func GetInventoryItems(userId uint) []UserItem {
+	userItems := GetUserItems(userId)
+
+	var inventoryUserItem []UserItem
+
+	for _, userItem := range userItems {
+		if userItem.Item.IsInventory == true {
+			inventoryUserItem = append(inventoryUserItem, userItem)
+		}
+	}
+
+	return inventoryUserItem
 }
 
 func UpdateUserItem(user User, userItem UserItem) {
@@ -128,13 +146,13 @@ func EatItem(update tgbotapi.Update, user User, userItem UserItem) string {
 func GetFullDescriptionOfUserItem(userItem UserItem) string {
 	userItem, _ = GetUserItem(userItem)
 	var fullDescriptionUserItem string
-	if userItem.Item.Type != "food" {
-		fullDescriptionUserItem = userItem.Item.View + " *" + userItem.Item.Name + "* - " + ToString(*userItem.Count) + "шт.\n" +
-			"*Сила*: " + ToString(*userItem.Item.Damage) + "💥\n"
-	} else {
-		fullDescriptionUserItem = userItem.Item.View + " *" + userItem.Item.Name + "* - " + ToString(*userItem.Count) + "шт.\n" +
-			"*Здоровье*: " + ToString(*userItem.Item.Healing) + "♥️️\n" +
-			"*Сытость*: " + ToString(*userItem.Item.Satiety) + "\U0001F9C3 \n"
+	if userItem.Item.IsInventory == true {
+		fullDescriptionUserItem = userItem.Item.View + " *" + userItem.Item.Name + "* - " + ToString(*userItem.Count) + " шт.\n" +
+			"*Сила*: +" + ToString(*userItem.Item.Damage) + "💥\n"
+	} else if userItem.Item.IsBackpack == true {
+		fullDescriptionUserItem = userItem.Item.View + " *" + userItem.Item.Name + "* - " + ToString(*userItem.Count) + " шт.\n" +
+			"*Здоровье*: +" + ToString(*userItem.Item.Healing) + " ♥️️\n" +
+			"*Сытость*: +" + ToString(*userItem.Item.Satiety) + " \U0001F9C3 \n"
 	}
 	itemDescription := "Описания нет("
 
