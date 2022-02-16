@@ -32,11 +32,13 @@ type User struct {
 	MenuLocation string    `gorm:"embedded"`
 	CreatedAt    time.Time `gorm:"autoCreateTime"`
 	Deleted      bool      `gorm:"embedded"`
+	OnlineMap    *bool     `gorm:"embedded"`
 }
 
 func GetOrCreateUser(update tgbotapi.Update) User {
 	userId := uint(update.Message.From.ID)
 	MoneyUserStart := 10
+	UserOnline := false
 
 	replacer := strings.NewReplacer("_", " ", "*", " ")
 	outUsername := replacer.Replace(update.Message.From.UserName)
@@ -50,6 +52,7 @@ func GetOrCreateUser(update tgbotapi.Update) User {
 		Satiety:   100,
 		Health:    100,
 		Money:     &MoneyUserStart,
+		OnlineMap: &UserOnline,
 	}
 	err := config.Db.
 		Preload("LeftHand").
@@ -124,13 +127,19 @@ func GetUserInfo(update tgbotapi.Update) string {
 	}
 
 	resUser := GetUser(User{TgId: tgId})
+	userIsOnline := "📳 Вкл"
+
+	if !*resUser.OnlineMap {
+		userIsOnline = "📴 Откл"
+	}
 
 	messageMap := "🔅 🔆 *Профиль* 🔆 🔅\n" +
 		"\n*Твое имя*: " + resUser.Username +
-		"\n*Золото*: " + ToString(*resUser.Money) + "💰" +
 		"\n*Аватар*: " + resUser.Avatar +
+		"\n*Золото*: " + ToString(*resUser.Money) + "💰" +
 		"\n*Здоровье*: _" + ToString(int(resUser.Health)) + "_ ❤️" +
-		"\n*Сытость*: _" + ToString(int(resUser.Satiety)) + "_ 😋️"
+		"\n*Сытость*: _" + ToString(int(resUser.Satiety)) + "_ 😋️" +
+		"\n*Онлайн*: _" + userIsOnline + "_"
 
 	return messageMap
 }

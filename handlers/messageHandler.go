@@ -145,6 +145,16 @@ func userProfileLocation(update tgbotapi.Update, user repository.User) tgbotapi.
 		case user.Avatar + " Изменить аватар? " + user.Avatar:
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "‼️ *ВНИМАНИЕ*: ‼️‼\nВыбери себе аватар...")
 			msg.ReplyMarkup = helpers.EmodjiInlineKeyboard()
+		case "Офлайн (📴♻️📳)":
+			userOnline := true
+			user = repository.UpdateUser(update, repository.User{OnlineMap: &userOnline})
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.GetUserInfo(update))
+			msg.ReplyMarkup = helpers.ProfileKeyboard(user)
+		case "Онлайн (📳♻️📴)":
+			userOnline := false
+			user = repository.UpdateUser(update, repository.User{OnlineMap: &userOnline})
+			msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.GetUserInfo(update))
+			msg.ReplyMarkup = helpers.ProfileKeyboard(user)
 		case "/menu", "Меню":
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Меню")
 			msg.ReplyMarkup = helpers.MainKeyboard(user)

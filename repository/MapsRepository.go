@@ -73,10 +73,17 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.Repl
 	mapSize := CalculateUserMapBorder(resLocation, resMap)
 	messageMap := "*Карта*: _" + resLocation.Maps.Name + "_ *X*: _" + ToString(*resLocation.AxisX) + "_  *Y*: _" + ToString(*resLocation.AxisY) + "_"
 
+	var onlineStatus string
+	if *resUser.OnlineMap {
+		onlineStatus = "📳 Онлайн 📳\n\n"
+	} else {
+		onlineStatus = "📴 Офлайн 📴\n\n"
+	}
+
 	type Point = [2]int
 	m := map[Point]Cellule{}
 
-	var result []Cellule
+	var resultCell []Cellule
 
 	err := config.Db.
 		Preload("Item").
@@ -89,14 +96,22 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.Repl
 		Where("axis_y <= " + ToString(mapSize.upperIndent)).
 		Order("axis_x ASC").
 		Order("axis_y ASC").
-		Find(&result).Error
-
+		Find(&resultCell).Error
 	if err != nil {
 		panic(err)
 	}
 
-	for _, cell := range result {
+	for _, cell := range resultCell {
 		m[Point{cell.AxisX, cell.AxisY}] = cell
+	}
+
+	if *resUser.OnlineMap {
+		resultLocationsOnlineUser := GetLocationOnlineUser(resLocation, mapSize)
+		for _, user := range resultLocationsOnlineUser {
+			if user.User.ID != 0 && *user.User.OnlineMap {
+				m[Point{*user.AxisX, *user.AxisY}] = Cellule{View: user.User.Avatar, ID: m[Point{*user.AxisX, *user.AxisY}].ID}
+			}
+		}
 	}
 
 	buttons = CalculateButtonMap(resLocation, resUser, m)
@@ -111,7 +126,7 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.Repl
 		}
 	}
 
-	return messageMap, buttons
+	return onlineStatus + messageMap, buttons
 }
 
 func CalculateUserMapBorder(resLocation Location, resMap Map) UserMap {

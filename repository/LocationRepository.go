@@ -83,3 +83,24 @@ func UpdateLocation(update tgbotapi.Update, LocationStruct Location) Location {
 	myLocation = GetOrCreateMyLocation(update)
 	return myLocation
 }
+
+func GetLocationOnlineUser(userlocation Location, mapSize UserMap) []Location {
+	var resultLocationsOnlineUser []Location
+
+	err := config.Db.
+		Preload("User", "online_map", true).
+		Where(Cellule{MapsId: *userlocation.MapsId}).
+		Where("axis_x >= " + ToString(mapSize.leftIndent)).
+		Where("axis_x <= " + ToString(mapSize.rightIndent)).
+		Where("axis_y >= " + ToString(mapSize.downIndent)).
+		Where("axis_y <= " + ToString(mapSize.upperIndent)).
+		Order("axis_x ASC").
+		Order("axis_y ASC").
+		Find(&resultLocationsOnlineUser).Error
+
+	if err != nil {
+		panic(err)
+	}
+
+	return resultLocationsOnlineUser
+}
