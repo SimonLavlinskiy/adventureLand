@@ -15,11 +15,14 @@ func Migrate() bool {
 		repository.Cellule{},
 		repository.Map{},
 		repository.UserItem{},
+		repository.Instrument{},
 	)
 	if err != nil {
 		fmt.Println("Migration failed")
 		panic(err)
 		return false
 	}
+	//err = config.Db.SetupJoinTable(&repository.Item{}, "Instruments", &repository.InstrumentItem{})
+
 	return true
 }

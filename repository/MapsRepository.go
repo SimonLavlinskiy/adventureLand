@@ -67,7 +67,8 @@ func GetUserMap(update tgbotapi.Update) Map {
 }
 
 func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.ReplyKeyboardMarkup) {
-	resUser := GetUser(User{TgId: uint(update.Message.From.ID)})
+	userTgId := GetUserTgId(update)
+	resUser := GetUser(User{TgId: userTgId})
 	resLocation := GetOrCreateMyLocation(update)
 	resMap := GetUserMap(update)
 	mapSize := CalculateUserMapBorder(resLocation, resMap)
@@ -88,7 +89,10 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.Repl
 	err := config.Db.
 		Preload("Item").
 		Preload("Teleport").
-		Preload("Item.CanTakeWith").
+		Preload("Item.Instruments").
+		Preload("Item.Instruments.Good").
+		Preload("Item.Instruments.ItemsResult").
+		Preload("Item.Instruments.NextStageItem").
 		Where(Cellule{MapsId: *resLocation.MapsId}).
 		Where("axis_x >= " + ToString(mapSize.leftIndent)).
 		Where("axis_x <= " + ToString(mapSize.rightIndent)).
@@ -355,29 +359,45 @@ func IsItem(cell Cellule) bool {
 }
 
 func IsSpecialItem(cell Cellule, user User) string {
-	if user.LeftHand != nil && user.LeftHand.Type == cell.Item.CanTakeWith.Type {
-		return user.LeftHand.View
-	} else if user.RightHand != nil && user.RightHand.Type == cell.Item.CanTakeWith.Type {
-		return user.RightHand.View
+	leftHand := user.LeftHand
+	rightHand := user.RightHand
+
+	var instrumentsUserCanUse []string
+
+	instruments := cell.Item.Instruments
+
+	for _, instrument := range instruments {
+		if user.LeftHandId != nil && leftHand.Type == instrument.Good.Type {
+			instrumentsUserCanUse = append(instrumentsUserCanUse, user.LeftHand.View)
+		}
+		if user.RightHandId != nil && rightHand.Type == instrument.Good.Type {
+			instrumentsUserCanUse = append(instrumentsUserCanUse, user.RightHand.View)
+		}
 	}
+	if len(instrumentsUserCanUse) == 2 && instrumentsUserCanUse[0] != instrumentsUserCanUse[1] {
+		return "❗ " + instrumentsUserCanUse[0] + " 🔛 " + instrumentsUserCanUse[1] + " ❓"
+	} else if len(instrumentsUserCanUse) == 1 || len(instrumentsUserCanUse) == 2 && instrumentsUserCanUse[0] == instrumentsUserCanUse[1] {
+		return instrumentsUserCanUse[0]
+	}
+
 	return "🚷"
 }
 
 func isItemCost(cell Cellule, button string, resUser User) string {
-	if cell.Item.Cost != nil && *cell.Item.Cost > 0 {
-		if cell.Item.CanTakeWith != nil {
-			res := IsSpecialItem(cell, resUser)
-			button = res + " " + button + " " + cell.Item.View + " (" + ToString(*cell.Item.Cost) + "💰)"
-		} else {
-			button = "👋 " + button + " " + cell.Item.View + " ( " + ToString(*cell.Item.Cost) + "💰 )"
-		}
+	var firstElem string
+
+	if len(cell.Item.Instruments) >= 1 {
+		res := IsSpecialItem(cell, resUser)
+		firstElem = res
 	} else {
-		if cell.Item.CanTakeWith != nil {
-			res := IsSpecialItem(cell, resUser)
-			button = res + " " + button + " " + cell.Item.View
-		} else {
-			button = "👋 " + button + " " + cell.Item.View
-		}
+		firstElem = "👋"
 	}
+
+	button = firstElem + " " + button + " " + cell.Item.View
+
+	if cell.Item.Cost != nil && *cell.Item.Cost > 0 {
+		button = button + " ( " + ToString(*cell.Item.Cost) + "💰 )"
+	}
+
 	return button
 }

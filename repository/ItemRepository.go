@@ -6,22 +6,26 @@ import (
 )
 
 type Item struct {
-	ID              uint    `gorm:"primaryKey"`
-	Name            string  `gorm:"embedded"`
-	View            string  `gorm:"embedded"`
-	Type            string  `gorm:"embedded"`
-	CanTake         bool    `gorm:"embedded"`
-	CanTakeWith     *Item   `gorm:"foreignKey:CanTakeWithId"`
-	CanTakeWithId   *int    `gorm:"embedded"`
-	Healing         *int    `gorm:"embedded"`
-	Damage          *int    `gorm:"embedded"`
-	Satiety         *int    `gorm:"embedded"`
-	Cost            *int    `gorm:"embedded"`
-	DressType       *string `gorm:"embedded"`
-	Description     *string `gorm:"embedded"`
-	IsBackpack      bool    `gorm:"embedded"`
-	IsInventory     bool    `gorm:"embedded"`
-	MaxCountUserHas *int    `gorm:"embedded"`
+	ID              uint         `gorm:"primaryKey"`
+	Name            string       `gorm:"embedded"`
+	View            string       `gorm:"embedded"`
+	Type            string       `gorm:"embedded"`
+	CanTake         bool         `gorm:"embedded"`
+	Instruments     []Instrument `gorm:"many2many:instrument_item;"`
+	Healing         *int         `gorm:"embedded"`
+	Damage          *int         `gorm:"embedded"`
+	Satiety         *int         `gorm:"embedded"`
+	Cost            *int         `gorm:"embedded"`
+	DressType       *string      `gorm:"embedded"`
+	Description     *string      `gorm:"embedded"`
+	IsBackpack      bool         `gorm:"embedded"`
+	IsInventory     bool         `gorm:"embedded"`
+	MaxCountUserHas *int         `gorm:"embedded"`
+}
+
+type InstrumentItem struct {
+	ItemID       int `gorm:"primaryKey"`
+	InstrumentID int `gorm:"primaryKey"`
 }
 
 func UserGetItem(update tgbotapi.Update, LocationStruct Location, char []string) string {
@@ -29,26 +33,32 @@ func UserGetItem(update tgbotapi.Update, LocationStruct Location, char []string)
 	var err error
 
 	err = config.Db.
-		Preload("Item").
+		Preload("Item.Instruments").
+		Preload("Item.Instruments.Good").
+		Preload("Item.Instruments.ItemsResult").
+		Preload("Item.Instruments.NextStageItem").
 		First(&resultCell, &Cellule{MapsId: *LocationStruct.MapsId, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY}).
 		Error
 	if err != nil {
 		panic(err)
 	}
-	if resultCell.ItemID != nil && (resultCell.Item.IsBackpack == true || resultCell.Item.IsInventory == true) {
-		res := UserGetItemUpdateModels(update, resultCell)
-		if res != "Ok" {
-			return res
-		}
-	} else {
-		return "0"
+
+	if len(resultCell.Item.Instruments) != 0 && char[0] == "👋" {
+		return "Не не, меня не наебешь!"
 	}
-	return "Ты взял " + char[2] + " 1шт.\nВ ячейке: " + ToString(*resultCell.CountItem-1) + " шт."
+
+	if resultCell.ItemID != nil && (resultCell.Item.IsBackpack == true || resultCell.Item.IsInventory == true) {
+		res := UserGetItemUpdateModels(update, resultCell, char[0])
+
+		return "Ты получил " + char[2] + " " + res + "шт." //\nВ ячейке: " + ToString(*resultCell.CountItem-1) + " шт."
+	}
+
+	return "0"
 }
 
-func UserGetItemUpdateModels(update tgbotapi.Update, resultCell Cellule) string {
-	countAfterUserGetItem := *resultCell.CountItem - 1
-	user := GetUser(User{TgId: uint(update.Message.From.ID)})
+func UserGetItemUpdateModels(update tgbotapi.Update, resultCell Cellule, instrumentView string) string {
+	userTgId := GetUserTgId(update)
+	user := GetUser(User{TgId: userTgId})
 	itemCost := 0
 
 	resUserItem := GetOrCreateUserItem(update, *resultCell.Item)
@@ -58,9 +68,13 @@ func UserGetItemUpdateModels(update tgbotapi.Update, resultCell Cellule) string 
 				itemCost = *resultCell.Item.Cost
 			}
 			updateUserMoney := *user.Money - itemCost
-			AddUserItemCount(update, resUserItem, resultCell, updateUserMoney)
-			UpdateCellule(resultCell.ID, Cellule{CountItem: &countAfterUserGetItem})
-			return "Ok"
+			err, countUserGetItem := AddUserItemCount(update, resUserItem, resultCell, updateUserMoney, instrumentView)
+
+			if err != "Ok" {
+				panic(err)
+			}
+
+			return ToString(countUserGetItem)
 		}
 		return "Не хватает деняк!"
 	}

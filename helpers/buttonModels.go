@@ -109,3 +109,23 @@ func MainKeyboard(user repository.User) tgbotapi.ReplyKeyboardMarkup {
 		),
 	)
 }
+
+func ChooseInstrument(char []string, leftHand string, rightHand string) tgbotapi.InlineKeyboardMarkup {
+	if char[1] == leftHand && char[3] == rightHand || char[1] == rightHand && char[3] == leftHand {
+		return tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData(char[1], char[1]+" "+char[5]+" "+char[6]),
+				tgbotapi.NewInlineKeyboardButtonData(char[3], char[3]+" "+char[5]+" "+char[6]),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("Отмена", "cancel"),
+			),
+		)
+	}
+
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Упс. А ничего нету тут! На карту?", "cancel"),
+		),
+	)
+}

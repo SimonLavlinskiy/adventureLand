@@ -27,7 +27,8 @@ func GetUserItem(userItem UserItem) (UserItem, error) {
 }
 
 func GetOrCreateUserItem(update tgbotapi.Update, item Item) UserItem {
-	resUser := GetOrCreateUser(update)
+	userTgId := GetUserTgId(update)
+	resUser := GetUser(User{TgId: userTgId})
 	userId := int(resUser.ID)
 	countItem := 0
 	result := UserItem{
@@ -95,23 +96,35 @@ func UpdateUserItem(user User, userItem UserItem) {
 	}
 }
 
-func AddUserItemCount(update tgbotapi.Update, userItem UserItem, cellule Cellule, updateUserMoney int) {
-	resUser := GetOrCreateUser(update)
+func AddUserItemCount(update tgbotapi.Update, userItem UserItem, cellule Cellule, updateUserMoney int, instrumentView string) (string, int) {
+	userTgId := GetUserTgId(update)
+	resUser := GetUser(User{TgId: userTgId})
 	userId := int(resUser.ID)
+	countAfterUserGetItem := *cellule.CountItem - 1
+	var sumCountItemResult int
 
-	sumCount := *userItem.Count + 1
+	if instrumentView == "👋" {
+		sumCountItemResult = *userItem.Count + 1
 
-	err := config.Db.
-		//Preload("Item").
-		Where(UserItem{UserId: userId, ItemId: *cellule.ItemID}).
-		Updates(UserItem{Count: &sumCount}).
-		Error
-	if err != nil {
-		panic(err)
+		UpdateUserItem(User{ID: uint(userId)}, UserItem{ID: userItem.ID, Count: &sumCountItemResult})
+		UpdateUser(update, User{Money: &updateUserMoney})
+		UpdateCellule(cellule.ID, Cellule{CountItem: &countAfterUserGetItem})
+
+		return "Ok", 1
+	} else {
+		for _, instrument := range cellule.Item.Instruments {
+			if instrumentView == instrument.Good.View {
+				sumCountItemResult = *userItem.Count + *instrument.CountResultItem
+
+				UpdateUserItem(User{ID: uint(userId)}, UserItem{ID: userItem.ID, Count: &sumCountItemResult})
+				UpdateUser(update, User{Money: &updateUserMoney})
+				UpdateCellule(cellule.ID, Cellule{CountItem: &countAfterUserGetItem})
+
+				return "Ok", *instrument.CountResultItem
+			}
+		}
 	}
-
-	UpdateUser(update, User{Money: &updateUserMoney})
-
+	return "err", 0
 }
 
 func EatItem(update tgbotapi.Update, user User, userItem UserItem) string {

@@ -36,15 +36,16 @@ type User struct {
 }
 
 func GetOrCreateUser(update tgbotapi.Update) User {
-	userId := uint(update.Message.From.ID)
+	userTgId := GetUserTgId(update)
 	MoneyUserStart := 10
 	UserOnline := false
 
 	replacer := strings.NewReplacer("_", " ", "*", " ")
-	outUsername := replacer.Replace(update.Message.From.UserName)
+	var outUsername string
+	outUsername = replacer.Replace(update.Message.From.UserName)
 
 	result := User{
-		TgId:      uint(update.Message.From.ID),
+		TgId:      userTgId,
 		Username:  outUsername,
 		FirstName: update.Message.From.FirstName,
 		LastName:  update.Message.From.LastName,
@@ -57,7 +58,7 @@ func GetOrCreateUser(update tgbotapi.Update) User {
 	err := config.Db.
 		Preload("LeftHand").
 		Preload("RightHand").
-		Where(&User{TgId: userId}).FirstOrCreate(&result).Error
+		Where(&User{TgId: userTgId}).FirstOrCreate(&result).Error
 
 	if err != nil {
 		panic(err)
@@ -85,13 +86,7 @@ func GetUser(user User) User {
 
 func UpdateUser(update tgbotapi.Update, UserStruct User) User {
 	var err error
-	var userTgId uint
-	if update.CallbackQuery != nil {
-		userTgId = uint(update.CallbackQuery.From.ID)
-	} else {
-		userTgId = uint(update.Message.From.ID)
-	}
-
+	userTgId := GetUserTgId(update)
 	err = config.Db.Where(&User{TgId: userTgId}).Updates(UserStruct).Error
 	if err != nil {
 		panic(err)
@@ -103,14 +98,7 @@ func UpdateUser(update tgbotapi.Update, UserStruct User) User {
 
 func SetNullUserField(update tgbotapi.Update, queryFeild string) {
 	var err error
-	var userTgId uint
-
-	if update.CallbackQuery != nil {
-		userTgId = uint(update.CallbackQuery.From.ID)
-	} else {
-		userTgId = uint(update.Message.From.ID)
-	}
-
+	userTgId := GetUserTgId(update)
 	err = config.Db.Model(&User{}).Where(&User{TgId: userTgId}).Update(queryFeild, nil).Error
 
 	if err != nil {

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/helpers"
 	"project0/repository"
@@ -31,8 +30,12 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 }
 
 func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
+	buttons := tgbotapi.ReplyKeyboardMarkup{}
 	charData := strings.Fields(update.CallbackQuery.Data)
 	deletePrevMessage := true
+
+	user := repository.GetUser(repository.User{TgId: uint(update.CallbackQuery.From.ID)})
+	viewItemLeftHand, viewItemRightHand := usersHandItemsView(user)
 
 	if len(charData) != 1 {
 		switch charData[0] {
@@ -55,9 +58,20 @@ func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 		case "description":
 			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, repository.GetFullDescriptionOfUserItem(repository.UserItem{ID: repository.ToInt(charData[1])}))
 			deletePrevMessage = false
+		case viewItemLeftHand, viewItemRightHand:
+			res := directionMovement(update, charData[1])
+			resultOfGetItem := repository.UserGetItem(update, res, charData)
+			msg.Text, buttons = repository.GetMyMap(update)
+			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, msg.Text+"\n\n"+resultOfGetItem)
+			msg.ReplyMarkup = buttons
 		}
 	} else {
-		fmt.Println("callbackQuery содержит 1 элемент")
+		switch charData[0] {
+		case "cancel":
+			msg.Text, buttons = repository.GetMyMap(update)
+			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, msg.Text)
+			msg.ReplyMarkup = buttons
+		}
 	}
 
 	msg.ParseMode = "markdown"
@@ -82,11 +96,14 @@ func useSpecialCell(update tgbotapi.Update, char []string, user repository.User)
 		msg.Text, buttons = repository.GetMyMap(update)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\n"+resultOfGetItem)
 		msg.ReplyMarkup = buttons
+	case "❗":
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "В зависимости от предмета в твоих руках ты можешь получить разный результат. Выбирай...")
+		msg.ReplyMarkup = helpers.ChooseInstrument(char, viewItemRightHand, viewItemLeftHand)
 	case "🚷":
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Нельзя взять без инструмента в руке")
 	default:
 		msg.Text, buttons = repository.GetMyMap(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\nКажется, не тот инструмент ты используешь!")
 		msg.ReplyMarkup = buttons
 	}
 
@@ -192,6 +209,7 @@ func useDefaultCell(update tgbotapi.Update, user repository.User) tgbotapi.Messa
 	newMessage := update.Message.Text
 	buttons := tgbotapi.ReplyKeyboardMarkup{}
 	currentTime := time.Now()
+	//userTgId := repository.GetUserTgId(update)
 
 	switch newMessage {
 	case "🔼", "🔽", "◀️️", "▶️":
@@ -201,12 +219,10 @@ func useDefaultCell(update tgbotapi.Update, user repository.User) tgbotapi.Messa
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
 		msg.ReplyMarkup = buttons
 	case "🎒":
-		resUser := repository.GetOrCreateUser(update)
-		resUserItems := repository.GetBackpackItems(resUser.ID)
+		resUserItems := repository.GetBackpackItems(user.ID)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, MessageBackpackUserItems(resUserItems, 0))
 		msg.ReplyMarkup = helpers.BackpackInlineKeyboard(resUserItems, 0)
 	case "🧥🎒":
-		user := repository.GetOrCreateUser(update)
 		userItems := repository.GetInventoryItems(user.ID)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, MessageGoodsUserItems(user, userItems, 0))
 		msg.ReplyMarkup = helpers.GoodsInlineKeyboard(user, userItems, 0)
@@ -335,8 +351,7 @@ func GoodsMoving(charData []string, update tgbotapi.Update) tgbotapi.MessageConf
 
 func UserEatItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConfig {
 	userItemId := repository.ToInt(charData[1])
-	userTgId := uint(update.CallbackQuery.From.ID)
-
+	userTgId := repository.GetUserTgId(update)
 	user := repository.GetUser(repository.User{TgId: userTgId})
 	userItem, err := repository.GetUserItem(repository.UserItem{ID: userItemId})
 	if err != nil {
@@ -353,8 +368,7 @@ func UserEatItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConf
 
 func UserThrowOutItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConfig {
 	userItemId := repository.ToInt(charData[1])
-	userTgId := uint(update.CallbackQuery.From.ID)
-
+	userTgId := repository.GetUserTgId(update)
 	user := repository.GetUser(repository.User{TgId: userTgId})
 	userItem, err := repository.GetUserItem(repository.UserItem{ID: userItemId})
 
@@ -450,8 +464,7 @@ func messageUserDressedGoods(user repository.User) string {
 
 func userTakeOffGood(update tgbotapi.Update, charData []string) {
 	userItemId := repository.ToInt(charData[1])
-	userTgId := uint(update.CallbackQuery.From.ID)
-
+	userTgId := repository.GetUserTgId(update)
 	user := repository.GetUser(repository.User{TgId: userTgId})
 	userItem, _ := repository.GetUserItem(repository.UserItem{ID: userItemId})
 
@@ -476,8 +489,7 @@ func userTakeOffGood(update tgbotapi.Update, charData []string) {
 
 func dressUserItem(update tgbotapi.Update, charData []string) {
 	userItemId := repository.ToInt(charData[1])
-	userTgId := uint(update.CallbackQuery.From.ID)
-
+	userTgId := repository.GetUserTgId(update)
 	user := repository.GetUser(repository.User{TgId: userTgId})
 	userItem, _ := repository.GetUserItem(repository.UserItem{ID: userItemId})
 

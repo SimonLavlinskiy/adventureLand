@@ -18,14 +18,16 @@ type Location struct {
 }
 
 func GetOrCreateMyLocation(update tgbotapi.Update) Location {
-	resUser := GetOrCreateUser(update)
+
+	userTgId := GetUserTgId(update)
+	user := GetUser(User{TgId: userTgId})
 
 	AsX := 7
 	AsY := 2
 	startMap := 1
 
 	result := Location{
-		UserTgId: uint(update.Message.From.ID),
+		UserTgId: userTgId,
 		AxisX:    &AsX,
 		AxisY:    &AsY,
 		MapsId:   &startMap,
@@ -33,7 +35,7 @@ func GetOrCreateMyLocation(update tgbotapi.Update) Location {
 
 	err := config.Db.
 		Preload("Maps").
-		Where(&Location{UserID: resUser.ID}).
+		Where(&Location{UserID: user.ID}).
 		FirstOrCreate(&result).Error
 	if err != nil {
 		panic(err)
@@ -44,6 +46,7 @@ func GetOrCreateMyLocation(update tgbotapi.Update) Location {
 
 func UpdateLocation(update tgbotapi.Update, LocationStruct Location) Location {
 	char := strings.Fields(update.Message.Text)
+	userTgId := GetUserTgId(update)
 	myLocation := GetOrCreateMyLocation(update)
 	resCellule := GetCellule(Cellule{MapsId: *LocationStruct.MapsId, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY})
 
@@ -67,14 +70,14 @@ func UpdateLocation(update tgbotapi.Update, LocationStruct Location) Location {
 	}
 
 	if !result.CanStep && result.Type != nil && len(char) != 1 {
-		err = config.Db.Where(&Location{UserTgId: uint(update.Message.From.ID)}).Updates(LocationStruct).Error
+		err = config.Db.Where(&Location{UserTgId: userTgId}).Updates(LocationStruct).Error
 		if err != nil {
 			panic(err)
 		}
 	} else if !result.CanStep {
 		return myLocation
 	} else {
-		err = config.Db.Where(&Location{UserTgId: uint(update.Message.From.ID)}).Updates(LocationStruct).Error
+		err = config.Db.Where(&Location{UserTgId: userTgId}).Updates(LocationStruct).Error
 		if err != nil {
 			panic(err)
 		}
