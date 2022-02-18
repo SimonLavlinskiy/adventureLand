@@ -103,6 +103,14 @@ func useSpecialCell(update tgbotapi.Update, char []string, user repository.User)
 		msg.ReplyMarkup = helpers.ChooseInstrument(char, cell, user)
 	case "🚷":
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Нельзя взять без инструмента в руке")
+	case "Рюкзак":
+		resUserItems := repository.GetBackpackItems(user.ID)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, MessageBackpackUserItems(resUserItems, 0))
+		msg.ReplyMarkup = helpers.BackpackInlineKeyboard(resUserItems, 0)
+	case "Вещи":
+		userItems := repository.GetInventoryItems(user.ID)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, MessageGoodsUserItems(user, userItems, 0))
+		msg.ReplyMarkup = helpers.GoodsInlineKeyboard(user, userItems, 0)
 	default:
 		msg.Text, buttons = repository.GetMyMap(update)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\nНет инструмента в руке!")
@@ -211,7 +219,6 @@ func useDefaultCell(update tgbotapi.Update, user repository.User) tgbotapi.Messa
 	newMessage := update.Message.Text
 	buttons := tgbotapi.ReplyKeyboardMarkup{}
 	currentTime := time.Now()
-	//userTgId := repository.GetUserTgId(update)
 
 	switch newMessage {
 	case "🔼", "🔽", "◀️️", "▶️":
@@ -220,14 +227,6 @@ func useDefaultCell(update tgbotapi.Update, user repository.User) tgbotapi.Messa
 		msg.Text, buttons = repository.GetMyMap(update)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
 		msg.ReplyMarkup = buttons
-	case "🎒":
-		resUserItems := repository.GetBackpackItems(user.ID)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, MessageBackpackUserItems(resUserItems, 0))
-		msg.ReplyMarkup = helpers.BackpackInlineKeyboard(resUserItems, 0)
-	case "🧥🎒":
-		userItems := repository.GetInventoryItems(user.ID)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, MessageGoodsUserItems(user, userItems, 0))
-		msg.ReplyMarkup = helpers.GoodsInlineKeyboard(user, userItems, 0)
 	case "\U0001F7E6": // Вода
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Ты не похож на Jesus! 👮‍♂️")
 	case "🕦":
@@ -282,7 +281,7 @@ func MessageBackpackUserItems(userItems []repository.UserItem, rowUser int) stri
 }
 
 func MessageGoodsUserItems(user repository.User, userItems []repository.UserItem, rowUser int) string {
-	var userItemMsg = "🧥 *Вещички* 🎒  (✅ - Надето)\n\n"
+	var userItemMsg = "🧥 *Вещички* 🎒\n\n"
 	userItemMsg = messageUserDressedGoods(user) + userItemMsg
 
 	if len(userItems) == 0 {

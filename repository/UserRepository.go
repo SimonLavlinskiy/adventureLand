@@ -136,7 +136,7 @@ func GetUserInfo(update tgbotapi.Update) string {
 }
 
 func IsDressedItem(user User, userItem UserItem) (string, string) {
-	dressItem := "Надеть"
+	dressItem := "Надеть ✅"
 	dressItemData := "dressGood"
 
 	if user.HeadId != nil && userItem.ItemId == *user.HeadId ||
@@ -145,7 +145,7 @@ func IsDressedItem(user User, userItem UserItem) (string, string) {
 		user.BodyId != nil && userItem.ItemId == *user.BodyId ||
 		user.FootId != nil && userItem.ItemId == *user.FootId ||
 		user.ShoesId != nil && userItem.ItemId == *user.ShoesId {
-		dressItem = "Снять"
+		dressItem = "Снять ❎"
 		dressItemData = "takeOffGood"
 	}
 

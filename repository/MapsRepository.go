@@ -185,9 +185,9 @@ func CalculateButtonMap(resLocation Location, resUser User, m map[[2]int]Cellule
 func CreateMapKeyboard(buttons MapButtons) tgbotapi.ReplyKeyboardMarkup {
 	return tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("🧥🎒"),
+			tgbotapi.NewKeyboardButton("Вещи 🧥"),
 			tgbotapi.NewKeyboardButton(buttons.Up),
-			tgbotapi.NewKeyboardButton("🎒"),
+			tgbotapi.NewKeyboardButton("Рюкзак 🎒"),
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(buttons.Left),
