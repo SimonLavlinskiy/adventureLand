@@ -98,33 +98,35 @@ func UpdateUserItem(user User, userItem UserItem) {
 
 func AddUserItemCount(update tgbotapi.Update, userItem UserItem, cellule Cellule, updateUserMoney int, instrumentView string) (string, int) {
 	userTgId := GetUserTgId(update)
-	resUser := GetUser(User{TgId: userTgId})
-	userId := int(resUser.ID)
-	countAfterUserGetItem := *cellule.CountItem - 1
+	user := GetUser(User{TgId: userTgId})
 	var sumCountItemResult int
 
-	if instrumentView == "👋" {
+	if instrumentView == "👋" && len(cellule.Item.Instruments) == 0 {
 		sumCountItemResult = *userItem.Count + 1
-
-		UpdateUserItem(User{ID: uint(userId)}, UserItem{ID: userItem.ID, Count: &sumCountItemResult})
-		UpdateUser(update, User{Money: &updateUserMoney})
-		UpdateCellule(cellule.ID, Cellule{CountItem: &countAfterUserGetItem})
-
+		UpdateModelsWhenUserGetOrUseItem(update, user, userItem, cellule, 0, updateUserMoney, sumCountItemResult)
 		return "Ok", 1
 	} else {
-		for _, instrument := range cellule.Item.Instruments {
+		for i, instrument := range cellule.Item.Instruments {
 			if instrumentView == instrument.Good.View {
 				sumCountItemResult = *userItem.Count + *instrument.CountResultItem
-
-				UpdateUserItem(User{ID: uint(userId)}, UserItem{ID: userItem.ID, Count: &sumCountItemResult})
-				UpdateUser(update, User{Money: &updateUserMoney})
-				UpdateCellule(cellule.ID, Cellule{CountItem: &countAfterUserGetItem})
-
+				UpdateModelsWhenUserGetOrUseItem(update, user, userItem, cellule, i, updateUserMoney, sumCountItemResult)
 				return "Ok", *instrument.CountResultItem
 			}
 		}
+		return "Так не получится!", 0
 	}
-	return "err", 0
+}
+
+func UpdateModelsWhenUserGetOrUseItem(update tgbotapi.Update, user User, userItem UserItem, cellule Cellule, i int, updateUserMoney int, sumCountItemResult int) {
+	countAfterUserGetItem := *cellule.CountItem - 1
+
+	UpdateUserItem(User{ID: user.ID}, UserItem{ID: userItem.ID, Count: &sumCountItemResult})
+	UpdateUser(update, User{Money: &updateUserMoney})
+	if len(cellule.Item.Instruments) == 0 || cellule.Item.Instruments[i].NextStageItemId == nil {
+		UpdateCellule(cellule.ID, Cellule{CountItem: &countAfterUserGetItem})
+	} else {
+		UpdateCellule(cellule.ID, Cellule{ItemID: cellule.Item.Instruments[i].NextStageItemId, CountItem: cellule.Item.Instruments[i].CountNextStageItem})
+	}
 }
 
 func EatItem(update tgbotapi.Update, user User, userItem UserItem) string {

@@ -27,6 +27,10 @@ func GetCellule(cellule Cellule) Cellule {
 	err := config.Db.
 		Preload("Item").
 		Preload("Teleport").
+		Preload("Item.Instruments").
+		Preload("Item.Instruments.Good").
+		Preload("Item.Instruments.ItemsResult").
+		Preload("Item.Instruments.NextStageItem").
 		Where(cellule).
 		First(&result).
 		Error

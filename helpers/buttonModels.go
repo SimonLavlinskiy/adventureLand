@@ -110,13 +110,18 @@ func MainKeyboard(user repository.User) tgbotapi.ReplyKeyboardMarkup {
 	)
 }
 
-func ChooseInstrument(char []string, leftHand string, rightHand string) tgbotapi.InlineKeyboardMarkup {
-	if char[1] == leftHand && char[3] == rightHand || char[1] == rightHand && char[3] == leftHand {
+func ChooseInstrument(char []string, cell repository.Cellule, user repository.User) tgbotapi.InlineKeyboardMarkup {
+	instruments := repository.GetInstrumentsUserCanUse(user, cell)
+
+	if len(instruments) != 0 {
+		var row []tgbotapi.InlineKeyboardButton
+
+		for _, instrument := range instruments {
+			row = append(row, tgbotapi.NewInlineKeyboardButtonData(instrument, instrument+" "+char[3]+" "+char[4]))
+		}
+
 		return tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(char[1], char[1]+" "+char[5]+" "+char[6]),
-				tgbotapi.NewInlineKeyboardButtonData(char[3], char[3]+" "+char[5]+" "+char[6]),
-			),
+			row,
 			tgbotapi.NewInlineKeyboardRow(
 				tgbotapi.NewInlineKeyboardButtonData("Отмена", "cancel"),
 			),
@@ -125,7 +130,7 @@ func ChooseInstrument(char []string, leftHand string, rightHand string) tgbotapi
 
 	return tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Упс. А ничего нету тут! На карту?", "cancel"),
+			tgbotapi.NewInlineKeyboardButtonData("На карту?", "cancel"),
 		),
 	)
 }

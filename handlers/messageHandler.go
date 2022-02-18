@@ -58,7 +58,7 @@ func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 		case "description":
 			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, repository.GetFullDescriptionOfUserItem(repository.UserItem{ID: repository.ToInt(charData[1])}))
 			deletePrevMessage = false
-		case viewItemLeftHand, viewItemRightHand:
+		case "👋", viewItemLeftHand, viewItemRightHand:
 			res := directionMovement(update, charData[1])
 			resultOfGetItem := repository.UserGetItem(update, res, charData)
 			msg.Text, buttons = repository.GetMyMap(update)
@@ -97,13 +97,15 @@ func useSpecialCell(update tgbotapi.Update, char []string, user repository.User)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\n"+resultOfGetItem)
 		msg.ReplyMarkup = buttons
 	case "❗":
+		cellLocation := directionMovement(update, char[3])
+		cell := repository.GetCellule(repository.Cellule{MapsId: *cellLocation.MapsId, AxisX: *cellLocation.AxisX, AxisY: *cellLocation.AxisY})
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "В зависимости от предмета в твоих руках ты можешь получить разный результат. Выбирай...")
-		msg.ReplyMarkup = helpers.ChooseInstrument(char, viewItemRightHand, viewItemLeftHand)
+		msg.ReplyMarkup = helpers.ChooseInstrument(char, cell, user)
 	case "🚷":
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Нельзя взять без инструмента в руке")
 	default:
 		msg.Text, buttons = repository.GetMyMap(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\nКажется, не тот инструмент ты используешь!")
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\nНет инструмента в руке!")
 		msg.ReplyMarkup = buttons
 	}
 

@@ -10,6 +10,7 @@ import (
 type User struct {
 	ID           uint   `gorm:"primaryKey"`
 	TgId         uint   `gorm:"embedded"`
+	TgChatId     uint   `gorm:"embedded"`
 	Username     string `gorm:"embedded"`
 	Avatar       string `gorm:"embedded"`
 	FirstName    string `gorm:"embedded"`
@@ -46,6 +47,7 @@ func GetOrCreateUser(update tgbotapi.Update) User {
 
 	result := User{
 		TgId:      userTgId,
+		TgChatId:  uint(update.Message.Chat.ID),
 		Username:  outUsername,
 		FirstName: update.Message.From.FirstName,
 		LastName:  update.Message.From.LastName,
@@ -56,8 +58,6 @@ func GetOrCreateUser(update tgbotapi.Update) User {
 		OnlineMap: &UserOnline,
 	}
 	err := config.Db.
-		Preload("LeftHand").
-		Preload("RightHand").
 		Where(&User{TgId: userTgId}).FirstOrCreate(&result).Error
 
 	if err != nil {

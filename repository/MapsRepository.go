@@ -359,24 +359,11 @@ func IsItem(cell Cellule) bool {
 }
 
 func IsSpecialItem(cell Cellule, user User) string {
-	leftHand := user.LeftHand
-	rightHand := user.RightHand
+	instrumentsUserCanUse := GetInstrumentsUserCanUse(user, cell)
 
-	var instrumentsUserCanUse []string
-
-	instruments := cell.Item.Instruments
-
-	for _, instrument := range instruments {
-		if user.LeftHandId != nil && leftHand.Type == instrument.Good.Type {
-			instrumentsUserCanUse = append(instrumentsUserCanUse, user.LeftHand.View)
-		}
-		if user.RightHandId != nil && rightHand.Type == instrument.Good.Type {
-			instrumentsUserCanUse = append(instrumentsUserCanUse, user.RightHand.View)
-		}
-	}
-	if len(instrumentsUserCanUse) == 2 && instrumentsUserCanUse[0] != instrumentsUserCanUse[1] {
-		return "❗ " + instrumentsUserCanUse[0] + " 🔛 " + instrumentsUserCanUse[1] + " ❓"
-	} else if len(instrumentsUserCanUse) == 1 || len(instrumentsUserCanUse) == 2 && instrumentsUserCanUse[0] == instrumentsUserCanUse[1] {
+	if len(instrumentsUserCanUse) > 1 {
+		return "❗ " + "🛠" + " ❓"
+	} else if len(instrumentsUserCanUse) == 1 {
 		return instrumentsUserCanUse[0]
 	}
 
@@ -387,8 +374,7 @@ func isItemCost(cell Cellule, button string, resUser User) string {
 	var firstElem string
 
 	if len(cell.Item.Instruments) >= 1 {
-		res := IsSpecialItem(cell, resUser)
-		firstElem = res
+		firstElem = IsSpecialItem(cell, resUser)
 	} else {
 		firstElem = "👋"
 	}
