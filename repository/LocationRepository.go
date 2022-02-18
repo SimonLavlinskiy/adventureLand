@@ -18,7 +18,6 @@ type Location struct {
 }
 
 func GetOrCreateMyLocation(update tgbotapi.Update) Location {
-
 	userTgId := GetUserTgId(update)
 	user := GetUser(User{TgId: userTgId})
 
@@ -27,7 +26,7 @@ func GetOrCreateMyLocation(update tgbotapi.Update) Location {
 	startMap := 1
 
 	result := Location{
-		UserTgId: userTgId,
+		UserTgId: user.TgId,
 		AxisX:    &AsX,
 		AxisY:    &AsY,
 		MapsId:   &startMap,

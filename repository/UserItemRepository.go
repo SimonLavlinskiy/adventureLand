@@ -97,8 +97,8 @@ func UpdateUserItem(user User, userItem UserItem) {
 }
 
 func AddUserItemCount(update tgbotapi.Update, userItem UserItem, cellule Cellule, updateUserMoney int, instrumentView string) (string, int) {
-	userTgId := GetUserTgId(update)
-	user := GetUser(User{TgId: userTgId})
+	userTgid := GetUserTgId(update)
+	user := GetUser(User{TgId: userTgid})
 	var sumCountItemResult int
 
 	if instrumentView == "👋" && len(cellule.Item.Instruments) == 0 {

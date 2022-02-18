@@ -89,6 +89,7 @@ func GetUser(user User) User {
 	if err != nil {
 		panic(err)
 	}
+
 	return result
 }
 
@@ -115,26 +116,20 @@ func SetNullUserField(update tgbotapi.Update, queryFeild string) {
 }
 
 func GetUserInfo(update tgbotapi.Update) string {
-	var tgId uint
-	if update.CallbackQuery != nil {
-		tgId = uint(update.CallbackQuery.From.ID)
-	} else {
-		tgId = uint(update.Message.From.ID)
-	}
-
-	resUser := GetUser(User{TgId: tgId})
+	userTgId := GetUserTgId(update)
+	user := GetUser(User{TgId: userTgId})
 	userIsOnline := "📳 Вкл"
 
-	if !*resUser.OnlineMap {
+	if !*user.OnlineMap {
 		userIsOnline = "📴 Откл"
 	}
 
 	messageMap := "🔅 🔆 *Профиль* 🔆 🔅\n" +
-		"\n*Твое имя*: " + resUser.Username +
-		"\n*Аватар*: " + resUser.Avatar +
-		"\n*Золото*: " + ToString(*resUser.Money) + "💰" +
-		"\n*Здоровье*: _" + ToString(int(resUser.Health)) + "_ ❤️" +
-		"\n*Сытость*: _" + ToString(int(resUser.Satiety)) + "_ 😋️" +
+		"\n*Твое имя*: " + user.Username +
+		"\n*Аватар*: " + user.Avatar +
+		"\n*Золото*: " + ToString(*user.Money) + "💰" +
+		"\n*Здоровье*: _" + ToString(int(user.Health)) + "_ ❤️" +
+		"\n*Сытость*: _" + ToString(int(user.Satiety)) + "_ 😋️" +
 		"\n*Онлайн*: _" + userIsOnline + "_"
 
 	return messageMap

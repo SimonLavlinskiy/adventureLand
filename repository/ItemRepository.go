@@ -44,8 +44,8 @@ func UserGetItem(update tgbotapi.Update, LocationStruct Location, char []string)
 }
 
 func UserGetItemUpdateModels(update tgbotapi.Update, resultCell Cellule, instrumentView string) (string, string) {
-	userTgId := GetUserTgId(update)
-	user := GetUser(User{TgId: userTgId})
+	userTgid := GetUserTgId(update)
+	user := GetUser(User{TgId: userTgid})
 	itemCost := 0
 
 	resUserItem := GetOrCreateUserItem(update, *resultCell.Item)

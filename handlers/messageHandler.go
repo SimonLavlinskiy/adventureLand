@@ -11,17 +11,17 @@ import (
 var msg tgbotapi.MessageConfig
 
 func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
-	resUser := repository.GetOrCreateUser(update)
+	user := repository.GetOrCreateUser(update)
 
-	switch resUser.MenuLocation {
+	switch user.MenuLocation {
 	case "Меню":
-		msg = userMenuLocation(update, resUser)
+		msg = userMenuLocation(update, user)
 	case "Карта":
-		msg = userMapLocation(update, resUser)
+		msg = userMapLocation(update, user)
 	case "Профиль":
-		msg = userProfileLocation(update, resUser)
+		msg = userProfileLocation(update, user)
 	default:
-		msg = userMenuLocation(update, resUser)
+		msg = userMenuLocation(update, user)
 	}
 
 	msg.ParseMode = "markdown"
@@ -34,7 +34,8 @@ func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 	charData := strings.Fields(update.CallbackQuery.Data)
 	deletePrevMessage := true
 
-	user := repository.GetUser(repository.User{TgId: uint(update.CallbackQuery.From.ID)})
+	userTgId := repository.GetUserTgId(update)
+	user := repository.GetUser(repository.User{TgId: userTgId})
 	viewItemLeftHand, viewItemRightHand := usersHandItemsView(user)
 
 	if len(charData) != 1 {
@@ -80,8 +81,6 @@ func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 
 func useSpecialCell(update tgbotapi.Update, char []string, user repository.User) tgbotapi.MessageConfig {
 	buttons := tgbotapi.ReplyKeyboardMarkup{}
-
-	user = repository.GetUser(repository.User{TgId: user.TgId})
 	viewItemLeftHand, viewItemRightHand := usersHandItemsView(user)
 
 	switch char[0] {
@@ -320,8 +319,8 @@ func MessageGoodsUserItems(user repository.User, userItems []repository.UserItem
 
 func BackPackMoving(charData []string, update tgbotapi.Update) tgbotapi.MessageConfig {
 	i := repository.ToInt(charData[1])
-
-	user := repository.GetUser(repository.User{TgId: uint(update.CallbackQuery.From.ID)})
+	userTgId := repository.GetUserTgId(update)
+	user := repository.GetUser(repository.User{TgId: userTgId})
 	userItems := repository.GetBackpackItems(user.ID)
 
 	switch i {
@@ -338,7 +337,8 @@ func BackPackMoving(charData []string, update tgbotapi.Update) tgbotapi.MessageC
 func GoodsMoving(charData []string, update tgbotapi.Update) tgbotapi.MessageConfig {
 	i := repository.ToInt(charData[1])
 
-	user := repository.GetUser(repository.User{TgId: uint(update.CallbackQuery.From.ID)})
+	userTgId := repository.GetUserTgId(update)
+	user := repository.GetUser(repository.User{TgId: userTgId})
 	userItems := repository.GetInventoryItems(user.ID)
 
 	switch i {
@@ -353,8 +353,9 @@ func GoodsMoving(charData []string, update tgbotapi.Update) tgbotapi.MessageConf
 }
 
 func UserEatItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConfig {
-	userItemId := repository.ToInt(charData[1])
 	userTgId := repository.GetUserTgId(update)
+	userItemId := repository.ToInt(charData[1])
+
 	user := repository.GetUser(repository.User{TgId: userTgId})
 	userItem, err := repository.GetUserItem(repository.UserItem{ID: userItemId})
 	if err != nil {
