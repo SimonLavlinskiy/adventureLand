@@ -58,7 +58,15 @@ func GetOrCreateUser(update tgbotapi.Update) User {
 		OnlineMap: &UserOnline,
 	}
 	err := config.Db.
-		Where(&User{TgId: userTgId}).FirstOrCreate(&result).Error
+		Preload("Head").
+		Preload("RightHand").
+		Preload("LeftHand").
+		Preload("Body").
+		Preload("Foot").
+		Preload("Shoes").
+		Where(&User{TgId: userTgId}).
+		FirstOrCreate(&result).
+		Error
 
 	if err != nil {
 		panic(err)

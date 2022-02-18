@@ -81,6 +81,7 @@ func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 func useSpecialCell(update tgbotapi.Update, char []string, user repository.User) tgbotapi.MessageConfig {
 	buttons := tgbotapi.ReplyKeyboardMarkup{}
 
+	user = repository.GetUser(repository.User{TgId: user.TgId})
 	viewItemLeftHand, viewItemRightHand := usersHandItemsView(user)
 
 	switch char[0] {
