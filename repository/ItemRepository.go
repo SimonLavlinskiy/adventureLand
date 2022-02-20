@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"encoding/json"
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"time"
 )
@@ -79,14 +81,12 @@ func UserGetItemWithInstrument(update tgbotapi.Update, cellule Cellule, user Use
 	}
 
 	switch instrument.Type {
-	case "destruction":
+	case "destruction", "growing":
 		itemMsg := DesctructionItem(update, cellule, user, userGetItem, instrument)
 		instrumentMsg := UpdateUserInstrument(update, user, userInstrument)
 		result = itemMsg + instrumentMsg
 	case "hand":
 		result = DesctructionItem(update, cellule, user, userGetItem, instrument)
-	case "growing":
-
 	}
 
 	return result
@@ -108,10 +108,27 @@ func itemHpLeft(cellule Cellule, instrument Instrument) string {
 }
 
 func DesctructionItem(update tgbotapi.Update, cellule Cellule, user User, userGetItem UserItem, instrument Instrument) string {
-	ItemDestructionHp := *cellule.DestructionHp - *instrument.Good.Destruction
+	var ItemDestructionHp = *cellule.DestructionHp
+	var updateItemTime = time.Now()
 
-	if isItemCrushed(cellule, ItemDestructionHp) {
-		sumCountItem := *userGetItem.Count + *instrument.CountResultItem
+	if instrument.Type == "destruction" || instrument.Type == "hand" {
+		ItemDestructionHp = *cellule.DestructionHp - *instrument.Good.Destruction
+	}
+	if instrument.Type == "growing" {
+		updateItemTime = cellule.NextStateTime.Add(-time.Duration(*instrument.Good.GrowingUpTime) * time.Minute)
+	}
+
+	j, _ := json.Marshal(cellule)
+	fmt.Println(string(j))
+
+	if isItemCrushed(cellule, ItemDestructionHp) || isItemGrowed(cellule, updateItemTime) {
+		var result string
+		if instrument.CountResultItem != nil {
+			*userGetItem.Count = *userGetItem.Count + *instrument.CountResultItem
+			result = "Ты получил " + instrument.ItemsResult.View + " " + ToString(*instrument.CountResultItem) + " шт."
+		} else {
+			result = "Оно выросло!"
+		}
 		updateUserMoney := *user.Money - *cellule.Item.Cost
 
 		UpdateUser(update, User{Money: &updateUserMoney})
@@ -119,15 +136,23 @@ func DesctructionItem(update tgbotapi.Update, cellule Cellule, user User, userGe
 			User{ID: user.ID},
 			UserItem{
 				ID:           userGetItem.ID,
-				Count:        &sumCountItem,
+				Count:        userGetItem.Count,
 				CountUseLeft: userGetItem.Item.CountUse,
 			})
 
 		updateCell := updateModelCellule(cellule, instrument)
+		fmt.Println("ТУТУТУТУТУТ")
 		UpdateCellule(updateCell.ID, updateCell)
 
-		return "Ты получил " + instrument.ItemsResult.View + " " + ToString(*instrument.CountResultItem) + " шт."
+		return result
 
+	} else if instrument.Type == "growing" && !isItemGrowed(cellule, updateItemTime) {
+		UpdateCellule(cellule.ID,
+			Cellule{
+				ID:            cellule.ID,
+				NextStateTime: &updateItemTime,
+			})
+		return "Вырастет " + updateItemTime.Format("2006.01.02 15:04:05") + "!"
 	} else {
 		UpdateCellule(cellule.ID,
 			Cellule{
@@ -137,7 +162,18 @@ func DesctructionItem(update tgbotapi.Update, cellule Cellule, user User, userGe
 
 		return "Попробуй еще.. (" + itemHpLeft(cellule, instrument) + ")"
 	}
+}
 
+func isItemGrowed(cellule Cellule, updateItemTime time.Time) bool {
+
+	fmt.Println(updateItemTime.Before(time.Now()))
+	fmt.Println(cellule.NextStateTime)
+	fmt.Println(cellule.Item.Growing)
+	if cellule.Item.Growing != nil && cellule.NextStateTime != nil && updateItemTime.Before(time.Now()) {
+		return true
+	} else {
+		return false
+	}
 }
 
 func isItemCrushed(cellule Cellule, ItemHp int) bool {
@@ -149,7 +185,9 @@ func isItemCrushed(cellule Cellule, ItemHp int) bool {
 }
 
 func updateModelCellule(cellule Cellule, instrument Instrument) Cellule {
-	cellule.DestructionHp = cellule.Item.DestructionHp
+	if cellule.Item.DestructionHp != nil {
+		cellule.DestructionHp = cellule.Item.DestructionHp
+	}
 
 	if *cellule.CountItem > 1 {
 		*cellule.CountItem = *cellule.CountItem - 1
@@ -169,7 +207,13 @@ func updateModelCellule(cellule Cellule, instrument Instrument) Cellule {
 		*cellule.NextStateTime = time.Now().Add(time.Duration(*instrument.NextStageItem.Growing) * time.Minute)
 	}
 
-	return cellule
+	return Cellule{
+		ID:            cellule.ID,
+		ItemID:        cellule.ItemID,
+		CountItem:     cellule.CountItem,
+		DestructionHp: cellule.DestructionHp,
+		NextStateTime: cellule.NextStateTime,
+	}
 }
 
 func UserGetItemUpdateModels(update tgbotapi.Update, cellule Cellule, instrumentView string) string {
