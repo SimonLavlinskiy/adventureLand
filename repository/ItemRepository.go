@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"time"
 )
 
 type Item struct {
@@ -17,6 +17,8 @@ type Item struct {
 	Satiety         *int         `gorm:"embedded"`
 	Destruction     *int         `gorm:"embedded"`
 	DestructionHp   *int         `gorm:"embedded"`
+	GrowingUpTime   *int         `gorm:"embedded"`
+	Growing         *int         `gorm:"embedded"`
 	CanTake         bool         `gorm:"embedded"`
 	Instruments     []Instrument `gorm:"many2many:instrument_item;"`
 	DressType       *string      `gorm:"embedded"`
@@ -35,26 +37,24 @@ func UserGetItem(update tgbotapi.Update, LocationStruct Location, char []string)
 	resultCell := GetCellule(Cellule{MapsId: *LocationStruct.MapsId, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY})
 
 	if resultCell.ItemID != nil {
-		status, res := UserGetItemUpdateModels(update, resultCell, char[0])
+		res := UserGetItemUpdateModels(update, resultCell, char[0])
 
-		if status == "Ok" {
-			return res
-		} else {
-			return res
-		}
+		return res
 	}
 
 	return "Не получилось..."
 }
 
 func CheckUserHasInstrument(user User, instrument Instrument) (string, Item) {
+	if instrument.Type == "hand" {
+		return "Ok", *instrument.Good
+	}
 	if user.LeftHandId != nil && *user.LeftHandId == *instrument.GoodId {
 		return "Ok", *user.LeftHand
 	}
 	if user.RightHandId != nil && *user.RightHandId == *instrument.GoodId {
 		return "Ok", *user.RightHand
 	}
-	fmt.Println("User dont have instrument")
 	return "User dont have instrument", Item{}
 }
 
@@ -64,59 +64,32 @@ func checkItemsOnNeededInstrument(instruments []Instrument, msgInstrumentView st
 			return "Ok", &instrument
 		}
 	}
+	if msgInstrumentView == "👋" {
+		return "Ok", nil
+	}
 	return "Not ok", nil
 }
 
-func UserGetItemWithoutInstrument(update tgbotapi.Update, cellule Cellule, user User) (string, string) {
-	userItem := GetOrCreateUserItem(update, *cellule.Item)
-	sumCountItemResult := *userItem.Count + 1
-
-	if isUserHasMaxCountItem(userItem) {
-		return "Not ok", "👋 У тебя уже есть такой!"
-	}
-	if !canUserPayItem(user, cellule) {
-		return "Not ok", "👋 Не хватает деняк!"
-	}
-
-	UpdateModelsWhenUserGetItem(update, user, userItem, cellule, nil, sumCountItemResult)
-
-	return "Ok", "Ты получил " + userItem.Item.View + " 1 шт."
-}
-
-func UserGetItemWithInstrument(update tgbotapi.Update, cellule Cellule, user User, instrumentView string) (string, string) {
-	userGetItem := UserItem{}
+func UserGetItemWithInstrument(update tgbotapi.Update, cellule Cellule, user User, instrument Instrument, userGetItem UserItem) string {
 	var result string
 
-	status, instrument := checkItemsOnNeededInstrument(cellule.Item.Instruments, instrumentView)
+	status, userInstrument := CheckUserHasInstrument(user, instrument)
 	if status != "Ok" {
-		return "Not ok", "Предмет не поддается под таким инструментом"
-	}
-
-	status, userInstrument := CheckUserHasInstrument(user, *instrument)
-	if status != "Ok" {
-		return "Not ok", "Нет инструмента в руках"
-	}
-
-	if instrument.ItemsResultId == nil {
-		userGetItem = GetOrCreateUserItem(update, *cellule.Item)
-	} else {
-		userGetItem = GetOrCreateUserItem(update, *instrument.ItemsResult)
-	}
-
-	if isUserHasMaxCountItem(userGetItem) {
-		return "Not ok", "У тебя уже есть такой!"
-	}
-	if !canUserPayItem(user, cellule) {
-		return "Not ok", "Не хватает деняк!"
+		return "Нет инструмента в руках"
 	}
 
 	switch instrument.Type {
 	case "destruction":
-		result = DesctructionItem(update, cellule, user, userGetItem, *instrument)
-		result += UpdateUserInstrument(update, user, userInstrument)
+		itemMsg := DesctructionItem(update, cellule, user, userGetItem, instrument)
+		instrumentMsg := UpdateUserInstrument(update, user, userInstrument)
+		result = itemMsg + instrumentMsg
+	case "hand":
+		result = DesctructionItem(update, cellule, user, userGetItem, instrument)
+	case "growing":
+
 	}
 
-	return "Ok", result
+	return result
 }
 
 func itemHpLeft(cellule Cellule, instrument Instrument) string {
@@ -135,66 +108,108 @@ func itemHpLeft(cellule Cellule, instrument Instrument) string {
 }
 
 func DesctructionItem(update tgbotapi.Update, cellule Cellule, user User, userGetItem UserItem, instrument Instrument) string {
-	updateCell := Cellule{}
 	ItemDestructionHp := *cellule.DestructionHp - *instrument.Good.Destruction
 
-	var result string
+	if isItemCrushed(cellule, ItemDestructionHp) {
+		sumCountItem := *userGetItem.Count + *instrument.CountResultItem
+		updateUserMoney := *user.Money - *cellule.Item.Cost
 
-	if cellule.Item.DestructionHp != nil && ItemDestructionHp > 0 {
-		updateCell = Cellule{
-			ID:            cellule.ID,
-			DestructionHp: &ItemDestructionHp,
-		}
-		result = "Попробуй еще.. (" + itemHpLeft(cellule, instrument) + ")"
-	} else if cellule.Item.DestructionHp != nil && ItemDestructionHp <= 0 {
-		var updateCountItem int
-		ItemDestructionHp = *cellule.Item.DestructionHp
-		sumCountUserItemResult := *userGetItem.Count + *instrument.CountResultItem
-		sumCountItemResult := *userGetItem.Count + *instrument.CountResultItem
-		itemId := cellule.ItemID
+		UpdateUser(update, User{Money: &updateUserMoney})
+		UpdateUserItem(
+			User{ID: user.ID},
+			UserItem{
+				ID:           userGetItem.ID,
+				Count:        &sumCountItem,
+				CountUseLeft: userGetItem.Item.CountUse,
+			})
 
-		if *cellule.CountItem > 1 {
-			updateCountItem = *cellule.CountItem - 1
-		} else if *cellule.CountItem == 1 {
-			updateCountItem = 0
+		updateCell := updateModelCellule(cellule, instrument)
+		UpdateCellule(updateCell.ID, updateCell)
 
-			if instrument.NextStageItem != nil {
-				itemId = instrument.NextStageItemId
-			}
+		return "Ты получил " + instrument.ItemsResult.View + " " + ToString(*instrument.CountResultItem) + " шт."
 
-			if instrument.CountNextStageItem != nil {
-				updateCountItem = *instrument.CountNextStageItem
-			}
+	} else {
+		UpdateCellule(cellule.ID,
+			Cellule{
+				ID:            cellule.ID,
+				DestructionHp: &ItemDestructionHp,
+			})
 
-		}
-
-		updateCell = Cellule{
-			ID:            cellule.ID,
-			ItemID:        itemId,
-			DestructionHp: &ItemDestructionHp,
-			CountItem:     &updateCountItem,
-		}
-
-		UpdateUserItem(User{ID: user.ID}, UserItem{ID: userGetItem.ID, Count: &sumCountUserItemResult, CountUseLeft: userGetItem.Item.CountUse})
-		UpdateModelsWhenUserGetItem(update, user, userGetItem, cellule, &instrument, sumCountItemResult)
-
-		result = "Ты получил " + instrument.ItemsResult.View + " " + ToString(*instrument.CountResultItem) + " шт."
+		return "Попробуй еще.. (" + itemHpLeft(cellule, instrument) + ")"
 	}
 
-	UpdateCellule(updateCell.ID, updateCell)
-
-	return result
 }
 
-func UserGetItemUpdateModels(update tgbotapi.Update, cellule Cellule, instrumentView string) (string, string) {
+func isItemCrushed(cellule Cellule, ItemHp int) bool {
+	if cellule.Item.DestructionHp != nil && ItemHp <= 0 {
+		return true
+	} else {
+		return false
+	}
+}
+
+func updateModelCellule(cellule Cellule, instrument Instrument) Cellule {
+	cellule.DestructionHp = cellule.Item.DestructionHp
+
+	if *cellule.CountItem > 1 {
+		*cellule.CountItem = *cellule.CountItem - 1
+	} else {
+		*cellule.CountItem = 0
+	}
+
+	if instrument.NextStageItem != nil {
+		cellule.ItemID = instrument.NextStageItemId
+	}
+
+	if instrument.CountNextStageItem != nil {
+		cellule.CountItem = instrument.CountNextStageItem
+	}
+
+	if instrument.NextStageItem != nil && instrument.NextStageItem.Growing != nil {
+		*cellule.NextStateTime = time.Now().Add(time.Duration(*instrument.NextStageItem.Growing) * time.Minute)
+	}
+
+	return cellule
+}
+
+func UserGetItemUpdateModels(update tgbotapi.Update, cellule Cellule, instrumentView string) string {
 	userTgid := GetUserTgId(update)
 	user := GetUser(User{TgId: userTgid})
 
-	if instrumentView == "👋" && len(cellule.Item.Instruments) == 0 {
-		return UserGetItemWithoutInstrument(update, cellule, user)
+	var userGetItem UserItem
+
+	status, instrument := checkItemsOnNeededInstrument(cellule.Item.Instruments, instrumentView)
+	if status != "Ok" {
+		return "Предмет не поддается под таким инструментом"
 	}
 
-	return UserGetItemWithInstrument(update, cellule, user, instrumentView)
+	if instrument == nil || instrument.ItemsResultId == nil {
+		userGetItem = GetOrCreateUserItem(update, *cellule.Item)
+	} else {
+		userGetItem = GetOrCreateUserItem(update, *instrument.ItemsResult)
+	}
+
+	if isUserHasMaxCountItem(userGetItem) {
+		return "У тебя уже есть такой!"
+	}
+
+	if !canUserPayItem(user, cellule) {
+		return "Не хватает деняк!"
+	}
+
+	if instrumentView == "👋" && len(cellule.Item.Instruments) == 0 {
+		sumCountItem := *userGetItem.Count + 1
+		countAfterUserGetItem := *cellule.CountItem - 1
+		updateUserMoney := *user.Money - *cellule.Item.Cost
+
+		UpdateUserItem(User{ID: user.ID}, UserItem{ID: userGetItem.ID, Count: &sumCountItem, CountUseLeft: userGetItem.Item.CountUse})
+		UpdateUser(update, User{Money: &updateUserMoney})
+		UpdateCellule(cellule.ID, Cellule{CountItem: &countAfterUserGetItem})
+
+		return "Ты получил " + userGetItem.Item.View + " 1 шт."
+	} else {
+		return UserGetItemWithInstrument(update, cellule, user, *instrument, userGetItem)
+	}
 
 }
 

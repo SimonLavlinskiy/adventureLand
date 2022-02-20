@@ -12,7 +12,6 @@ type Instrument struct {
 	NextStageItem      *Item
 	CountNextStageItem *int   `gorm:"embedded"`
 	Items              []Item `gorm:"many2many:instrument_item;"`
-	NextStageTimeMin   *int
 }
 
 func GetInstrumentsUserCanUse(user User, cell Cellule) []string {

@@ -102,55 +102,33 @@ func UpdateUserItem(user User, userItem UserItem) {
 	}
 }
 
-func UpdateModelsWhenUserGetItem(update tgbotapi.Update, user User, userItem UserItem, cellule Cellule, instrument *Instrument, sumCountItemResult int) {
-	itemCost := 0
-	if cellule.Item.Cost != nil {
-		itemCost = *cellule.Item.Cost
-	}
-
-	updateUserMoney := *user.Money - itemCost
-
-	UpdateUserItem(User{ID: user.ID}, UserItem{ID: userItem.ID, Count: &sumCountItemResult, CountUseLeft: userItem.Item.CountUse})
-	UpdateUser(update, User{Money: &updateUserMoney})
-
-	countAfterUserGetItem := *cellule.CountItem - 1
-
-	if instrument == nil {
-		UpdateCellule(cellule.ID, Cellule{CountItem: &countAfterUserGetItem})
-	} else {
-		fmt.Println("121")
-		//UpdateCelluleWhenUserUseIt(cellule, *instrument)
-	}
-}
-
 func EatItem(update tgbotapi.Update, user User, userItem UserItem) string {
 	userItemCount := userItem.Count
 
 	if *userItemCount > 0 {
-		itemHeal := userItem.Item.Healing
-		itemSatiety := userItem.Item.Satiety
-		itemDamage := userItem.Item.Damage
-		*userItemCount = *userItemCount - 1
+		itemHeal := uint(*userItem.Item.Healing)
+		itemSatiety := uint(*userItem.Item.Satiety)
+		itemDamage := uint(*userItem.Item.Damage)
 
-		userHealth := user.Health + uint(*itemHeal) - uint(*itemDamage)
-		userSatiety := user.Satiety + uint(*itemSatiety)
+		*userItem.Count = *userItem.Count - 1
+		user.Health = user.Health + itemHeal - itemDamage
+		user.Satiety = user.Satiety + itemSatiety
 
-		userUpdate := User{
-			Health:  userHealth,
-			Satiety: userSatiety,
-		}
+		UpdateUser(update, User{
+			Health:  user.Health,
+			Satiety: user.Satiety,
+		})
 
-		userItemUpdate := UserItem{
+		UpdateUserItem(user, UserItem{
 			ID:    userItem.ID,
-			Count: userItemCount,
-		}
-
-		UpdateUser(update, userUpdate)
-		UpdateUserItem(user, userItemUpdate)
+			Count: userItem.Count,
+		})
 	}
+
 	message := "🍽 Ты съел 1 " + userItem.Item.View + ""
+
 	return message
-}
+} // Горжусь ею)
 
 func GetFullDescriptionOfUserItem(userItem UserItem) string {
 	userItem, _ = GetUserItem(userItem)
@@ -180,14 +158,25 @@ func UpdateUserInstrument(update tgbotapi.Update, user User, instrument Item) st
 		UpdateUserItem(user, UserItem{ID: userItem.ID, CountUseLeft: &c})
 		return ""
 	}
-	countsValue := 0
+
+	zeroValue := 0
 
 	if *userItem.Count > 1 {
 		userItemCount := *userItem.Count - 1
 		countUseLeft := userItem.Item.CountUse
-		UpdateUserItem(user, UserItem{ID: userItem.ID, CountUseLeft: countUseLeft, Count: &userItemCount})
+		UpdateUserItem(user,
+			UserItem{
+				ID:           userItem.ID,
+				CountUseLeft: countUseLeft,
+				Count:        &userItemCount,
+			})
 	} else {
-		UpdateUserItem(user, UserItem{ID: userItem.ID, CountUseLeft: &countsValue, Count: &countsValue})
+		UpdateUserItem(user,
+			UserItem{
+				ID:           userItem.ID,
+				CountUseLeft: &zeroValue,
+				Count:        &zeroValue,
+			})
 
 		switch int(userItem.Item.ID) {
 		case *user.LeftHandId:
@@ -196,6 +185,6 @@ func UpdateUserInstrument(update tgbotapi.Update, user User, instrument Item) st
 			SetNullUserField(update, "right_hand_id")
 		}
 	}
-	return "\n\n💥 Инструмент " + userItem.Item.View + " " + userItem.Item.Name + " был сломан! 💥"
 
+	return "\n\n💥 Инструмент " + userItem.Item.View + " " + userItem.Item.Name + " был сломан! 💥"
 }

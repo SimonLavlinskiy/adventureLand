@@ -309,7 +309,7 @@ func MessageGoodsUserItems(user repository.User, userItems []repository.UserItem
 			firstCell += "▫️"
 		}
 		userItemMsg += firstCell + "   " + item.Item.View + " " + repository.ToString(*item.Count) +
-			"шт.     " + res + " " + item.Item.Name + "    " + "\n"
+			"шт.     " + res + " " + item.Item.Name + "    (еще " + repository.ToString(*item.CountUseLeft) + " исп.)\n"
 
 	}
 
