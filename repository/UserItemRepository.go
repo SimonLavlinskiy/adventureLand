@@ -7,12 +7,13 @@ import (
 )
 
 type UserItem struct {
-	ID     int  `gorm:"primaryKey"`
-	Count  *int `gorm:"embedded"`
-	UserId int  `gorm:"embedded"`
-	User   User
-	ItemId int `gorm:"embedded"`
-	Item   Item
+	ID           int  `gorm:"primaryKey"`
+	Count        *int `gorm:"embedded"`
+	CountUseLeft *int `gorm:"embedded"`
+	UserId       int  `gorm:"embedded"`
+	User         User
+	ItemId       int `gorm:"embedded"`
+	Item         Item
 }
 
 func GetUserItem(userItem UserItem) (UserItem, error) {
@@ -32,11 +33,16 @@ func GetOrCreateUserItem(update tgbotapi.Update, item Item) UserItem {
 	userId := int(resUser.ID)
 	countItem := 0
 	result := UserItem{
-		Count:  &countItem,
-		UserId: userId,
-		ItemId: int(item.ID),
+		Count:        &countItem,
+		UserId:       userId,
+		ItemId:       int(item.ID),
+		CountUseLeft: item.CountUse,
 	}
-	err := config.Db.Preload("Item").Where(UserItem{UserId: userId, ItemId: int(item.ID)}).FirstOrCreate(&result).Error
+	err := config.Db.
+		Preload("Item").
+		Preload("Item.Instruments").
+		Where(UserItem{UserId: userId, ItemId: int(item.ID)}).
+		FirstOrCreate(&result).Error
 	if err != nil {
 		panic(err)
 	}
@@ -96,36 +102,24 @@ func UpdateUserItem(user User, userItem UserItem) {
 	}
 }
 
-func AddUserItemCount(update tgbotapi.Update, userItem UserItem, cellule Cellule, updateUserMoney int, instrumentView string) (string, int) {
-	userTgid := GetUserTgId(update)
-	user := GetUser(User{TgId: userTgid})
-	var sumCountItemResult int
-
-	if instrumentView == "👋" && len(cellule.Item.Instruments) == 0 {
-		sumCountItemResult = *userItem.Count + 1
-		UpdateModelsWhenUserGetOrUseItem(update, user, userItem, cellule, 0, updateUserMoney, sumCountItemResult)
-		return "Ok", 1
-	} else {
-		for i, instrument := range cellule.Item.Instruments {
-			if instrumentView == instrument.Good.View {
-				sumCountItemResult = *userItem.Count + *instrument.CountResultItem
-				UpdateModelsWhenUserGetOrUseItem(update, user, userItem, cellule, i, updateUserMoney, sumCountItemResult)
-				return "Ok", *instrument.CountResultItem
-			}
-		}
-		return "Так не получится!", 0
+func UpdateModelsWhenUserGetItem(update tgbotapi.Update, user User, userItem UserItem, cellule Cellule, instrument *Instrument, sumCountItemResult int) {
+	itemCost := 0
+	if cellule.Item.Cost != nil {
+		itemCost = *cellule.Item.Cost
 	}
-}
 
-func UpdateModelsWhenUserGetOrUseItem(update tgbotapi.Update, user User, userItem UserItem, cellule Cellule, i int, updateUserMoney int, sumCountItemResult int) {
+	updateUserMoney := *user.Money - itemCost
+
+	UpdateUserItem(User{ID: user.ID}, UserItem{ID: userItem.ID, Count: &sumCountItemResult, CountUseLeft: userItem.Item.CountUse})
+	UpdateUser(update, User{Money: &updateUserMoney})
+
 	countAfterUserGetItem := *cellule.CountItem - 1
 
-	UpdateUserItem(User{ID: user.ID}, UserItem{ID: userItem.ID, Count: &sumCountItemResult})
-	UpdateUser(update, User{Money: &updateUserMoney})
-	if len(cellule.Item.Instruments) == 0 || cellule.Item.Instruments[i].NextStageItemId == nil {
+	if instrument == nil {
 		UpdateCellule(cellule.ID, Cellule{CountItem: &countAfterUserGetItem})
 	} else {
-		UpdateCellule(cellule.ID, Cellule{ItemID: cellule.Item.Instruments[i].NextStageItemId, CountItem: cellule.Item.Instruments[i].CountNextStageItem})
+		fmt.Println("121")
+		//UpdateCelluleWhenUserUseIt(cellule, *instrument)
 	}
 }
 
@@ -176,4 +170,32 @@ func GetFullDescriptionOfUserItem(userItem UserItem) string {
 	}
 
 	return fullDescriptionUserItem + itemDescription
+}
+
+func UpdateUserInstrument(update tgbotapi.Update, user User, instrument Item) string {
+	userItem, _ := GetUserItem(UserItem{ItemId: int(instrument.ID), UserId: int(user.ID)})
+
+	c := *userItem.CountUseLeft - 1
+	if c > 0 {
+		UpdateUserItem(user, UserItem{ID: userItem.ID, CountUseLeft: &c})
+		return ""
+	}
+	countsValue := 0
+
+	if *userItem.Count > 1 {
+		userItemCount := *userItem.Count - 1
+		countUseLeft := userItem.Item.CountUse
+		UpdateUserItem(user, UserItem{ID: userItem.ID, CountUseLeft: countUseLeft, Count: &userItemCount})
+	} else {
+		UpdateUserItem(user, UserItem{ID: userItem.ID, CountUseLeft: &countsValue, Count: &countsValue})
+
+		switch int(userItem.Item.ID) {
+		case *user.LeftHandId:
+			SetNullUserField(update, "left_hand_id")
+		case *user.RightHandId:
+			SetNullUserField(update, "right_hand_id")
+		}
+	}
+	return "\n\n💥 Инструмент " + userItem.Item.View + " " + userItem.Item.Name + " был сломан! 💥"
+
 }

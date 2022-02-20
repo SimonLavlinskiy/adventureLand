@@ -5,7 +5,6 @@ type Instrument struct {
 	GoodId             *int `gorm:"embedded"`
 	Good               *Item
 	Type               string `gorm:"embedded"`
-	CountDoing         int    `gorm:"embedded"`
 	ItemsResultId      *int   `gorm:"embedded"`
 	ItemsResult        *Item
 	CountResultItem    *int `gorm:"embedded"`
@@ -13,6 +12,7 @@ type Instrument struct {
 	NextStageItem      *Item
 	CountNextStageItem *int   `gorm:"embedded"`
 	Items              []Item `gorm:"many2many:instrument_item;"`
+	NextStageTimeMin   *int
 }
 
 func GetInstrumentsUserCanUse(user User, cell Cellule) []string {

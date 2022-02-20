@@ -145,6 +145,7 @@ func IsDressedItem(user User, userItem UserItem) (string, string) {
 		user.BodyId != nil && userItem.ItemId == *user.BodyId ||
 		user.FootId != nil && userItem.ItemId == *user.FootId ||
 		user.ShoesId != nil && userItem.ItemId == *user.ShoesId {
+
 		dressItem = "Снять ❎"
 		dressItemData = "takeOffGood"
 	}
