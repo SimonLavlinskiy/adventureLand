@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"encoding/json"
-	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"time"
 )
@@ -81,12 +79,17 @@ func UserGetItemWithInstrument(update tgbotapi.Update, cellule Cellule, user Use
 	}
 
 	switch instrument.Type {
-	case "destruction", "growing":
+	case "destruction":
 		itemMsg := DesctructionItem(update, cellule, user, userGetItem, instrument)
 		instrumentMsg := UpdateUserInstrument(update, user, userInstrument)
 		result = itemMsg + instrumentMsg
 	case "hand":
 		result = DesctructionItem(update, cellule, user, userGetItem, instrument)
+	case "growing":
+		itemMsg := GrowingItem(update, cellule, user, userGetItem, instrument)
+		instrumentMsg := UpdateUserInstrument(update, user, userInstrument)
+		result = itemMsg + instrumentMsg
+
 	}
 
 	return result
@@ -107,27 +110,55 @@ func itemHpLeft(cellule Cellule, instrument Instrument) string {
 	return result
 }
 
-func DesctructionItem(update tgbotapi.Update, cellule Cellule, user User, userGetItem UserItem, instrument Instrument) string {
-	var ItemDestructionHp = *cellule.DestructionHp
+func GrowingItem(update tgbotapi.Update, cellule Cellule, user User, userGetItem UserItem, instrument Instrument) string {
 	var updateItemTime = time.Now()
 
-	if instrument.Type == "destruction" || instrument.Type == "hand" {
-		ItemDestructionHp = *cellule.DestructionHp - *instrument.Good.Destruction
+	if cellule.NextStateTime == nil {
+		updateItemTime = updateItemTime.Add(time.Duration(*cellule.Item.Growing) * time.Minute)
+	} else {
+		updateItemTime = *cellule.NextStateTime
 	}
-	if instrument.Type == "growing" {
-		updateItemTime = cellule.NextStateTime.Add(-time.Duration(*instrument.Good.GrowingUpTime) * time.Minute)
+	updateItemTime = updateItemTime.Add(-time.Duration(*instrument.Good.GrowingUpTime) * time.Minute)
+
+	if isItemGrowed(cellule, updateItemTime) {
+		updateUserMoney := *user.Money - *cellule.Item.Cost
+
+		UpdateUser(update, User{Money: &updateUserMoney})
+		UpdateUserItem(
+			User{ID: user.ID},
+			UserItem{
+				ID:           userGetItem.ID,
+				Count:        userGetItem.Count,
+				CountUseLeft: userGetItem.Item.CountUse,
+			})
+
+		updateCell := updateModelCellule(cellule, instrument)
+		UpdateCellule(updateCell.ID, updateCell)
+
+		return "Оно выросло!"
+
+	} else {
+		UpdateCellule(cellule.ID,
+			Cellule{
+				ID:            cellule.ID,
+				NextStateTime: &updateItemTime,
+			})
+		return "Вырастет " + updateItemTime.Format("2006.01.02 15:04:05") + "!"
 	}
+}
 
-	j, _ := json.Marshal(cellule)
-	fmt.Println(string(j))
+func DesctructionItem(update tgbotapi.Update, cellule Cellule, user User, userGetItem UserItem, instrument Instrument) string {
+	var ItemDestructionHp = *cellule.DestructionHp
 
-	if isItemCrushed(cellule, ItemDestructionHp) || isItemGrowed(cellule, updateItemTime) {
+	ItemDestructionHp = *cellule.DestructionHp - *instrument.Good.Destruction
+
+	if isItemCrushed(cellule, ItemDestructionHp) {
 		var result string
 		if instrument.CountResultItem != nil {
 			*userGetItem.Count = *userGetItem.Count + *instrument.CountResultItem
 			result = "Ты получил " + instrument.ItemsResult.View + " " + ToString(*instrument.CountResultItem) + " шт."
 		} else {
-			result = "Оно выросло!"
+			result = "что то не так"
 		}
 		updateUserMoney := *user.Money - *cellule.Item.Cost
 
@@ -141,18 +172,9 @@ func DesctructionItem(update tgbotapi.Update, cellule Cellule, user User, userGe
 			})
 
 		updateCell := updateModelCellule(cellule, instrument)
-		fmt.Println("ТУТУТУТУТУТ")
 		UpdateCellule(updateCell.ID, updateCell)
 
 		return result
-
-	} else if instrument.Type == "growing" && !isItemGrowed(cellule, updateItemTime) {
-		UpdateCellule(cellule.ID,
-			Cellule{
-				ID:            cellule.ID,
-				NextStateTime: &updateItemTime,
-			})
-		return "Вырастет " + updateItemTime.Format("2006.01.02 15:04:05") + "!"
 	} else {
 		UpdateCellule(cellule.ID,
 			Cellule{
@@ -166,9 +188,6 @@ func DesctructionItem(update tgbotapi.Update, cellule Cellule, user User, userGe
 
 func isItemGrowed(cellule Cellule, updateItemTime time.Time) bool {
 
-	fmt.Println(updateItemTime.Before(time.Now()))
-	fmt.Println(cellule.NextStateTime)
-	fmt.Println(cellule.Item.Growing)
 	if cellule.Item.Growing != nil && cellule.NextStateTime != nil && updateItemTime.Before(time.Now()) {
 		return true
 	} else {
@@ -181,38 +200,6 @@ func isItemCrushed(cellule Cellule, ItemHp int) bool {
 		return true
 	} else {
 		return false
-	}
-}
-
-func updateModelCellule(cellule Cellule, instrument Instrument) Cellule {
-	if cellule.Item.DestructionHp != nil {
-		cellule.DestructionHp = cellule.Item.DestructionHp
-	}
-
-	if *cellule.CountItem > 1 {
-		*cellule.CountItem = *cellule.CountItem - 1
-	} else {
-		*cellule.CountItem = 0
-	}
-
-	if instrument.NextStageItem != nil {
-		cellule.ItemID = instrument.NextStageItemId
-	}
-
-	if instrument.CountNextStageItem != nil {
-		cellule.CountItem = instrument.CountNextStageItem
-	}
-
-	if instrument.NextStageItem != nil && instrument.NextStageItem.Growing != nil {
-		*cellule.NextStateTime = time.Now().Add(time.Duration(*instrument.NextStageItem.Growing) * time.Minute)
-	}
-
-	return Cellule{
-		ID:            cellule.ID,
-		ItemID:        cellule.ItemID,
-		CountItem:     cellule.CountItem,
-		DestructionHp: cellule.DestructionHp,
-		NextStateTime: cellule.NextStateTime,
 	}
 }
 

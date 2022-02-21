@@ -85,6 +85,7 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.Repl
 	m := map[Point]Cellule{}
 
 	var resultCell []Cellule
+	UpdateCelluleWithNextStateTime()
 
 	err := config.Db.
 		Preload("Item").
