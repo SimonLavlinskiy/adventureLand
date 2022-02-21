@@ -83,19 +83,12 @@ func EmodjiInlineKeyboard() tgbotapi.InlineKeyboardMarkup {
 }
 
 func ProfileKeyboard(user repository.User) tgbotapi.ReplyKeyboardMarkup {
-	var onlineButton string
-	if *user.OnlineMap {
-		onlineButton = "Онлайн (📳♻️📴)"
-	} else {
-		onlineButton = "Офлайн (📴♻️📳)"
-	}
 	return tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton("📝 Изменить имя? 📝"),
 			tgbotapi.NewKeyboardButton(user.Avatar+" Изменить аватар? "+user.Avatar),
 		),
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton(onlineButton),
 			tgbotapi.NewKeyboardButton("Меню"),
 		),
 	)

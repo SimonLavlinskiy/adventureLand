@@ -19,6 +19,7 @@ type Item struct {
 	DestructionHp   *int         `gorm:"embedded"`
 	GrowingUpTime   *int         `gorm:"embedded"`
 	Growing         *int         `gorm:"embedded"`
+	IntervalGrowing *int         `gorm:"embedded"`
 	CanTake         bool         `gorm:"embedded"`
 	Instruments     []Instrument `gorm:"many2many:instrument_item;"`
 	DressType       *string      `gorm:"embedded"`
@@ -72,6 +73,7 @@ func checkItemsOnNeededInstrument(instruments []Instrument, msgInstrumentView st
 
 func UserGetItemWithInstrument(update tgbotapi.Update, cellule Cellule, user User, instrument Instrument, userGetItem UserItem) string {
 	var result string
+	var instrumentMsg string
 
 	status, userInstrument := CheckUserHasInstrument(user, instrument)
 	if status != "Ok" {
@@ -81,13 +83,15 @@ func UserGetItemWithInstrument(update tgbotapi.Update, cellule Cellule, user Use
 	switch instrument.Type {
 	case "destruction":
 		itemMsg := DesctructionItem(update, cellule, user, userGetItem, instrument)
-		instrumentMsg := UpdateUserInstrument(update, user, userInstrument)
+		instrumentMsg = UpdateUserInstrument(update, user, userInstrument)
 		result = itemMsg + instrumentMsg
 	case "hand":
 		result = DesctructionItem(update, cellule, user, userGetItem, instrument)
 	case "growing":
-		itemMsg := GrowingItem(update, cellule, user, userGetItem, instrument)
-		instrumentMsg := UpdateUserInstrument(update, user, userInstrument)
+		status, itemMsg := GrowingItem(update, cellule, user, userGetItem, instrument)
+		if status == "Ok" {
+			instrumentMsg = UpdateUserInstrument(update, user, userInstrument)
+		}
 		result = itemMsg + instrumentMsg
 
 	}
@@ -110,8 +114,12 @@ func itemHpLeft(cellule Cellule, instrument Instrument) string {
 	return result
 }
 
-func GrowingItem(update tgbotapi.Update, cellule Cellule, user User, userGetItem UserItem, instrument Instrument) string {
+func GrowingItem(update tgbotapi.Update, cellule Cellule, user User, userGetItem UserItem, instrument Instrument) (string, string) {
 	var updateItemTime = time.Now()
+
+	if cellule.LastGrowing != nil && time.Now().Before(cellule.LastGrowing.Add(time.Duration(*cellule.Item.IntervalGrowing)*time.Minute)) {
+		return "Not ok", "Ты уже использовал " + instrument.Good.View + "\nМожно будет повторить " + cellule.LastGrowing.Add(time.Duration(*cellule.Item.IntervalGrowing)*time.Minute).Format("2006.01.02 15:04:05") + "!"
+	}
 
 	if cellule.NextStateTime == nil {
 		updateItemTime = updateItemTime.Add(time.Duration(*cellule.Item.Growing) * time.Minute)
@@ -132,18 +140,20 @@ func GrowingItem(update tgbotapi.Update, cellule Cellule, user User, userGetItem
 				CountUseLeft: userGetItem.Item.CountUse,
 			})
 
-		updateCell := updateModelCellule(cellule, instrument)
-		UpdateCellule(updateCell.ID, updateCell)
+		UpdateCelluleAfterGrowing(cellule, instrument)
 
-		return "Оно выросло!"
+		return "Ok", "Оно выросло!"
 
 	} else {
+		t := time.Now()
 		UpdateCellule(cellule.ID,
 			Cellule{
 				ID:            cellule.ID,
 				NextStateTime: &updateItemTime,
+				LastGrowing:   &t,
 			})
-		return "Вырастет " + updateItemTime.Format("2006.01.02 15:04:05") + "!"
+		return "Ok", "Вырастет " + updateItemTime.Format("2006.01.02 15:04:05") + "!"
+
 	}
 }
 
@@ -171,8 +181,7 @@ func DesctructionItem(update tgbotapi.Update, cellule Cellule, user User, userGe
 				CountUseLeft: userGetItem.Item.CountUse,
 			})
 
-		updateCell := updateModelCellule(cellule, instrument)
-		UpdateCellule(updateCell.ID, updateCell)
+		UpdateCelluleAfterDestruction(cellule, instrument)
 
 		return result
 	} else {

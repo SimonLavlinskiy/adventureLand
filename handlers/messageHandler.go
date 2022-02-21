@@ -111,6 +111,18 @@ func useSpecialCell(update tgbotapi.Update, char []string, user repository.User)
 		userItems := repository.GetInventoryItems(user.ID)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, MessageGoodsUserItems(user, userItems, 0))
 		msg.ReplyMarkup = helpers.GoodsInlineKeyboard(user, userItems, 0)
+	case "📴":
+		userOnline := true
+		user = repository.UpdateUser(update, repository.User{OnlineMap: &userOnline})
+		msg.Text, buttons = repository.GetMyMap(update)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\nОнлайн включен!")
+		msg.ReplyMarkup = buttons
+	case "📳":
+		userOnline := false
+		user = repository.UpdateUser(update, repository.User{OnlineMap: &userOnline})
+		msg.Text, buttons = repository.GetMyMap(update)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\nОнлайн выключен!")
+		msg.ReplyMarkup = buttons
 	default:
 		msg.Text, buttons = repository.GetMyMap(update)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\nНет инструмента в руке!")
@@ -172,16 +184,6 @@ func userProfileLocation(update tgbotapi.Update, user repository.User) tgbotapi.
 		case user.Avatar + " Изменить аватар? " + user.Avatar:
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "‼️ *ВНИМАНИЕ*: ‼️‼\nВыбери себе аватар...")
 			msg.ReplyMarkup = helpers.EmodjiInlineKeyboard()
-		case "Офлайн (📴♻️📳)":
-			userOnline := true
-			user = repository.UpdateUser(update, repository.User{OnlineMap: &userOnline})
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.GetUserInfo(update))
-			msg.ReplyMarkup = helpers.ProfileKeyboard(user)
-		case "Онлайн (📳♻️📴)":
-			userOnline := false
-			user = repository.UpdateUser(update, repository.User{OnlineMap: &userOnline})
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.GetUserInfo(update))
-			msg.ReplyMarkup = helpers.ProfileKeyboard(user)
 		case "/menu", "Меню":
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Меню")
 			msg.ReplyMarkup = helpers.MainKeyboard(user)

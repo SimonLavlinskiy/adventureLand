@@ -178,13 +178,13 @@ func UpdateUserInstrument(update tgbotapi.Update, user User, instrument Item) st
 				Count:        &zeroValue,
 			})
 
-		switch int(userItem.Item.ID) {
-		case *user.LeftHandId:
+		if user.LeftHandId != nil && *user.LeftHandId == int(userItem.Item.ID) {
 			SetNullUserField(update, "left_hand_id")
-		case *user.RightHandId:
+		}
+		if user.RightHandId != nil && *user.RightHandId == int(userItem.Item.ID) {
 			SetNullUserField(update, "right_hand_id")
 		}
 	}
 
-	return "\n\n💥 Инструмент " + userItem.Item.View + " " + userItem.Item.Name + " был сломан! 💥"
+	return "\n\n💥 Инструмент «" + userItem.Item.View + " " + userItem.Item.Name + "» был сломан! 💥"
 }
