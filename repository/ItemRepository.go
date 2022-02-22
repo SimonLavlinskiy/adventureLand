@@ -74,17 +74,35 @@ func UserGetItemWithInstrument(update tgbotapi.Update, cellule Cellule, user Use
 		instrumentMsg = UpdateUserInstrument(update, user, userInstrument)
 		result = itemMsg + instrumentMsg
 	case "hand":
-		result = DesctructionItem(update, cellule, user, userGetItem, instrument)
+		result = UserGetItemWithHand(update, cellule, user, userGetItem)
 	case "growing":
 		status, itemMsg := GrowingItem(update, cellule, user, userGetItem, instrument)
 		if status == "Ok" {
 			instrumentMsg = UpdateUserInstrument(update, user, userInstrument)
 		}
 		result = itemMsg + instrumentMsg
-
 	}
 
 	return result
+}
+
+func UserGetItemWithHand(update tgbotapi.Update, cellule Cellule, user User, userGetItem UserItem) string {
+	sumCountItem := *userGetItem.Count + 1
+	countAfterUserGetItem := *cellule.ItemCount - 1
+	updateUserMoney := *user.Money - *cellule.Item.Cost
+	countUseLeft := *userGetItem.CountUseLeft
+	if *userGetItem.Count == 0 {
+		countUseLeft = *userGetItem.Item.CountUse
+	}
+
+	UpdateUserItem(User{ID: user.ID}, UserItem{ID: userGetItem.ID, Count: &sumCountItem, CountUseLeft: &countUseLeft})
+	UpdateUser(update, User{Money: &updateUserMoney})
+	if countAfterUserGetItem != 0 || cellule.PrevItemID == nil {
+		UpdateCellule(cellule.ID, Cellule{ItemCount: &countAfterUserGetItem})
+	} else {
+		UpdateCellOnPrevItem(cellule)
+	}
+	return "Ты получил " + userGetItem.Item.View + " 1 шт. (Осталось лежать еще " + ToString(countAfterUserGetItem) + ")"
 }
 
 func itemHpLeft(cellule Cellule, instrument Instrument) string {
@@ -115,7 +133,6 @@ func GrowingItem(update tgbotapi.Update, cellule Cellule, user User, userGetItem
 		updateItemTime = *cellule.NextStateTime
 	}
 	updateItemTime = updateItemTime.Add(-time.Duration(*instrument.Good.GrowingUpTime) * time.Minute)
-	fmt.Println(updateItemTime, isItemGrowed(cellule, updateItemTime))
 
 	if isItemGrowed(cellule, updateItemTime) {
 		var result string
@@ -233,23 +250,7 @@ func UserGetItemUpdateModels(update tgbotapi.Update, cellule Cellule, instrument
 	}
 
 	if instrumentView == "👋" && len(cellule.Item.Instruments) == 0 {
-		sumCountItem := *userGetItem.Count + 1
-		countAfterUserGetItem := *cellule.ItemCount - 1
-		updateUserMoney := *user.Money - *cellule.Item.Cost
-		countUseLeft := *userGetItem.CountUseLeft
-		if *userGetItem.Count == 0 {
-			countUseLeft = *userGetItem.Item.CountUse
-		}
-
-		UpdateUserItem(User{ID: user.ID}, UserItem{ID: userGetItem.ID, Count: &sumCountItem, CountUseLeft: &countUseLeft})
-		UpdateUser(update, User{Money: &updateUserMoney})
-		if countAfterUserGetItem != 0 || cellule.PrevItemID == nil {
-			UpdateCellule(cellule.ID, Cellule{ItemCount: &countAfterUserGetItem})
-		} else {
-			UpdateCellOnPrevItem(cellule)
-		}
-
-		return "Ты получил " + userGetItem.Item.View + " 1 шт. (Осталось лежать еще " + ToString(countAfterUserGetItem) + ")"
+		return UserGetItemWithHand(update, cellule, user, userGetItem)
 	} else {
 		return UserGetItemWithInstrument(update, cellule, user, *instrument, userGetItem)
 	}
@@ -265,4 +266,66 @@ func isUserHasMaxCountItem(item UserItem) bool {
 		return false
 	}
 	return true
+}
+
+func ViewItemInfo(location Location) string {
+	cell := GetCellule(Cellule{MapsId: *location.MapsId, AxisX: *location.AxisX, AxisY: *location.AxisY})
+	var itemInfo string
+	var dressType string
+
+	if cell.Item == nil {
+		return "Ячейка пустая"
+	}
+
+	if cell.Item.DressType != nil {
+		switch *cell.Item.DressType {
+		case "hand":
+			dressType = "(Для рук)"
+		case "head":
+			dressType = "(Головной убор)"
+		case "body":
+			dressType = "(Верхняя одежда)"
+		case "shoes":
+			dressType = "(Обувь)"
+		case "foot":
+			dressType = "(Штанихи)"
+		}
+	}
+
+	itemInfo = fmt.Sprintf("%s *%s* (_%s шт._) %s _%s_\n", cell.Item.View, cell.Item.Name, ToString(*cell.ItemCount), cell.Item.View, dressType)
+	itemInfo = itemInfo + fmt.Sprintf("*Описание*: `%s`\n", *cell.Item.Description)
+
+	if cell.Item.Healing != nil && *cell.Item.Healing != 0 {
+		itemInfo = itemInfo + fmt.Sprintf("*Здоровье*: `+%s♥️`\n", ToString(*cell.Item.Healing))
+	}
+	if cell.Item.Damage != nil && *cell.Item.Damage != 0 {
+		itemInfo = itemInfo + fmt.Sprintf("*Атака*: `+%s`💥️\n", ToString(*cell.Item.Damage))
+	}
+	if cell.Item.Satiety != nil && *cell.Item.Satiety != 0 {
+		itemInfo = itemInfo + fmt.Sprintf("*Сытость*: `+%s`\U0001F9C3️\n", ToString(*cell.Item.Satiety))
+	}
+	if cell.Item.Cost != nil && *cell.Item.Cost != 0 {
+		itemInfo = itemInfo + fmt.Sprintf("*Стоимость*: `%s`💰\n", ToString(*cell.Item.Cost))
+	}
+	if cell.Item.Destruction != nil && *cell.Item.Destruction != 0 {
+		itemInfo = itemInfo + fmt.Sprintf("*Сила*: `%s %s`\n", ToString(*cell.Item.Destruction), cell.Item.View)
+	}
+	if cell.Item.DestructionHp != nil && *cell.Item.DestructionHp != 0 {
+		itemInfo = itemInfo + fmt.Sprintf("*Прочность*: `%s`\n", ToString(*cell.Item.DestructionHp))
+	}
+	if cell.Item.Growing != nil {
+		itemInfo = itemInfo + fmt.Sprintf("*Время роста*: `%s мин.`\n", ToString(*cell.Item.Growing))
+	}
+	if cell.Item.IntervalGrowing != nil {
+		itemInfo = itemInfo + fmt.Sprintf("*Интервал ускорения роста*: `раз в %s мин.`\n", ToString(*cell.Item.IntervalGrowing))
+	}
+	if len(cell.Item.Instruments) != 0 {
+		var itemsInstrument string
+		for _, i := range cell.Item.Instruments {
+			itemsInstrument = itemsInstrument + fmt.Sprintf("%s - `%s`\n", i.Good.View, i.Good.Name)
+		}
+		itemInfo = itemInfo + fmt.Sprintf("*Чем можно взаимодествовать*:\n%s", itemsInstrument)
+	}
+
+	return itemInfo
 }

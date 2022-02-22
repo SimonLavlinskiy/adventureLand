@@ -16,16 +16,17 @@ type Instrument struct {
 
 func GetInstrumentsUserCanUse(user User, cell Cellule) []string {
 	var instrumentsUserCanUse []string
-	leftHand := user.LeftHand
-	rightHand := user.RightHand
 	instruments := cell.Item.Instruments
 
 	for _, instrument := range instruments {
-		if user.LeftHandId != nil && leftHand.Type == instrument.Good.Type {
+		if user.LeftHandId != nil && user.LeftHand.Type == instrument.Good.Type {
 			instrumentsUserCanUse = append(instrumentsUserCanUse, user.LeftHand.View)
 		}
-		if user.RightHandId != nil && rightHand.Type == instrument.Good.Type {
+		if user.RightHandId != nil && user.RightHand.Type == instrument.Good.Type {
 			instrumentsUserCanUse = append(instrumentsUserCanUse, user.RightHand.View)
+		}
+		if user.HeadId != nil && user.Head.Type == instrument.Good.Type {
+			instrumentsUserCanUse = append(instrumentsUserCanUse, user.Head.View)
 		}
 		if instrument.Good.Type == "hand" {
 			instrumentsUserCanUse = append(instrumentsUserCanUse, instrument.Good.View)

@@ -36,7 +36,7 @@ func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 
 	userTgId := repository.GetUserTgId(update)
 	user := repository.GetUser(repository.User{TgId: userTgId})
-	viewItemLeftHand, viewItemRightHand := usersHandItemsView(user)
+	ItemLeftHand, ItemRightHand, ItemHead := usersHandItemsView(user)
 
 	if len(charData) != 1 {
 		switch charData[0] {
@@ -73,12 +73,16 @@ func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 		case "description":
 			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, repository.GetFullDescriptionOfUserItem(repository.UserItem{ID: repository.ToInt(charData[1])}))
 			deletePrevMessage = false
-		case "👋", viewItemLeftHand, viewItemRightHand:
+		case "👋", ItemLeftHand.View, ItemRightHand.View:
 			res := directionMovement(update, charData[1])
 			resultOfGetItem := repository.UserGetItem(update, res, charData)
 			msg.Text, buttons = repository.GetMyMap(update)
 			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, msg.Text+"\n\n"+resultOfGetItem)
 			msg.ReplyMarkup = buttons
+		case ItemHead.View:
+			res := directionMovement(update, charData[1])
+			text := repository.UpdateUserInstrument(update, user, ItemHead)
+			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, repository.ViewItemInfo(res)+text)
 		}
 	} else {
 		switch charData[0] {
@@ -95,7 +99,7 @@ func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 
 func useSpecialCell(update tgbotapi.Update, char []string, user repository.User) tgbotapi.MessageConfig {
 	buttons := tgbotapi.ReplyKeyboardMarkup{}
-	viewItemLeftHand, viewItemRightHand := usersHandItemsView(user)
+	ItemLeftHand, ItemRightHand, ItemHead := usersHandItemsView(user)
 
 	switch char[0] {
 	case "🔼", "🔽", "◀️️", "▶️":
@@ -105,7 +109,7 @@ func useSpecialCell(update tgbotapi.Update, char []string, user repository.User)
 		msg.Text, buttons = repository.GetMyMap(update)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+text)
 		msg.ReplyMarkup = buttons
-	case "👋", viewItemLeftHand, viewItemRightHand:
+	case "👋", ItemLeftHand.View, ItemRightHand.View:
 		res := directionMovement(update, char[1])
 		resultOfGetItem := repository.UserGetItem(update, res, char)
 		msg.Text, buttons = repository.GetMyMap(update)
@@ -138,6 +142,10 @@ func useSpecialCell(update tgbotapi.Update, char []string, user repository.User)
 		msg.Text, buttons = repository.GetMyMap(update)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\nОнлайн выключен!")
 		msg.ReplyMarkup = buttons
+	case ItemHead.View:
+		res := directionMovement(update, char[1])
+		text := repository.UpdateUserInstrument(update, user, ItemHead)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.ViewItemInfo(res)+text)
 	default:
 		msg.Text, buttons = repository.GetMyMap(update)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\nНет инструмента в руке!")
@@ -420,17 +428,22 @@ func UserThrowOutItem(update tgbotapi.Update, charData []string) tgbotapi.Messag
 	return msg
 }
 
-func usersHandItemsView(user repository.User) (string, string) {
-	viewItemLeftHand := "👋"
-	viewItemRightHand := "👋"
+func usersHandItemsView(user repository.User) (repository.Item, repository.Item, repository.Item) {
+	ItemLeftHand := repository.Item{View: "👋"}
+	ItemRightHand := repository.Item{View: "👋"}
+	var ItemHead repository.Item
+
 	if user.LeftHand != nil {
-		viewItemLeftHand = user.LeftHand.View
+		ItemLeftHand = *user.LeftHand
 	}
 	if user.RightHand != nil {
-		viewItemRightHand = user.RightHand.View
+		ItemRightHand = *user.RightHand
+	}
+	if user.Head != nil {
+		ItemHead = *user.Head
 	}
 
-	return viewItemLeftHand, viewItemRightHand
+	return ItemLeftHand, ItemRightHand, ItemHead
 }
 
 func messageUserDressedGoods(user repository.User) string {
