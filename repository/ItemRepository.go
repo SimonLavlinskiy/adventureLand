@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"time"
 )
@@ -121,15 +122,22 @@ func GrowingItem(update tgbotapi.Update, cellule Cellule, user User, userGetItem
 		return "Not ok", "Ты уже использовал " + instrument.Good.View + "\nМожно будет повторить " + cellule.LastGrowing.Add(time.Duration(*cellule.Item.IntervalGrowing)*time.Minute).Format("2006.01.02 15:04:05") + "!"
 	}
 
-	if cellule.NextStateTime == nil {
+	if cellule.NextStateTime == nil && cellule.Item.Growing != nil {
 		updateItemTime = updateItemTime.Add(time.Duration(*cellule.Item.Growing) * time.Minute)
 	} else {
 		updateItemTime = *cellule.NextStateTime
 	}
 	updateItemTime = updateItemTime.Add(-time.Duration(*instrument.Good.GrowingUpTime) * time.Minute)
+	fmt.Println(updateItemTime, isItemGrowed(cellule, updateItemTime))
 
 	if isItemGrowed(cellule, updateItemTime) {
+		var result string
 		updateUserMoney := *user.Money - *cellule.Item.Cost
+
+		if instrument.CountResultItem != nil {
+			*userGetItem.Count = *userGetItem.Count + *instrument.CountResultItem
+			result = "\nТы получил " + instrument.ItemsResult.View + " " + ToString(*instrument.CountResultItem) + " шт."
+		}
 
 		UpdateUser(update, User{Money: &updateUserMoney})
 		UpdateUserItem(
@@ -142,7 +150,7 @@ func GrowingItem(update tgbotapi.Update, cellule Cellule, user User, userGetItem
 
 		UpdateCelluleAfterGrowing(cellule, instrument)
 
-		return "Ok", "Оно выросло!"
+		return "Ok", "Оно выросло!" + result
 
 	} else {
 		t := time.Now()
@@ -197,7 +205,7 @@ func DesctructionItem(update tgbotapi.Update, cellule Cellule, user User, userGe
 
 func isItemGrowed(cellule Cellule, updateItemTime time.Time) bool {
 
-	if cellule.Item.Growing != nil && cellule.NextStateTime != nil && updateItemTime.Before(time.Now()) {
+	if cellule.Item.Growing != nil && updateItemTime.Before(time.Now()) {
 		return true
 	} else {
 		return false
@@ -239,12 +247,16 @@ func UserGetItemUpdateModels(update tgbotapi.Update, cellule Cellule, instrument
 
 	if instrumentView == "👋" && len(cellule.Item.Instruments) == 0 {
 		sumCountItem := *userGetItem.Count + 1
-		countAfterUserGetItem := *cellule.CountItem - 1
+		countAfterUserGetItem := *cellule.ItemCount - 1
 		updateUserMoney := *user.Money - *cellule.Item.Cost
 
 		UpdateUserItem(User{ID: user.ID}, UserItem{ID: userGetItem.ID, Count: &sumCountItem, CountUseLeft: userGetItem.Item.CountUse})
 		UpdateUser(update, User{Money: &updateUserMoney})
-		UpdateCellule(cellule.ID, Cellule{CountItem: &countAfterUserGetItem})
+		if countAfterUserGetItem != 0 || cellule.PrevItemID == nil {
+			UpdateCellule(cellule.ID, Cellule{ItemCount: &countAfterUserGetItem})
+		} else {
+			UpdateCellOnPrevItem(cellule)
+		}
 
 		return "Ты получил " + userGetItem.Item.View + " 1 шт."
 	} else {

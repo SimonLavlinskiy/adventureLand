@@ -287,7 +287,7 @@ func appendVisibleUserZone(m map[[2]int]Cellule, x int, y int, Maps [][]string) 
 	if m[Point{x, y}].Type != nil &&
 		*m[Point{x, y}].Type == "item" &&
 		m[Point{x, y}].ItemID != nil &&
-		*m[Point{x, y}].CountItem != 0 {
+		*m[Point{x, y}].ItemCount != 0 {
 		Maps[y] = append(Maps[y], m[Point{x, y}].Item.View)
 	} else {
 		Maps[y] = append(Maps[y], m[Point{x, y}].View)
@@ -358,7 +358,7 @@ func IsTeleport(cell Cellule) bool {
 }
 
 func IsItem(cell Cellule) bool {
-	if cell.Type != nil && *cell.Type == "item" && cell.ItemID != nil && *cell.CountItem > 0 {
+	if cell.Type != nil && *cell.Type == "item" && cell.ItemID != nil && *cell.ItemCount > 0 {
 		return true
 	}
 	return false

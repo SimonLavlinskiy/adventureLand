@@ -32,6 +32,18 @@ func BackpackInlineKeyboard(items []repository.UserItem, i int) tgbotapi.InlineK
 	)
 }
 
+func ChangeItemInHand(user repository.User, itemId int, charData2 string) tgbotapi.InlineKeyboardMarkup {
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("❓ "+user.LeftHand.View+" ❔", "changeLeftHand "+repository.ToString(itemId)+" "+charData2),
+			tgbotapi.NewInlineKeyboardButtonData("❔ "+user.RightHand.View+" ❓", "changeRightHand "+repository.ToString(itemId)+" "+charData2),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Отмена", "goodsMoving "+charData2),
+		),
+	)
+}
+
 func GoodsInlineKeyboard(user repository.User, userItems []repository.UserItem, i int) tgbotapi.InlineKeyboardMarkup {
 	if len(userItems) == 0 {
 		return tgbotapi.NewInlineKeyboardMarkup(

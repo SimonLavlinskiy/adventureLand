@@ -49,9 +49,23 @@ func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 		case "throwOutFood", "throwOutGood":
 			UserThrowOutItem(update, charData)
 		case "dressGood":
-			dressUserItem(update, charData)
+			msg = dressUserItem(update, charData)
 		case "takeOffGood":
 			userTakeOffGood(update, charData)
+		case "changeLeftHand":
+			itemId := repository.ToInt(charData[1])
+			userItem, _ := repository.GetUserItem(repository.UserItem{ID: itemId})
+			repository.UpdateUser(update, repository.User{LeftHandId: &userItem.ItemId})
+			msg.Text = "Вы надели " + userItem.Item.View
+			charDataForOpenGoods := strings.Fields("goodMoving " + charData[2])
+			msg = GoodsMoving(charDataForOpenGoods, update)
+		case "changeRightHand":
+			itemId := repository.ToInt(charData[1])
+			userItem, _ := repository.GetUserItem(repository.UserItem{ID: itemId})
+			repository.UpdateUser(update, repository.User{RightHandId: &userItem.ItemId})
+			msg.Text = "Вы надели " + userItem.Item.View
+			charDataForOpenGoods := strings.Fields("goodMoving " + charData[2])
+			msg = GoodsMoving(charDataForOpenGoods, update)
 		case "changeAvatar":
 			res := repository.UpdateUser(update, repository.User{Avatar: charData[1]})
 			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, repository.GetUserInfo(update))
@@ -492,11 +506,12 @@ func userTakeOffGood(update tgbotapi.Update, charData []string) {
 	msg.Text = msg.Text + "\n\n" + "Вещь снята"
 }
 
-func dressUserItem(update tgbotapi.Update, charData []string) {
+func dressUserItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConfig {
 	userItemId := repository.ToInt(charData[1])
 	userTgId := repository.GetUserTgId(update)
 	user := repository.GetUser(repository.User{TgId: userTgId})
 	userItem, _ := repository.GetUserItem(repository.UserItem{ID: userItemId})
+	changeHandItem := false
 
 	var result = "Вы надели " + userItem.Item.View
 
@@ -507,7 +522,8 @@ func dressUserItem(update tgbotapi.Update, charData []string) {
 		} else if user.RightHandId == nil {
 			repository.UpdateUser(update, repository.User{RightHandId: &userItem.ItemId})
 		} else {
-			result = "У вас заняты все руки! Сначала снимите предмет, чтоб надеть другой"
+			result = "У вас заняты все руки! Что хочешь снять?"
+			changeHandItem = true
 		}
 	case "head":
 		if user.HeadId == nil {
@@ -535,7 +551,13 @@ func dressUserItem(update tgbotapi.Update, charData []string) {
 		}
 	}
 
-	charDataForOpenGoods := strings.Fields("goodMoving " + charData[2])
-	msg = GoodsMoving(charDataForOpenGoods, update)
-	msg.Text = msg.Text + "\n\n" + result
+	if changeHandItem {
+		msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, msg.Text+"\n\n"+result)
+		msg.ReplyMarkup = helpers.ChangeItemInHand(user, userItemId, charData[2])
+	} else {
+		charDataForOpenGoods := strings.Fields("goodMoving " + charData[2])
+		msg = GoodsMoving(charDataForOpenGoods, update)
+	}
+
+	return msg
 }

@@ -15,14 +15,17 @@ type Cellule struct {
 	View          string  `gorm:"embedded"`
 	CanStep       bool    `gorm:"embedded"`
 	Type          *string `gorm:"embedded"`
-	TeleportID    *int
+	TeleportID    *int    `gorm:"embedded"`
 	Teleport      *Teleport
-	ItemID        *int
+	ItemID        *int `gorm:"embedded"`
 	Item          *Item
-	CountItem     *int `gorm:"embedded"`
+	ItemCount     *int `gorm:"embedded"`
 	DestructionHp *int `gorm:"embedded"`
 	NextStateTime *time.Time
 	LastGrowing   *time.Time
+	PrevItemID    *int `gorm:"embedded"`
+	PrevItem      *Item
+	PrevItemCount *int `gorm:"embedded"`
 }
 
 func GetCellule(cellule Cellule) Cellule {
@@ -30,6 +33,7 @@ func GetCellule(cellule Cellule) Cellule {
 
 	err := config.Db.
 		Preload("Item").
+		Preload("PrevItem").
 		Preload("Teleport").
 		Preload("Item.Instruments").
 		Preload("Item.Instruments.Good").
@@ -70,6 +74,7 @@ func UpdateCelluleWithNextStateTime() {
 	var results []Cellule
 	err := config.Db.
 		Preload("Item").
+		Preload("PrevItem").
 		Preload("Item.Instruments").
 		Preload("Item.Instruments.Good").
 		Preload("Item.Instruments.ItemsResult").
@@ -93,85 +98,118 @@ func UpdateCelluleWithNextStateTime() {
 
 func UpdateCelluleAfterGrowing(cellule Cellule, instrument Instrument) {
 
-	if *cellule.CountItem > 1 {
-		*cellule.CountItem = *cellule.CountItem - 1
-
-		if cellule.Item.Growing != nil {
-			*cellule.NextStateTime = time.Now().Add(time.Duration(*cellule.Item.Growing) * time.Minute)
-		}
-	} else {
-		if instrument.NextStageItem.DestructionHp == nil {
-			*cellule.DestructionHp = 0
-		} else {
-			cellule.DestructionHp = instrument.NextStageItem.DestructionHp
-		}
-
-		if instrument.NextStageItem != nil {
-			cellule.ItemID = instrument.NextStageItemId
-		}
-
-		if instrument.CountNextStageItem != nil {
-			cellule.CountItem = instrument.CountNextStageItem
-		} else {
-			*cellule.CountItem = 0
-		}
-
-		if instrument.NextStageItem != nil && instrument.NextStageItem.Growing != nil {
-			*cellule.NextStateTime = time.Now().Add(time.Duration(*instrument.NextStageItem.Growing) * time.Minute)
-		} else {
-			cellule.NextStateTime = nil
-		}
+	if *cellule.ItemCount > 1 && instrument.NextStageItem != nil {
+		cellule.PrevItemID = cellule.ItemID
+		cellule.PrevItemCount = cellule.ItemCount
+		cellule = CellUpdatedNextItem(cellule, instrument)
+	} else if *cellule.ItemCount > 1 && instrument.NextStageItem == nil {
+		*cellule.ItemCount = *cellule.ItemCount - 1
+	} else if *cellule.ItemCount <= 1 && cellule.PrevItemID != nil {
+		cellule = CellUpdatePrevItem(cellule)
+	} else if *cellule.ItemCount <= 1 && instrument.NextStageItem != nil {
+		cellule = CellUpdatedNextItem(cellule, instrument)
 	}
+
+	cellule.LastGrowing = nil
+	cellule.NextStateTime = nil
 
 	err := config.Db.Model(Cellule{}).
 		Where(&Cellule{ID: cellule.ID}).
 		Update("item_id", cellule.ItemID).
-		Update("count_item", cellule.CountItem).
+		Update("item_count", cellule.ItemCount).
 		Update("destruction_hp", cellule.DestructionHp).
 		Update("next_state_time", cellule.NextStateTime).
 		Update("last_growing", cellule.LastGrowing).
+		Update("prev_item_id", cellule.PrevItemID).
+		Update("prev_item_count", cellule.PrevItemCount).
 		Error
 	if err != nil {
 		panic(err)
 	}
 }
 
+func CellUpdatedNextItem(cellule Cellule, instrument Instrument) Cellule {
+	cellule.ItemID = instrument.NextStageItemId
+
+	if instrument.NextStageItem.DestructionHp == nil {
+		cellule.DestructionHp = nil
+	} else {
+		cellule.DestructionHp = instrument.NextStageItem.DestructionHp
+	}
+
+	if instrument.CountNextStageItem == nil {
+		*cellule.ItemCount = 0
+	} else {
+		cellule.ItemCount = instrument.CountNextStageItem
+	}
+	return cellule
+}
+
+func CellUpdatePrevItem(cellule Cellule) Cellule {
+	cellule.ItemID = cellule.PrevItemID
+	*cellule.ItemCount = *cellule.PrevItemCount - 1
+
+	cellule.PrevItemID = nil
+	cellule.PrevItemCount = nil
+	cellule.NextStateTime = nil
+
+	if cellule.PrevItem.DestructionHp != nil {
+		cellule.DestructionHp = cellule.PrevItem.DestructionHp
+	} else {
+		cellule.DestructionHp = nil
+	}
+	return cellule
+}
+
 func UpdateCelluleAfterDestruction(cellule Cellule, instrument Instrument) {
 
-	if *cellule.CountItem > 1 {
-		*cellule.CountItem = *cellule.CountItem - 1
-
-		if cellule.Item.DestructionHp != nil {
-			cellule.DestructionHp = cellule.Item.DestructionHp
-		}
-	} else {
-		if instrument.NextStageItem != nil && instrument.NextStageItem.DestructionHp != nil {
-			cellule.DestructionHp = instrument.NextStageItem.DestructionHp
-		}
-
-		if instrument.NextStageItem != nil {
-			cellule.ItemID = instrument.NextStageItemId
-		}
-
-		if instrument.CountNextStageItem != nil {
-			cellule.CountItem = instrument.CountNextStageItem
-		} else {
-			*cellule.CountItem = 0
-		}
-
-		if instrument.NextStageItem != nil && instrument.NextStageItem.Growing != nil {
-			*cellule.NextStateTime = time.Now().Add(time.Duration(*instrument.NextStageItem.Growing) * time.Minute)
-		} else {
-			cellule.NextStateTime = nil
-		}
+	if *cellule.ItemCount > 1 && instrument.NextStageItem != nil {
+		cellule.PrevItemID = cellule.ItemID
+		cellule.PrevItemCount = cellule.ItemCount
+		cellule = CellUpdatedNextItem(cellule, instrument)
+	} else if *cellule.ItemCount > 1 && cellule.Item.DestructionHp != nil {
+		*cellule.ItemCount = *cellule.ItemCount - 1
+		cellule.DestructionHp = cellule.Item.DestructionHp
+	} else if *cellule.ItemCount <= 1 && cellule.PrevItemID != nil {
+		cellule = CellUpdatePrevItem(cellule)
+	} else if *cellule.ItemCount <= 1 && instrument.NextStageItem != nil {
+		cellule = CellUpdatedNextItem(cellule, instrument)
 	}
+
+	cellule.LastGrowing = nil
+	cellule.NextStateTime = nil
 
 	err := config.Db.Model(Cellule{}).
 		Where(&Cellule{ID: cellule.ID}).
 		Update("item_id", cellule.ItemID).
-		Update("count_item", cellule.CountItem).
+		Update("item_count", cellule.ItemCount).
 		Update("destruction_hp", cellule.DestructionHp).
 		Update("next_state_time", cellule.NextStateTime).
+		Update("last_growing", cellule.LastGrowing).
+		Update("prev_item_id", cellule.PrevItemID).
+		Update("prev_item_count", cellule.PrevItemCount).
+		Error
+	if err != nil {
+		panic(err)
+	}
+}
+
+func UpdateCellOnPrevItem(cellule Cellule) {
+
+	cellule = CellUpdatePrevItem(cellule)
+
+	cellule.LastGrowing = nil
+	cellule.NextStateTime = nil
+
+	err := config.Db.Model(Cellule{}).
+		Where(&Cellule{ID: cellule.ID}).
+		Update("item_id", cellule.ItemID).
+		Update("item_count", cellule.ItemCount).
+		Update("destruction_hp", cellule.DestructionHp).
+		Update("next_state_time", cellule.NextStateTime).
+		Update("last_growing", cellule.LastGrowing).
+		Update("prev_item_id", cellule.PrevItemID).
+		Update("prev_item_count", cellule.PrevItemCount).
 		Error
 	if err != nil {
 		panic(err)
