@@ -47,19 +47,6 @@ func UserGetItem(update tgbotapi.Update, LocationStruct Location, char []string)
 	return "Не получилось..."
 }
 
-func CheckUserHasInstrument(user User, instrument Instrument) (string, Item) {
-	if instrument.Type == "hand" {
-		return "Ok", *instrument.Good
-	}
-	if user.LeftHandId != nil && *user.LeftHandId == *instrument.GoodId {
-		return "Ok", *user.LeftHand
-	}
-	if user.RightHandId != nil && *user.RightHandId == *instrument.GoodId {
-		return "Ok", *user.RightHand
-	}
-	return "User dont have instrument", Item{}
-}
-
 func checkItemsOnNeededInstrument(instruments []Instrument, msgInstrumentView string) (string, *Instrument) {
 	for _, instrument := range instruments {
 		if instrument.Good.View == msgInstrumentView {
@@ -249,8 +236,12 @@ func UserGetItemUpdateModels(update tgbotapi.Update, cellule Cellule, instrument
 		sumCountItem := *userGetItem.Count + 1
 		countAfterUserGetItem := *cellule.ItemCount - 1
 		updateUserMoney := *user.Money - *cellule.Item.Cost
+		countUseLeft := *userGetItem.CountUseLeft
+		if *userGetItem.Count == 0 {
+			countUseLeft = *userGetItem.Item.CountUse
+		}
 
-		UpdateUserItem(User{ID: user.ID}, UserItem{ID: userGetItem.ID, Count: &sumCountItem, CountUseLeft: userGetItem.Item.CountUse})
+		UpdateUserItem(User{ID: user.ID}, UserItem{ID: userGetItem.ID, Count: &sumCountItem, CountUseLeft: &countUseLeft})
 		UpdateUser(update, User{Money: &updateUserMoney})
 		if countAfterUserGetItem != 0 || cellule.PrevItemID == nil {
 			UpdateCellule(cellule.ID, Cellule{ItemCount: &countAfterUserGetItem})
@@ -258,7 +249,7 @@ func UserGetItemUpdateModels(update tgbotapi.Update, cellule Cellule, instrument
 			UpdateCellOnPrevItem(cellule)
 		}
 
-		return "Ты получил " + userGetItem.Item.View + " 1 шт."
+		return "Ты получил " + userGetItem.Item.View + " 1 шт. (Осталось лежать еще " + ToString(countAfterUserGetItem) + ")"
 	} else {
 		return UserGetItemWithInstrument(update, cellule, user, *instrument, userGetItem)
 	}

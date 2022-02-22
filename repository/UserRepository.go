@@ -152,3 +152,26 @@ func IsDressedItem(user User, userItem UserItem) (string, string) {
 
 	return dressItem, dressItemData
 }
+
+func CheckUserHasInstrument(user User, instrument Instrument) (string, Item) {
+	if instrument.Type == "hand" {
+		return "Ok", *instrument.Good
+	}
+	if user.LeftHandId != nil && *user.LeftHandId == *instrument.GoodId {
+		return "Ok", *user.LeftHand
+	}
+	if user.RightHandId != nil && *user.RightHandId == *instrument.GoodId {
+		return "Ok", *user.RightHand
+	}
+	return "User dont have instrument", Item{}
+}
+
+func CheckUserHasLighter(update tgbotapi.Update, user User) string {
+	if user.LeftHandId != nil && user.LeftHand.Type == "light" {
+		return UpdateUserInstrument(update, user, *user.LeftHand)
+	}
+	if user.RightHandId != nil && user.RightHand.Type == "light" {
+		return UpdateUserInstrument(update, user, *user.RightHand)
+	}
+	return ""
+}

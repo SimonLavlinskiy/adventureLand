@@ -101,8 +101,9 @@ func useSpecialCell(update tgbotapi.Update, char []string, user repository.User)
 	case "🔼", "🔽", "◀️️", "▶️":
 		res := directionMovement(update, char[0])
 		repository.UpdateLocation(update, res)
+		text := repository.CheckUserHasLighter(update, user)
 		msg.Text, buttons = repository.GetMyMap(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+text)
 		msg.ReplyMarkup = buttons
 	case "👋", viewItemLeftHand, viewItemRightHand:
 		res := directionMovement(update, char[1])
@@ -240,8 +241,9 @@ func useDefaultCell(update tgbotapi.Update, user repository.User) tgbotapi.Messa
 	case "🔼", "🔽", "◀️️", "▶️":
 		res := directionMovement(update, newMessage)
 		repository.UpdateLocation(update, res)
+		text := repository.CheckUserHasLighter(update, user)
 		msg.Text, buttons = repository.GetMyMap(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+text)
 		msg.ReplyMarkup = buttons
 	case "\U0001F7E6": // Вода
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Ты не похож на Jesus! 👮‍♂️")
