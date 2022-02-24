@@ -348,7 +348,7 @@ func MessageGoodsUserItems(user repository.User, userItems []repository.UserItem
 		default:
 			firstCell += "▫️"
 		}
-		userItemMsg += fmt.Sprintf("%s   %s %sшт.     %s %s    (%s из %s)\n", firstCell, item.Item.View, repository.ToString(*item.Count), res, item.Item.Name, repository.ToString(*item.CountUseLeft), repository.ToString(*item.Item.CountUse))
+		userItemMsg += fmt.Sprintf("%s  %s %sшт.   %s %s   (%s/%s)\n", firstCell, item.Item.View, repository.ToString(*item.Count), res, item.Item.Name, repository.ToString(*item.CountUseLeft), repository.ToString(*item.Item.CountUse))
 
 	}
 

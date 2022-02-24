@@ -135,7 +135,7 @@ func GrowingItem(update tgbotapi.Update, cellule Cellule, user User, userGetItem
 	var updateItemTime = time.Now()
 
 	if cellule.LastGrowing != nil && time.Now().Before(cellule.LastGrowing.Add(time.Duration(*cellule.Item.IntervalGrowing)*time.Minute)) {
-		return "Not ok", "Ты уже использовал " + instrument.Good.View + "\nМожно будет повторить " + cellule.LastGrowing.Add(time.Duration(*cellule.Item.IntervalGrowing)*time.Minute).Format("2006.01.02 15:04:05") + "!"
+		return "Not ok", "Ты уже использовал " + instrument.Good.View + "\nМожно будет повторить " + cellule.LastGrowing.Add(time.Duration(*cellule.Item.IntervalGrowing)*time.Minute).Format("15:04:05 02.01.06") + "!"
 	}
 
 	if cellule.NextStateTime == nil && cellule.Item.Growing != nil {
@@ -175,7 +175,7 @@ func GrowingItem(update tgbotapi.Update, cellule Cellule, user User, userGetItem
 				NextStateTime: &updateItemTime,
 				LastGrowing:   &t,
 			})
-		return "Ok", "Вырастет " + updateItemTime.Format("2006.01.02 15:04:05") + "!"
+		return "Ok", "Вырастет " + updateItemTime.Format("15:04:05 02.01.06") + "!"
 
 	}
 }
@@ -328,11 +328,16 @@ func ViewItemInfo(location Location) string {
 	if cell.Item.DestructionHp != nil && *cell.Item.DestructionHp != 0 {
 		itemInfo = itemInfo + fmt.Sprintf("*Прочность*: `%s`\n", ToString(*cell.Item.DestructionHp))
 	}
-	if cell.Item.Growing != nil {
+	if cell.Item.Growing != nil && cell.NextStateTime != nil {
+		itemInfo = itemInfo + fmt.Sprintf("*Вырастет*: %s\n", cell.NextStateTime.Format("15:04:05 02.01.06"))
+	} else {
 		itemInfo = itemInfo + fmt.Sprintf("*Время роста*: `%s мин.`\n", ToString(*cell.Item.Growing))
 	}
 	if cell.Item.IntervalGrowing != nil {
 		itemInfo = itemInfo + fmt.Sprintf("*Интервал ускорения роста*: `раз в %s мин.`\n", ToString(*cell.Item.IntervalGrowing))
+	}
+	if cell.LastGrowing != nil {
+		itemInfo = itemInfo + fmt.Sprintf("*Последнее ускорение:* %s\n", cell.LastGrowing.Format("15:04:05"))
 	}
 	if len(cell.Item.Instruments) != 0 {
 		var itemsInstrument string
