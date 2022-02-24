@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/helpers"
 	"project0/repository"
@@ -9,6 +10,7 @@ import (
 )
 
 var msg tgbotapi.MessageConfig
+var messageSeparator = "\n\n〰️〰️〰️〰️〰️〰️〰️\n"
 
 func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 	user := repository.GetOrCreateUser(update)
@@ -30,6 +32,7 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 }
 
 func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
+	msg.BaseChat.ChatID = update.CallbackQuery.Message.Chat.ID
 	buttons := tgbotapi.ReplyKeyboardMarkup{}
 	charData := strings.Fields(update.CallbackQuery.Data)
 	deletePrevMessage := true
@@ -46,8 +49,8 @@ func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 			msg = GoodsMoving(charData, update)
 		case "eatFood":
 			UserEatItem(update, charData)
-		case "throwOutFood", "throwOutGood":
-			UserThrowOutItem(update, charData)
+		case "deleteItem":
+			UserDeleteItem(update, charData)
 		case "dressGood":
 			msg = dressUserItem(update, charData)
 		case "takeOffGood":
@@ -56,33 +59,41 @@ func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 			itemId := repository.ToInt(charData[1])
 			userItem, _ := repository.GetUserItem(repository.UserItem{ID: itemId})
 			repository.UpdateUser(update, repository.User{LeftHandId: &userItem.ItemId})
-			msg.Text = "Вы надели " + userItem.Item.View
 			charDataForOpenGoods := strings.Fields("goodMoving " + charData[2])
 			msg = GoodsMoving(charDataForOpenGoods, update)
+			msg.Text = fmt.Sprintf("%s%sВы надели %s", msg.Text, messageSeparator, userItem.Item.View)
 		case "changeRightHand":
 			itemId := repository.ToInt(charData[1])
 			userItem, _ := repository.GetUserItem(repository.UserItem{ID: itemId})
 			repository.UpdateUser(update, repository.User{RightHandId: &userItem.ItemId})
-			msg.Text = "Вы надели " + userItem.Item.View
 			charDataForOpenGoods := strings.Fields("goodMoving " + charData[2])
 			msg = GoodsMoving(charDataForOpenGoods, update)
+			msg.Text = fmt.Sprintf("%s%sВы надели %s", msg.Text, messageSeparator, userItem.Item.View)
 		case "changeAvatar":
 			res := repository.UpdateUser(update, repository.User{Avatar: charData[1]})
-			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, repository.GetUserInfo(update))
+			msg.Text = repository.GetUserInfo(update)
 			msg.ReplyMarkup = helpers.ProfileKeyboard(res)
 		case "description":
-			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, repository.GetFullDescriptionOfUserItem(repository.UserItem{ID: repository.ToInt(charData[1])}))
+			msg.Text = repository.GetFullDescriptionOfUserItem(repository.UserItem{ID: repository.ToInt(charData[1])})
 			deletePrevMessage = false
 		case "👋", ItemLeftHand.View, ItemRightHand.View:
 			res := directionMovement(update, charData[1])
 			resultOfGetItem := repository.UserGetItem(update, res, charData)
-			msg.Text, buttons = repository.GetMyMap(update)
-			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, msg.Text+"\n\n"+resultOfGetItem)
+			resText, buttons := repository.GetMyMap(update)
+			msg.Text = resText + messageSeparator + resultOfGetItem
 			msg.ReplyMarkup = buttons
 		case ItemHead.View:
 			res := directionMovement(update, charData[1])
-			text := repository.UpdateUserInstrument(update, user, ItemHead)
-			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, repository.ViewItemInfo(res)+text)
+			status, text := repository.UpdateUserInstrument(update, user, ItemHead)
+			if status != "Ok" {
+				msg.Text = repository.ViewItemInfo(res) + messageSeparator + text
+			} else {
+				msg.Text = repository.ViewItemInfo(res)
+			}
+		case "throwOutItem":
+			userWantsToThrowOutItem(update, charData)
+		case "countOfDelete":
+			msg = userThrowOutItem(update, user, charData)
 		}
 	} else {
 		switch charData[0] {
@@ -100,6 +111,7 @@ func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 func useSpecialCell(update tgbotapi.Update, char []string, user repository.User) tgbotapi.MessageConfig {
 	buttons := tgbotapi.ReplyKeyboardMarkup{}
 	ItemLeftHand, ItemRightHand, ItemHead := usersHandItemsView(user)
+	msg.ChatID = update.Message.Chat.ID
 
 	switch char[0] {
 	case "🔼", "🔽", "◀️️", "▶️":
@@ -107,45 +119,49 @@ func useSpecialCell(update tgbotapi.Update, char []string, user repository.User)
 		repository.UpdateLocation(update, res)
 		text := repository.CheckUserHasLighter(update, user)
 		msg.Text, buttons = repository.GetMyMap(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+text)
+		msg.Text = msg.Text + messageSeparator + text
 		msg.ReplyMarkup = buttons
 	case "👋", ItemLeftHand.View, ItemRightHand.View:
 		res := directionMovement(update, char[1])
 		resultOfGetItem := repository.UserGetItem(update, res, char)
 		msg.Text, buttons = repository.GetMyMap(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\n"+resultOfGetItem)
+		msg.Text = msg.Text + messageSeparator + resultOfGetItem
 		msg.ReplyMarkup = buttons
 	case "❗":
 		cellLocation := directionMovement(update, char[3])
 		cell := repository.GetCellule(repository.Cellule{MapsId: *cellLocation.MapsId, AxisX: *cellLocation.AxisX, AxisY: *cellLocation.AxisY})
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "В зависимости от предмета в твоих руках ты можешь получить разный результат. Выбирай...")
+		msg.Text = "В зависимости от предмета в твоих руках ты можешь получить разный результат. Выбирай..."
 		msg.ReplyMarkup = helpers.ChooseInstrument(char, cell, user)
 	case "🚷":
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Нельзя взять без инструмента в руке")
 	case "Рюкзак":
 		resUserItems := repository.GetBackpackItems(user.ID)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, MessageBackpackUserItems(resUserItems, 0))
+		msg.Text = MessageBackpackUserItems(resUserItems, 0)
 		msg.ReplyMarkup = helpers.BackpackInlineKeyboard(resUserItems, 0)
 	case "Вещи":
 		userItems := repository.GetInventoryItems(user.ID)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, MessageGoodsUserItems(user, userItems, 0))
+		msg.Text = MessageGoodsUserItems(user, userItems, 0)
 		msg.ReplyMarkup = helpers.GoodsInlineKeyboard(user, userItems, 0)
 	case "📴":
 		userOnline := true
 		user = repository.UpdateUser(update, repository.User{OnlineMap: &userOnline})
 		msg.Text, buttons = repository.GetMyMap(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\nОнлайн включен!")
+		msg.Text = msg.Text + messageSeparator + "Онлайн включен!"
 		msg.ReplyMarkup = buttons
 	case "📳":
 		userOnline := false
 		user = repository.UpdateUser(update, repository.User{OnlineMap: &userOnline})
 		msg.Text, buttons = repository.GetMyMap(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\nОнлайн выключен!")
+		msg.Text = msg.Text + messageSeparator + "Онлайн выключен!"
 		msg.ReplyMarkup = buttons
 	case ItemHead.View:
 		res := directionMovement(update, char[1])
-		text := repository.UpdateUserInstrument(update, user, ItemHead)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, repository.ViewItemInfo(res)+text)
+		status, text := repository.UpdateUserInstrument(update, user, ItemHead)
+		if status != "Ok" {
+			msg.Text = repository.ViewItemInfo(res) + messageSeparator + text
+		} else {
+			msg.Text = repository.ViewItemInfo(res)
+		}
 	default:
 		msg.Text, buttons = repository.GetMyMap(update)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\nНет инструмента в руке!")
@@ -297,9 +313,7 @@ func MessageBackpackUserItems(userItems []repository.UserItem, rowUser int) stri
 		default:
 			firstCell += "▫️"
 		}
-		userItemMsg += firstCell + "   " + repository.ToString(*item.Count) + item.Item.View +
-			"     *HP*:  _+" + repository.ToString(*item.Item.Healing) + "_ ♥️️" +
-			"     *ST*:  _+" + repository.ToString(*item.Item.Satiety) + "_\U0001F9C3 ️\n"
+		userItemMsg += fmt.Sprintf("%s   %s%s     *HP*:  _%s_ ♥️️     *ST*:  _%s_ \U0001F9C3 ️\n", firstCell, repository.ToString(*item.Count), item.Item.View, repository.ToString(*item.Item.Healing), repository.ToString(*item.Item.Satiety))
 
 	}
 
@@ -334,8 +348,7 @@ func MessageGoodsUserItems(user repository.User, userItems []repository.UserItem
 		default:
 			firstCell += "▫️"
 		}
-		userItemMsg += firstCell + "   " + item.Item.View + " " + repository.ToString(*item.Count) +
-			"шт.     " + res + " " + item.Item.Name + "    (еще " + repository.ToString(*item.CountUseLeft) + " исп.)\n"
+		userItemMsg += fmt.Sprintf("%s   %s %sшт.     %s %s    (%s из %s)\n", firstCell, item.Item.View, repository.ToString(*item.Count), res, item.Item.Name, repository.ToString(*item.CountUseLeft), repository.ToString(*item.Item.CountUse))
 
 	}
 
@@ -353,7 +366,7 @@ func BackPackMoving(charData []string, update tgbotapi.Update) tgbotapi.MessageC
 		i = i - 1
 	}
 
-	msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, MessageBackpackUserItems(userItems, i))
+	msg.Text = MessageBackpackUserItems(userItems, i)
 	msg.ReplyMarkup = helpers.BackpackInlineKeyboard(userItems, i)
 
 	return msg
@@ -371,7 +384,7 @@ func GoodsMoving(charData []string, update tgbotapi.Update) tgbotapi.MessageConf
 		i = i - 1
 	}
 
-	msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, MessageGoodsUserItems(user, userItems, i))
+	msg.Text = MessageGoodsUserItems(user, userItems, i)
 	msg.ReplyMarkup = helpers.GoodsInlineKeyboard(user, userItems, i)
 
 	return msg
@@ -390,12 +403,12 @@ func UserEatItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConf
 	res := repository.EatItem(update, user, userItem)
 	charDataForOpenBackPack := strings.Fields("backpackMoving " + charData[2])
 	msg = BackPackMoving(charDataForOpenBackPack, update)
-	msg.Text = msg.Text + "\n\n" + res
+	msg.Text = msg.Text + messageSeparator + res
 
 	return msg
 }
 
-func UserThrowOutItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConfig {
+func UserDeleteItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConfig {
 	userItemId := repository.ToInt(charData[1])
 	userTgId := repository.GetUserTgId(update)
 	user := repository.GetUser(repository.User{TgId: userTgId})
@@ -409,21 +422,21 @@ func UserThrowOutItem(update tgbotapi.Update, charData []string) tgbotapi.Messag
 
 	repository.UpdateUserItem(user, updateUserItemStruct)
 	if err != nil {
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Еда магически исчезла из твоих рук! и ты ее больше не нашел)")
+		msg.Text = "Еда магически исчезла из твоих рук! и ты ее больше не нашел)"
 	}
 
 	var charDataForOpenList []string
-	switch charData[0] {
-	case "throwOutGood":
+	switch charData[3] {
+	case "good":
 		charDataForOpenList = strings.Fields("goodsMoving " + charData[2])
 		userTakeOffGood(update, charData)
 		msg = GoodsMoving(charDataForOpenList, update)
-	case "throwOutFood":
+	case "backpack":
 		charDataForOpenList = strings.Fields("backpackMoving " + charData[2])
 		msg = BackPackMoving(charDataForOpenList, update)
 	}
 
-	msg.Text = msg.Text + "\n\n" + "🗑 Вы выкинули " + repository.ToString(*userItem.Count) + "шт. " + userItem.Item.View
+	msg.Text = fmt.Sprintf("%s%s🗑 Вы выкинули %s%sшт.", msg.Text, messageSeparator, userItem.Item.View, repository.ToString(*userItem.Count))
 
 	return msg
 }
@@ -518,7 +531,7 @@ func userTakeOffGood(update tgbotapi.Update, charData []string) {
 
 	charDataForOpenGoods := strings.Fields("goodMoving " + charData[2])
 	msg = GoodsMoving(charDataForOpenGoods, update)
-	msg.Text = msg.Text + "\n\n" + "Вещь снята"
+	msg.Text = fmt.Sprintf("%s%sВещь снята!", msg.Text, messageSeparator)
 }
 
 func dressUserItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConfig {
@@ -567,11 +580,73 @@ func dressUserItem(update tgbotapi.Update, charData []string) tgbotapi.MessageCo
 	}
 
 	if changeHandItem {
-		msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, msg.Text+"\n\n"+result)
 		msg.ReplyMarkup = helpers.ChangeItemInHand(user, userItemId, charData[2])
 	} else {
 		charDataForOpenGoods := strings.Fields("goodMoving " + charData[2])
 		msg = GoodsMoving(charDataForOpenGoods, update)
+	}
+
+	msg.Text = fmt.Sprintf("%s%s%s", msg.Text, messageSeparator, result)
+
+	return msg
+}
+
+func userThrowOutItem(update tgbotapi.Update, user repository.User, charData []string) tgbotapi.MessageConfig {
+	userItem, _ := repository.GetUserItem(repository.UserItem{ID: repository.ToInt(charData[1])})
+
+	*userItem.Count = *userItem.Count - repository.ToInt(charData[3])
+
+	res := repository.UpdateCellUnderUser(update, userItem, repository.ToInt(charData[3]))
+	var msgtext string
+	if res != "Ok" {
+		msgtext = fmt.Sprintf("%s%s", messageSeparator, res)
+	} else {
+		msgtext = fmt.Sprintf("%sВы сбросили %s %sшт. на карту!", messageSeparator, userItem.Item.View, charData[3])
+		repository.UpdateUserItem(user, repository.UserItem{ID: userItem.ID, Count: userItem.Count})
+	}
+
+	var charDataForOpenList []string
+	switch charData[4] {
+	case "good":
+		charDataForOpenList = strings.Fields("goodsMoving " + charData[2])
+		if *userItem.Count == 0 {
+			userTakeOffGood(update, charData)
+		}
+		msg = GoodsMoving(charDataForOpenList, update)
+	case "backpack":
+		charDataForOpenList = strings.Fields("backpackMoving " + charData[2])
+		msg = BackPackMoving(charDataForOpenList, update)
+	}
+
+	msg.Text = msg.Text + msgtext
+
+	return msg
+}
+
+func userWantsToThrowOutItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConfig {
+	userItem, _ := repository.GetUserItem(repository.UserItem{ID: repository.ToInt(charData[1])})
+
+	if userItem.CountUseLeft != nil && *userItem.CountUseLeft != *userItem.Item.CountUse {
+		*userItem.Count = *userItem.Count - 1
+	}
+
+	if *userItem.Count == 0 {
+		var charDataForOpenList []string
+		switch charData[3] {
+		case "good":
+			charDataForOpenList = strings.Fields("goodsMoving " + charData[2])
+			if *userItem.CountUseLeft == *userItem.Item.CountUse {
+				userTakeOffGood(update, charData)
+			}
+			msg = GoodsMoving(charDataForOpenList, update)
+		case "backpack":
+			charDataForOpenList = strings.Fields("backpackMoving " + charData[2])
+			msg = BackPackMoving(charDataForOpenList, update)
+		}
+		msg.Text = fmt.Sprintf("%s%sНельзя выкинуть на карту предмет, который уже был использован!", msg.Text, messageSeparator)
+	} else {
+		msg.ReplyMarkup = helpers.CountItemUserWantsToThrow(charData, userItem)
+		msg.Text = fmt.Sprintf("%sСколько %s ты хочешь скинуть?", messageSeparator, userItem.Item.View)
 	}
 
 	return msg

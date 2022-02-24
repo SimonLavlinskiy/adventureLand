@@ -3,6 +3,7 @@ package repository
 import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"project0/config"
 	"time"
 )
 
@@ -71,14 +72,14 @@ func UserGetItemWithInstrument(update tgbotapi.Update, cellule Cellule, user Use
 	switch instrument.Type {
 	case "destruction":
 		itemMsg := DesctructionItem(update, cellule, user, userGetItem, instrument)
-		instrumentMsg = UpdateUserInstrument(update, user, userInstrument)
+		_, instrumentMsg = UpdateUserInstrument(update, user, userInstrument)
 		result = itemMsg + instrumentMsg
 	case "hand":
 		result = UserGetItemWithHand(update, cellule, user, userGetItem)
 	case "growing":
 		status, itemMsg := GrowingItem(update, cellule, user, userGetItem, instrument)
 		if status == "Ok" {
-			instrumentMsg = UpdateUserInstrument(update, user, userInstrument)
+			_, instrumentMsg = UpdateUserInstrument(update, user, userInstrument)
 		}
 		result = itemMsg + instrumentMsg
 	}
@@ -90,19 +91,29 @@ func UserGetItemWithHand(update tgbotapi.Update, cellule Cellule, user User, use
 	sumCountItem := *userGetItem.Count + 1
 	countAfterUserGetItem := *cellule.ItemCount - 1
 	updateUserMoney := *user.Money - *cellule.Item.Cost
-	countUseLeft := *userGetItem.CountUseLeft
-	if *userGetItem.Count == 0 {
-		countUseLeft = *userGetItem.Item.CountUse
+	var countUseLeft = userGetItem.Item.CountUse
+
+	if userGetItem.CountUseLeft != nil {
+		countUseLeft = userGetItem.CountUseLeft
+	}
+	if *userGetItem.Count == 0 && userGetItem.Item.CountUse != nil {
+		*countUseLeft = *userGetItem.Item.CountUse
 	}
 
-	UpdateUserItem(User{ID: user.ID}, UserItem{ID: userGetItem.ID, Count: &sumCountItem, CountUseLeft: &countUseLeft})
+	UpdateUserItem(User{ID: user.ID}, UserItem{ID: userGetItem.ID, Count: &sumCountItem, CountUseLeft: countUseLeft})
 	UpdateUser(update, User{Money: &updateUserMoney})
+
+	textCountLeft := ""
 	if countAfterUserGetItem != 0 || cellule.PrevItemID == nil {
 		UpdateCellule(cellule.ID, Cellule{ItemCount: &countAfterUserGetItem})
 	} else {
 		UpdateCellOnPrevItem(cellule)
 	}
-	return "Ты получил " + userGetItem.Item.View + " 1 шт. (Осталось лежать еще " + ToString(countAfterUserGetItem) + ")"
+
+	if countAfterUserGetItem != 0 {
+		textCountLeft = fmt.Sprintf("(Осталось лежать еще %s)", ToString(countAfterUserGetItem))
+	}
+	return fmt.Sprintf("Ты получил %s 1 шт. %s", userGetItem.Item.View, textCountLeft)
 }
 
 func itemHpLeft(cellule Cellule, instrument Instrument) string {
@@ -197,11 +208,15 @@ func DesctructionItem(update tgbotapi.Update, cellule Cellule, user User, userGe
 
 		return result
 	} else {
-		UpdateCellule(cellule.ID,
-			Cellule{
-				ID:            cellule.ID,
-				DestructionHp: &ItemDestructionHp,
-			})
+		err := config.Db.
+			Where(&Cellule{ID: cellule.ID}).
+			Updates(Cellule{ID: cellule.ID, DestructionHp: &ItemDestructionHp}).
+			Update("next_state_time", nil).
+			Update("last_growing", nil).
+			Error
+		if err != nil {
+			panic(err)
+		}
 
 		return "Попробуй еще.. (" + itemHpLeft(cellule, instrument) + ")"
 	}

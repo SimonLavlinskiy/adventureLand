@@ -168,10 +168,12 @@ func CheckUserHasInstrument(user User, instrument Instrument) (string, Item) {
 
 func CheckUserHasLighter(update tgbotapi.Update, user User) string {
 	if user.LeftHandId != nil && user.LeftHand.Type == "light" {
-		return UpdateUserInstrument(update, user, *user.LeftHand)
+		_, res := UpdateUserInstrument(update, user, *user.LeftHand)
+		return res
 	}
 	if user.RightHandId != nil && user.RightHand.Type == "light" {
-		return UpdateUserInstrument(update, user, *user.RightHand)
+		_, res := UpdateUserInstrument(update, user, *user.RightHand)
+		return res
 	}
 	return ""
 }

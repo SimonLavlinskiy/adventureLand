@@ -150,13 +150,13 @@ func GetFullDescriptionOfUserItem(userItem UserItem) string {
 	return fullDescriptionUserItem + itemDescription
 }
 
-func UpdateUserInstrument(update tgbotapi.Update, user User, instrument Item) string {
+func UpdateUserInstrument(update tgbotapi.Update, user User, instrument Item) (string, string) {
 	userItem, _ := GetUserItem(UserItem{ItemId: int(instrument.ID), UserId: int(user.ID)})
 
 	c := *userItem.CountUseLeft - 1
 	if c > 0 {
 		UpdateUserItem(user, UserItem{ID: userItem.ID, CountUseLeft: &c})
-		return ""
+		return "Ok", ""
 	}
 
 	zeroValue := 0
@@ -186,5 +186,5 @@ func UpdateUserInstrument(update tgbotapi.Update, user User, instrument Item) st
 		}
 	}
 
-	return "\n\n💥 Инструмент «" + userItem.Item.View + " " + userItem.Item.Name + "» был сломан! 💥"
+	return "Not ok", "💥 Инструмент «" + userItem.Item.View + " " + userItem.Item.Name + "» был сломан! 💥"
 }

@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/repository"
 	"strings"
@@ -26,8 +27,11 @@ func BackpackInlineKeyboard(items []repository.UserItem, i int) tgbotapi.InlineK
 			tgbotapi.NewInlineKeyboardButtonData("🔺", "backpackMoving "+repository.ToString(i-1)),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🗑 все!", "throwOutFood "+repository.ToString(items[i].ID)+" "+repository.ToString(i)),
+			tgbotapi.NewInlineKeyboardButtonData("👋🗑🗺", "throwOutItem "+repository.ToString(items[i].ID)+" "+repository.ToString(i)+" backpack"),
 			tgbotapi.NewInlineKeyboardButtonData("🔻", "backpackMoving "+repository.ToString(i+1)),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("💥🗑💥", "deleteItem "+repository.ToString(items[i].ID)+" "+repository.ToString(i)+" backpack"),
 		),
 	)
 }
@@ -69,10 +73,50 @@ func GoodsInlineKeyboard(user repository.User, userItems []repository.UserItem, 
 			tgbotapi.NewInlineKeyboardButtonData("🔺", "goodsMoving "+repository.ToString(i-1)),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🗑", "throwOutGood "+repository.ToString(userItems[i].ID)+" "+repository.ToString(i)),
+			tgbotapi.NewInlineKeyboardButtonData("👋🗑🗺", "throwOutItem "+repository.ToString(userItems[i].ID)+" "+repository.ToString(i)+" good"),
 			tgbotapi.NewInlineKeyboardButtonData("🔻", "goodsMoving "+repository.ToString(i+1)),
 		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("💥🗑💥", "deleteItem "+repository.ToString(userItems[i].ID)+" "+repository.ToString(i)+" good"),
+		),
 	)
+}
+
+func CountItemUserWantsToThrow(buttonData []string, userItem repository.UserItem) tgbotapi.InlineKeyboardMarkup {
+	maxCountItem := *userItem.Count
+	var buttons [][]tgbotapi.InlineKeyboardButton
+
+	for x := 1; x < 10; x = x + 5 {
+		var row []tgbotapi.InlineKeyboardButton
+		if x > maxCountItem {
+			break
+		}
+		for y := 0; y < 5; y++ {
+			if x+y > maxCountItem {
+				break
+			}
+			row = append(row, tgbotapi.NewInlineKeyboardButtonData(repository.ToString(x+y)+"шт.", fmt.Sprintf("countOfDelete %s %s %s %s", buttonData[1], buttonData[2], repository.ToString(x+y), buttonData[3])))
+		}
+		buttons = append(buttons, row)
+	}
+
+	for y := 20; y <= maxCountItem; y = y + 20 {
+		var row []tgbotapi.InlineKeyboardButton
+		if y < maxCountItem {
+			row = append(row, tgbotapi.NewInlineKeyboardButtonData(repository.ToString(y)+"шт.", fmt.Sprintf("countOfDelete %s %s %s %s", buttonData[1], buttonData[2], repository.ToString(y), buttonData[3])))
+		}
+		x := y + 10
+		if y < maxCountItem {
+			row = append(row, tgbotapi.NewInlineKeyboardButtonData(repository.ToString(x)+"шт.", fmt.Sprintf("countOfDelete %s %s %s %s", buttonData[1], buttonData[2], repository.ToString(x), buttonData[3])))
+		}
+		buttons = append(buttons, row)
+	}
+
+	var row []tgbotapi.InlineKeyboardButton
+	row = append(row, tgbotapi.NewInlineKeyboardButtonData("Все!", fmt.Sprintf("countOfDelete %s %s %s %s", buttonData[1], buttonData[2], repository.ToString(maxCountItem), buttonData[3])))
+	buttons = append(buttons, row)
+
+	return tgbotapi.NewInlineKeyboardMarkup(buttons...)
 }
 
 func EmodjiInlineKeyboard() tgbotapi.InlineKeyboardMarkup {

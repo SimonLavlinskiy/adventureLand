@@ -5,8 +5,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-// TODO вынести костантные названия кнопок в отдельный файл(Можно даже в yml)
-
 var deleteBotMsg tgbotapi.DeleteMessageConfig
 
 func GetMessage(telegramApiToken string) {
@@ -38,7 +36,6 @@ func GetMessage(telegramApiToken string) {
 			msg = messageResolver(update)
 			SendMessage(msg, bot)
 		}
-		//msg.ReplyToMessageID = update.Message.MessageID
 	}
 
 }

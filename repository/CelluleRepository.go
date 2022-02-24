@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
 	"time"
 )
@@ -58,16 +59,6 @@ func UpdateCellule(cellId uint, updateCellule Cellule) {
 	if err != nil {
 		panic(err)
 	}
-
-	if updateCellule.NextStateTime == nil {
-		err := config.Db.Model(Cellule{}).
-			Where(&Cellule{ID: cellId}).
-			Update("next_state_time", nil).
-			Error
-		if err != nil {
-			panic(err)
-		}
-	}
 }
 
 func UpdateCelluleWithNextStateTime() {
@@ -89,7 +80,7 @@ func UpdateCelluleWithNextStateTime() {
 	for _, result := range results {
 		for _, instrument := range result.Item.Instruments {
 			if instrument.Type == "growing" {
-				fmt.Println("Апдейтнулся: %?", result.ID)
+				fmt.Println("Апдейтнулся: ", result.ID)
 				UpdateCelluleAfterGrowing(result, instrument)
 			}
 		}
@@ -214,4 +205,31 @@ func UpdateCellOnPrevItem(cellule Cellule) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func UpdateCellUnderUser(update tgbotapi.Update, userItem UserItem, count int) string {
+	location := GetOrCreateMyLocation(update)
+
+	cell := GetCellule(Cellule{AxisX: *location.AxisX, AxisY: *location.AxisY, MapsId: *location.MapsId})
+	if cell.ItemCount != nil && *cell.ItemCount > 0 {
+		return "В этой ячейке уже есть предмет, перейди на другую ячейку..."
+	}
+
+	err := config.Db.Model(Cellule{}).
+		Where(&Cellule{AxisX: *location.AxisX, AxisY: *location.AxisY, MapsId: *location.MapsId}).
+		Update("item_id", userItem.ItemId).
+		Update("item_count", count).
+		Update("type", "item").
+		Update("destruction_hp", nil).
+		Update("next_state_time", nil).
+		Update("last_growing", nil).
+		Update("prev_item_id", nil).
+		Update("prev_item_count", nil).
+		Error
+	if err != nil {
+		panic(err)
+	}
+
+	return "Ok"
+
 }
