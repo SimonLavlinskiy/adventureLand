@@ -10,7 +10,7 @@ import (
 )
 
 var msg tgbotapi.MessageConfig
-var messageSeparator = "\n\n〰️〰️〰️〰️〰️〰️〰️\n"
+var messageSeparator = "\n\n〰️〰️〰️〰️〰️〰️〰️〰️〰️\n"
 
 func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 	user := repository.GetOrCreateUser(update)
@@ -56,15 +56,13 @@ func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 		case "takeOffGood":
 			userTakeOffGood(update, charData)
 		case "changeLeftHand":
-			itemId := repository.ToInt(charData[1])
-			userItem, _ := repository.GetUserItem(repository.UserItem{ID: itemId})
+			userItem, _ := repository.GetUserItem(repository.UserItem{ID: repository.ToInt(charData[1])})
 			repository.UpdateUser(update, repository.User{LeftHandId: &userItem.ItemId})
 			charDataForOpenGoods := strings.Fields("goodMoving " + charData[2])
 			msg = GoodsMoving(charDataForOpenGoods, update)
 			msg.Text = fmt.Sprintf("%s%sВы надели %s", msg.Text, messageSeparator, userItem.Item.View)
 		case "changeRightHand":
-			itemId := repository.ToInt(charData[1])
-			userItem, _ := repository.GetUserItem(repository.UserItem{ID: itemId})
+			userItem, _ := repository.GetUserItem(repository.UserItem{ID: repository.ToInt(charData[1])})
 			repository.UpdateUser(update, repository.User{RightHandId: &userItem.ItemId})
 			charDataForOpenGoods := strings.Fields("goodMoving " + charData[2])
 			msg = GoodsMoving(charDataForOpenGoods, update)

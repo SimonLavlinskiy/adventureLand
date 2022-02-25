@@ -51,7 +51,6 @@ func SendMessage(message tgbotapi.MessageConfig, bot *tgbotapi.BotAPI) {
 	if err != nil {
 		panic("Error send msg: " + err.Error())
 	}
-
 }
 
 //func UpdateMessage(updateMsg tgbotapi.EditMessageTextConfig, telegramApiToken string) {
