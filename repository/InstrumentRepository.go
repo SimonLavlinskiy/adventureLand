@@ -32,7 +32,7 @@ func GetInstrumentsUserCanUse(user User, cell Cellule) []string {
 	if cell.Item.CanTake {
 		instrumentsUserCanUse = append(instrumentsUserCanUse, "👋")
 	}
-	if cell.CanStep {
+	if cell.Item.CanStep {
 		instrumentsUserCanUse = append(instrumentsUserCanUse, "\U0001F9B6")
 	}
 

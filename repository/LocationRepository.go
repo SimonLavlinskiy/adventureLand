@@ -65,7 +65,7 @@ func UpdateLocation(update tgbotapi.Update, LocationStruct Location) (Location, 
 	var result Cellule
 	var err error
 
-	err = config.Db.First(&result, &Cellule{MapsId: *LocationStruct.MapsId, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY}).Error
+	err = config.Db.Preload("Item").First(&result, &Cellule{MapsId: *LocationStruct.MapsId, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY}).Error
 	if err != nil {
 		if err.Error() == "record not found" {
 			return myLocation, "\nСюда никак не пройти("
@@ -73,7 +73,7 @@ func UpdateLocation(update tgbotapi.Update, LocationStruct Location) (Location, 
 		panic(err)
 	}
 
-	if !result.CanStep {
+	if !result.CanStep || result.Item != nil && *result.ItemCount > 0 && !result.Item.CanStep {
 		return myLocation, "\nСюда никак не пройти("
 	} else {
 		err = config.Db.Where(&Location{UserTgId: userTgId}).Updates(LocationStruct).Error

@@ -23,6 +23,7 @@ type Item struct {
 	Growing         *int         `gorm:"embedded"`
 	IntervalGrowing *int         `gorm:"embedded"`
 	CanTake         bool         `gorm:"embedded"`
+	CanStep         bool         `gorm:"embedded"`
 	Instruments     []Instrument `gorm:"many2many:instrument_item;"`
 	DressType       *string      `gorm:"embedded"`
 	IsBackpack      bool         `gorm:"embedded"`
@@ -74,8 +75,6 @@ func UserGetItemWithInstrument(update tgbotapi.Update, cellule Cellule, user Use
 		itemMsg := DesctructionItem(update, cellule, user, userGetItem, instrument)
 		_, instrumentMsg = UpdateUserInstrument(update, user, userInstrument)
 		result = itemMsg + instrumentMsg
-	case "hand":
-		result = UserGetItemWithHand(update, cellule, user, userGetItem)
 	case "growing":
 		status, itemMsg := GrowingItem(update, cellule, user, userGetItem, instrument)
 		if status == "Ok" {
@@ -118,7 +117,12 @@ func UserGetItemWithHand(update tgbotapi.Update, cellule Cellule, user User, use
 
 func itemHpLeft(cellule Cellule, instrument Instrument) string {
 	maxCountHit := int(float64(*cellule.Item.DestructionHp / *instrument.Good.Destruction))
-	countHitLeft := int(float64(*cellule.DestructionHp / *instrument.Good.Destruction))
+	var countHitLeft int
+	if cellule.DestructionHp != nil {
+		countHitLeft = int(float64(*cellule.DestructionHp / *instrument.Good.Destruction))
+	} else {
+		countHitLeft = int(float64(*cellule.Item.DestructionHp / *instrument.Good.Destruction))
+	}
 
 	var result string
 	for i := 1; i <= maxCountHit; i++ {
@@ -181,9 +185,14 @@ func GrowingItem(update tgbotapi.Update, cellule Cellule, user User, userGetItem
 }
 
 func DesctructionItem(update tgbotapi.Update, cellule Cellule, user User, userGetItem UserItem, instrument Instrument) string {
-	var ItemDestructionHp = *cellule.DestructionHp
+	var ItemDestructionHp int
+	if cellule.DestructionHp == nil {
+		ItemDestructionHp = *cellule.Item.DestructionHp
+	} else {
+		ItemDestructionHp = *cellule.DestructionHp
+	}
 
-	ItemDestructionHp = *cellule.DestructionHp - *instrument.Good.Destruction
+	ItemDestructionHp = ItemDestructionHp - *instrument.Good.Destruction
 
 	if isItemCrushed(cellule, ItemDestructionHp) {
 		var result string

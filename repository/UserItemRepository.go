@@ -186,5 +186,5 @@ func UpdateUserInstrument(update tgbotapi.Update, user User, instrument Item) (s
 		}
 	}
 
-	return "Not ok", "💥 Инструмент «" + userItem.Item.View + " " + userItem.Item.Name + "» был сломан! 💥"
+	return "Not ok", "\n💥 Инструмент «" + userItem.Item.View + " " + userItem.Item.Name + "» был сломан! 💥"
 }

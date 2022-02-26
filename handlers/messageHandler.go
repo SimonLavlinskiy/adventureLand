@@ -124,16 +124,20 @@ func useSpecialCell(update tgbotapi.Update, char []string, user repository.User)
 
 	switch char[0] {
 	case "🔼", "🔽", "◀️️", "▶️":
+		var text string
 		res := directionMovement(update, char[0])
-		repository.UpdateLocation(update, res)
-		text := repository.CheckUserHasLighter(update, user)
+		_, locText := repository.UpdateLocation(update, res)
+		if locText != "Ok" {
+			text = messageSeparator + repository.CheckUserHasLighter(update, user)
+			text = text + locText
+		}
 		msg.Text, buttons = repository.GetMyMap(update)
 		msg.Text = msg.Text + messageSeparator + text
 		msg.ReplyMarkup = buttons
 	case "\U0001F9B6":
+		var text string
 		res := directionMovement(update, char[1])
 		_, locText := repository.UpdateLocation(update, res)
-		var text string
 		if locText != "Ok" {
 			text = messageSeparator + repository.CheckUserHasLighter(update, user)
 			text = text + locText
@@ -283,9 +287,13 @@ func useDefaultCell(update tgbotapi.Update, user repository.User) tgbotapi.Messa
 
 	switch newMessage {
 	case "🔼", "🔽", "◀️️", "▶️":
+		var text string
 		res := directionMovement(update, newMessage)
-		repository.UpdateLocation(update, res)
-		text := repository.CheckUserHasLighter(update, user)
+		_, locText := repository.UpdateLocation(update, res)
+		if locText != "Ok" {
+			text = messageSeparator + repository.CheckUserHasLighter(update, user)
+			text = text + locText
+		}
 		msg.Text, buttons = repository.GetMyMap(update)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+text)
 		msg.ReplyMarkup = buttons

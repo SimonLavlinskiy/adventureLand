@@ -165,6 +165,9 @@ func UpdateCelluleAfterDestruction(cellule Cellule, instrument Instrument) {
 		cellule = CellUpdatePrevItem(cellule)
 	} else if *cellule.ItemCount <= 1 && instrument.NextStageItem != nil {
 		cellule = CellUpdatedNextItem(cellule, instrument)
+	} else {
+		*cellule.ItemCount = *cellule.ItemCount - 1
+		cellule.DestructionHp = nil
 	}
 
 	cellule.LastGrowing = nil
