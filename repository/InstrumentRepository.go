@@ -28,9 +28,12 @@ func GetInstrumentsUserCanUse(user User, cell Cellule) []string {
 		if user.HeadId != nil && user.Head.Type == instrument.Good.Type {
 			instrumentsUserCanUse = append(instrumentsUserCanUse, user.Head.View)
 		}
-		if instrument.Good.Type == "hand" {
-			instrumentsUserCanUse = append(instrumentsUserCanUse, instrument.Good.View)
-		}
+	}
+	if cell.Item.CanTake {
+		instrumentsUserCanUse = append(instrumentsUserCanUse, "👋")
+	}
+	if cell.CanStep {
+		instrumentsUserCanUse = append(instrumentsUserCanUse, "\U0001F9B6")
 	}
 
 	return instrumentsUserCanUse

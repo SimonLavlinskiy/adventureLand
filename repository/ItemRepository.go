@@ -48,13 +48,13 @@ func UserGetItem(update tgbotapi.Update, LocationStruct Location, char []string)
 	return "Не получилось..."
 }
 
-func checkItemsOnNeededInstrument(instruments []Instrument, msgInstrumentView string) (string, *Instrument) {
-	for _, instrument := range instruments {
+func checkItemsOnNeededInstrument(cell Cellule, msgInstrumentView string) (string, *Instrument) {
+	for _, instrument := range cell.Item.Instruments {
 		if instrument.Good.View == msgInstrumentView {
 			return "Ok", &instrument
 		}
 	}
-	if msgInstrumentView == "👋" {
+	if msgInstrumentView == "👋" && cell.Item.CanTake {
 		return "Ok", nil
 	}
 	return "Not ok", nil
@@ -245,7 +245,7 @@ func UserGetItemUpdateModels(update tgbotapi.Update, cellule Cellule, instrument
 
 	var userGetItem UserItem
 
-	status, instrument := checkItemsOnNeededInstrument(cellule.Item.Instruments, instrumentView)
+	status, instrument := checkItemsOnNeededInstrument(cellule, instrumentView)
 	if status != "Ok" {
 		return "Предмет не поддается под таким инструментом"
 	}
@@ -264,11 +264,13 @@ func UserGetItemUpdateModels(update tgbotapi.Update, cellule Cellule, instrument
 		return "Не хватает деняк!"
 	}
 
-	if instrumentView == "👋" && len(cellule.Item.Instruments) == 0 {
+	if instrumentView == "👋" {
 		return UserGetItemWithHand(update, cellule, user, userGetItem)
-	} else {
+	} else if instrumentView != "👋" && len(cellule.Item.Instruments) != 0 {
 		return UserGetItemWithInstrument(update, cellule, user, *instrument, userGetItem)
 	}
+
+	return "Нельзя взять!"
 
 }
 
@@ -325,12 +327,14 @@ func ViewItemInfo(location Location) string {
 	if cell.Item.Destruction != nil && *cell.Item.Destruction != 0 {
 		itemInfo = itemInfo + fmt.Sprintf("*Сила*: `%s %s`\n", ToString(*cell.Item.Destruction), cell.Item.View)
 	}
-	if cell.Item.DestructionHp != nil && *cell.Item.DestructionHp != 0 {
+	if cell.DestructionHp != nil && *cell.Item.DestructionHp != 0 {
+		itemInfo = itemInfo + fmt.Sprintf("*Прочность*: `%s`\n", ToString(*cell.DestructionHp))
+	} else if cell.Item.DestructionHp != nil && *cell.Item.DestructionHp != 0 {
 		itemInfo = itemInfo + fmt.Sprintf("*Прочность*: `%s`\n", ToString(*cell.Item.DestructionHp))
 	}
 	if cell.Item.Growing != nil && cell.NextStateTime != nil {
 		itemInfo = itemInfo + fmt.Sprintf("*Вырастет*: %s\n", cell.NextStateTime.Format("15:04:05 02.01.06"))
-	} else {
+	} else if cell.Item.Growing != nil {
 		itemInfo = itemInfo + fmt.Sprintf("*Время роста*: `%s мин.`\n", ToString(*cell.Item.Growing))
 	}
 	if cell.Item.IntervalGrowing != nil {

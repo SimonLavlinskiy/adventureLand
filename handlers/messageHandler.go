@@ -80,6 +80,17 @@ func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 			resText, buttons := repository.GetMyMap(update)
 			msg.Text = resText + messageSeparator + resultOfGetItem
 			msg.ReplyMarkup = buttons
+		case "\U0001F9B6":
+			res := directionMovement(update, charData[1])
+			_, locText := repository.UpdateLocation(update, res)
+			var text string
+			if locText != "Ok" {
+				text = messageSeparator + repository.CheckUserHasLighter(update, user)
+				text = text + locText
+			}
+			msg.Text, buttons = repository.GetMyMap(update)
+			msg.Text = msg.Text + text
+			msg.ReplyMarkup = buttons
 		case ItemHead.View:
 			res := directionMovement(update, charData[1])
 			status, text := repository.UpdateUserInstrument(update, user, ItemHead)
@@ -118,6 +129,17 @@ func useSpecialCell(update tgbotapi.Update, char []string, user repository.User)
 		text := repository.CheckUserHasLighter(update, user)
 		msg.Text, buttons = repository.GetMyMap(update)
 		msg.Text = msg.Text + messageSeparator + text
+		msg.ReplyMarkup = buttons
+	case "\U0001F9B6":
+		res := directionMovement(update, char[1])
+		_, locText := repository.UpdateLocation(update, res)
+		var text string
+		if locText != "Ok" {
+			text = messageSeparator + repository.CheckUserHasLighter(update, user)
+			text = text + locText
+		}
+		msg.Text, buttons = repository.GetMyMap(update)
+		msg.Text = msg.Text + text
 		msg.ReplyMarkup = buttons
 	case "👋", ItemLeftHand.View, ItemRightHand.View:
 		res := directionMovement(update, char[1])

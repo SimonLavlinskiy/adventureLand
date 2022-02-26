@@ -166,7 +166,11 @@ func ChooseInstrument(char []string, cell repository.Cellule, user repository.Us
 		var row []tgbotapi.InlineKeyboardButton
 
 		for _, instrument := range instruments {
-			row = append(row, tgbotapi.NewInlineKeyboardButtonData(instrument, instrument+" "+char[3]+" "+char[4]))
+			if cell.Item.Cost != nil && *cell.Item.Cost > 0 && instrument == "👋" {
+				row = append(row, tgbotapi.NewInlineKeyboardButtonData(instrument+" ( "+repository.ToString(*cell.Item.Cost)+"💰 )", instrument+" "+char[3]+" "+char[4]))
+			} else {
+				row = append(row, tgbotapi.NewInlineKeyboardButtonData(instrument, instrument+" "+char[3]+" "+char[4]))
+			}
 		}
 
 		return tgbotapi.NewInlineKeyboardMarkup(

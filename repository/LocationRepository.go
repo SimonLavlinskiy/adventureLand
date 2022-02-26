@@ -43,8 +43,13 @@ func GetOrCreateMyLocation(update tgbotapi.Update) Location {
 	return result
 }
 
-func UpdateLocation(update tgbotapi.Update, LocationStruct Location) Location {
-	char := strings.Fields(update.Message.Text)
+func UpdateLocation(update tgbotapi.Update, LocationStruct Location) (Location, string) {
+	var char []string
+	if update.Message != nil {
+		char = strings.Fields(update.Message.Text)
+	} else {
+		char = strings.Fields(update.CallbackQuery.Data)
+	}
 	userTgId := GetUserTgId(update)
 	myLocation := GetOrCreateMyLocation(update)
 	resCellule := GetCellule(Cellule{MapsId: *LocationStruct.MapsId, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY})
@@ -63,18 +68,13 @@ func UpdateLocation(update tgbotapi.Update, LocationStruct Location) Location {
 	err = config.Db.First(&result, &Cellule{MapsId: *LocationStruct.MapsId, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY}).Error
 	if err != nil {
 		if err.Error() == "record not found" {
-			return myLocation
+			return myLocation, "\nСюда никак не пройти("
 		}
 		panic(err)
 	}
 
-	if !result.CanStep && result.Type != nil && len(char) != 1 {
-		err = config.Db.Where(&Location{UserTgId: userTgId}).Updates(LocationStruct).Error
-		if err != nil {
-			panic(err)
-		}
-	} else if !result.CanStep {
-		return myLocation
+	if !result.CanStep {
+		return myLocation, "\nСюда никак не пройти("
 	} else {
 		err = config.Db.Where(&Location{UserTgId: userTgId}).Updates(LocationStruct).Error
 		if err != nil {
@@ -83,7 +83,7 @@ func UpdateLocation(update tgbotapi.Update, LocationStruct Location) Location {
 	}
 
 	myLocation = GetOrCreateMyLocation(update)
-	return myLocation
+	return myLocation, "Ok"
 }
 
 func GetLocationOnlineUser(userlocation Location, mapSize UserMap) []Location {

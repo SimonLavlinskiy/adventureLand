@@ -368,7 +368,7 @@ func IsSpecialItem(cell Cellule, user User) string {
 	instrumentsUserCanUse := GetInstrumentsUserCanUse(user, cell)
 
 	if len(instrumentsUserCanUse) > 1 {
-		return "❗ " + "🛠" + " ❓"
+		return "❗ 🛠 ❓"
 	} else if len(instrumentsUserCanUse) == 1 {
 		return instrumentsUserCanUse[0]
 	}
@@ -377,17 +377,11 @@ func IsSpecialItem(cell Cellule, user User) string {
 }
 
 func isItemCost(cell Cellule, button string, resUser User) string {
-	var firstElem string
-
-	if len(cell.Item.Instruments) >= 1 {
-		firstElem = IsSpecialItem(cell, resUser)
-	} else {
-		firstElem = "👋"
-	}
+	var firstElem = IsSpecialItem(cell, resUser)
 
 	button = firstElem + " " + button + " " + cell.Item.View
 
-	if cell.Item.Cost != nil && *cell.Item.Cost > 0 {
+	if cell.Item.Cost != nil && *cell.Item.Cost > 0 && firstElem != "❗ 🛠 ❓" {
 		button = button + " ( " + ToString(*cell.Item.Cost) + "💰 )"
 	}
 
