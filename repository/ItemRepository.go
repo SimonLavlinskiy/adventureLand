@@ -232,7 +232,6 @@ func DesctructionItem(update tgbotapi.Update, cellule Cellule, user User, userGe
 }
 
 func isItemGrowed(cellule Cellule, updateItemTime time.Time) bool {
-
 	if cellule.Item.Growing != nil && updateItemTime.Before(time.Now()) {
 		return true
 	} else {

@@ -10,7 +10,8 @@ import (
 )
 
 var msg tgbotapi.MessageConfig
-var messageSeparator = "\n\n〰️〰️〰️〰️〰️〰️〰️〰️〰️\n"
+
+const messageSeparator = "\n\n〰️〰️〰️〰️〰️〰️〰️〰️〰️\n"
 
 func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 	user := repository.GetOrCreateUser(update)
@@ -41,76 +42,96 @@ func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 	user := repository.GetUser(repository.User{TgId: userTgId})
 	ItemLeftHand, ItemRightHand, ItemHead := usersHandItemsView(user)
 
-	if len(charData) != 1 {
-		switch charData[0] {
-		case "backpackMoving":
-			msg = BackPackMoving(charData, update)
-		case "goodsMoving":
-			msg = GoodsMoving(charData, update)
-		case "eatFood":
-			UserEatItem(update, charData)
-		case "deleteItem":
-			UserDeleteItem(update, charData)
-		case "dressGood":
-			msg = dressUserItem(update, charData)
-		case "takeOffGood":
-			userTakeOffGood(update, charData)
-		case "changeLeftHand":
-			userItem, _ := repository.GetUserItem(repository.UserItem{ID: repository.ToInt(charData[1])})
-			repository.UpdateUser(update, repository.User{LeftHandId: &userItem.ItemId})
-			charDataForOpenGoods := strings.Fields("goodMoving " + charData[2])
-			msg = GoodsMoving(charDataForOpenGoods, update)
-			msg.Text = fmt.Sprintf("%s%sВы надели %s", msg.Text, messageSeparator, userItem.Item.View)
-		case "changeRightHand":
-			userItem, _ := repository.GetUserItem(repository.UserItem{ID: repository.ToInt(charData[1])})
-			repository.UpdateUser(update, repository.User{RightHandId: &userItem.ItemId})
-			charDataForOpenGoods := strings.Fields("goodMoving " + charData[2])
-			msg = GoodsMoving(charDataForOpenGoods, update)
-			msg.Text = fmt.Sprintf("%s%sВы надели %s", msg.Text, messageSeparator, userItem.Item.View)
-		case "changeAvatar":
-			res := repository.UpdateUser(update, repository.User{Avatar: charData[1]})
-			msg.Text = repository.GetUserInfo(update)
-			msg.ReplyMarkup = helpers.ProfileKeyboard(res)
-		case "description":
-			msg.Text = repository.GetFullDescriptionOfUserItem(repository.UserItem{ID: repository.ToInt(charData[1])})
-			deletePrevMessage = false
-		case "👋", ItemLeftHand.View, ItemRightHand.View:
-			res := directionMovement(update, charData[1])
-			resultOfGetItem := repository.UserGetItem(update, res, charData)
-			resText, buttons := repository.GetMyMap(update)
-			msg.Text = resText + messageSeparator + resultOfGetItem
-			msg.ReplyMarkup = buttons
-		case "\U0001F9B6":
-			res := directionMovement(update, charData[1])
-			_, locText := repository.UpdateLocation(update, res)
-			var text string
-			if locText != "Ok" {
-				text = messageSeparator + repository.CheckUserHasLighter(update, user)
-				text = text + locText
-			}
-			msg.Text, buttons = repository.GetMyMap(update)
-			msg.Text = msg.Text + text
-			msg.ReplyMarkup = buttons
-		case ItemHead.View:
-			res := directionMovement(update, charData[1])
-			status, text := repository.UpdateUserInstrument(update, user, ItemHead)
-			if status != "Ok" {
-				msg.Text = repository.ViewItemInfo(res) + messageSeparator + text
-			} else {
-				msg.Text = repository.ViewItemInfo(res)
-			}
-		case "throwOutItem":
-			userWantsToThrowOutItem(update, charData)
-		case "countOfDelete":
-			msg = userThrowOutItem(update, user, charData)
-		}
-	} else {
+	if len(charData) == 1 {
 		switch charData[0] {
 		case "cancel":
 			msg.Text, buttons = repository.GetMyMap(update)
 			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, msg.Text)
 			msg.ReplyMarkup = buttons
 		}
+	}
+
+	switch charData[0] {
+	case "backpackMoving":
+		msg = BackPackMoving(charData, update)
+	case "goodsMoving":
+		msg = GoodsMoving(charData, update)
+	case "eatFood":
+		UserEatItem(update, charData)
+	case "deleteItem":
+		UserDeleteItem(update, charData)
+	case "dressGood":
+		msg = dressUserItem(update, charData)
+	case "takeOffGood":
+		userTakeOffGood(update, charData)
+	case "changeLeftHand":
+		userItem := repository.GetUserItem(repository.UserItem{ID: repository.ToInt(charData[1])})
+		repository.UpdateUser(update, repository.User{LeftHandId: &userItem.ItemId})
+		charDataForOpenGoods := strings.Fields("goodMoving " + charData[2])
+		msg = GoodsMoving(charDataForOpenGoods, update)
+		msg.Text = fmt.Sprintf("%s%sВы надели %s", msg.Text, messageSeparator, userItem.Item.View)
+	case "changeRightHand":
+		userItem := repository.GetUserItem(repository.UserItem{ID: repository.ToInt(charData[1])})
+		repository.UpdateUser(update, repository.User{RightHandId: &userItem.ItemId})
+		charDataForOpenGoods := strings.Fields("goodMoving " + charData[2])
+		msg = GoodsMoving(charDataForOpenGoods, update)
+		msg.Text = fmt.Sprintf("%s%sВы надели %s", msg.Text, messageSeparator, userItem.Item.View)
+	case "changeAvatar":
+		res := repository.UpdateUser(update, repository.User{Avatar: charData[1]})
+		msg.Text = repository.GetUserInfo(update)
+		msg.ReplyMarkup = helpers.ProfileKeyboard(res)
+	case "description":
+		msg.Text = repository.GetFullDescriptionOfUserItem(repository.UserItem{ID: repository.ToInt(charData[1])})
+		deletePrevMessage = false
+	case "workbench":
+		msg = Workbench(nil, charData)
+	case "receipt":
+		msg.Text = "📖 *Рецепты*: 📖\n---------------------------\n" + AllReceiptsMsg()
+		msg.ReplyMarkup = nil
+		deletePrevMessage = false
+	case "putItem":
+		userItem := repository.GetUserItems(user.ID)
+		msg.ReplyMarkup = helpers.ChooseUserItemButton(userItem, charData)
+		msg = OpenWorkbenchMessage(charData)
+		msg.Text = fmt.Sprintf("%s%sВыбери предмет:", msg.Text, messageSeparator)
+	case "putCountItem":
+		msg = OpenWorkbenchMessage(charData)
+		msg = PutCountComponent(charData)
+		msg.Text = fmt.Sprintf("%s%s⚠️ Сколько выкладываешь? ", msg.Text, messageSeparator)
+	case "makeNewItem":
+		resp := GetRecieptFromData(charData)
+		receipt := repository.FindReceiptForUser(resp)
+		msg, deletePrevMessage = UserCraftItem(user, receipt)
+
+	case "👋", ItemLeftHand.View, ItemRightHand.View:
+		res := directionMovement(update, charData[1])
+		resultOfGetItem := repository.UserGetItem(update, res, charData)
+		resText, buttons := repository.GetMyMap(update)
+		msg.Text = resText + messageSeparator + resultOfGetItem
+		msg.ReplyMarkup = buttons
+	case "\U0001F9B6":
+		res := directionMovement(update, charData[1])
+		_, locText := repository.UpdateLocation(update, res)
+		var text string
+		if locText != "Ok" {
+			text = messageSeparator + repository.CheckUserHasLighter(update, user)
+			text = text + locText
+		}
+		msg.Text, buttons = repository.GetMyMap(update)
+		msg.Text = msg.Text + text
+		msg.ReplyMarkup = buttons
+	case ItemHead.View:
+		res := directionMovement(update, charData[1])
+		status, text := repository.UpdateUserInstrument(update, user, ItemHead)
+		if status != "Ok" {
+			msg.Text = repository.ViewItemInfo(res) + messageSeparator + text
+		} else {
+			msg.Text = repository.ViewItemInfo(res)
+		}
+	case "throwOutItem":
+		userWantsToThrowOutItem(update, charData)
+	case "countOfDelete":
+		msg = userThrowOutItem(update, user, charData)
 	}
 
 	msg.ParseMode = "markdown"
@@ -132,7 +153,7 @@ func useSpecialCell(update tgbotapi.Update, char []string, user repository.User)
 			text = text + locText
 		}
 		msg.Text, buttons = repository.GetMyMap(update)
-		msg.Text = msg.Text + messageSeparator + text
+		msg.Text = msg.Text + text
 		msg.ReplyMarkup = buttons
 	case "\U0001F9B6":
 		var text string
@@ -186,6 +207,11 @@ func useSpecialCell(update tgbotapi.Update, char []string, user repository.User)
 		} else {
 			msg.Text = repository.ViewItemInfo(res)
 		}
+	case "🔧":
+		loc := directionMovement(update, char[1])
+		cell := repository.GetCellule(repository.Cellule{MapsId: *loc.MapsId, AxisX: *loc.AxisX, AxisY: *loc.AxisY})
+		charWorkbench := strings.Fields("workbench userPointer: 0 1stComponent: null 0 2ndComponent: null 0 3rdComponent: null 0")
+		msg = Workbench(&cell, charWorkbench)
 	default:
 		msg.Text, buttons = repository.GetMyMap(update)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+"\n\nНет инструмента в руке!")
@@ -315,7 +341,7 @@ func useDefaultCell(update tgbotapi.Update, user repository.User) tgbotapi.Messa
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "🚫 Сюда нельзя! 🚫")
 	default:
 		msg.Text, buttons = repository.GetMyMap(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
+		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+messageSeparator+"Хммм....🤔")
 		msg.ReplyMarkup = buttons
 	}
 
@@ -423,10 +449,7 @@ func UserEatItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConf
 	userItemId := repository.ToInt(charData[1])
 
 	user := repository.GetUser(repository.User{TgId: userTgId})
-	userItem, err := repository.GetUserItem(repository.UserItem{ID: userItemId})
-	if err != nil {
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Еда магически исчезла из твоих рук! и ты ее больше не нашел)")
-	}
+	userItem := repository.GetUserItem(repository.UserItem{ID: userItemId})
 
 	res := repository.EatItem(update, user, userItem)
 	charDataForOpenBackPack := strings.Fields("backpackMoving " + charData[2])
@@ -440,7 +463,7 @@ func UserDeleteItem(update tgbotapi.Update, charData []string) tgbotapi.MessageC
 	userItemId := repository.ToInt(charData[1])
 	userTgId := repository.GetUserTgId(update)
 	user := repository.GetUser(repository.User{TgId: userTgId})
-	userItem, err := repository.GetUserItem(repository.UserItem{ID: userItemId})
+	userItem := repository.GetUserItem(repository.UserItem{ID: userItemId})
 
 	countAfterUserThrowOutItem := 0
 	var updateUserItemStruct = repository.UserItem{
@@ -449,9 +472,6 @@ func UserDeleteItem(update tgbotapi.Update, charData []string) tgbotapi.MessageC
 	}
 
 	repository.UpdateUserItem(user, updateUserItemStruct)
-	if err != nil {
-		msg.Text = "Еда магически исчезла из твоих рук! и ты ее больше не нашел)"
-	}
 
 	var charDataForOpenList []string
 	switch charData[3] {
@@ -541,7 +561,7 @@ func userTakeOffGood(update tgbotapi.Update, charData []string) {
 	userItemId := repository.ToInt(charData[1])
 	userTgId := repository.GetUserTgId(update)
 	user := repository.GetUser(repository.User{TgId: userTgId})
-	userItem, _ := repository.GetUserItem(repository.UserItem{ID: userItemId})
+	userItem := repository.GetUserItem(repository.UserItem{ID: userItemId})
 
 	if user.HeadId != nil && userItem.ItemId == *user.HeadId {
 		repository.SetNullUserField(update, "head_id")
@@ -566,7 +586,7 @@ func dressUserItem(update tgbotapi.Update, charData []string) tgbotapi.MessageCo
 	userItemId := repository.ToInt(charData[1])
 	userTgId := repository.GetUserTgId(update)
 	user := repository.GetUser(repository.User{TgId: userTgId})
-	userItem, _ := repository.GetUserItem(repository.UserItem{ID: userItemId})
+	userItem := repository.GetUserItem(repository.UserItem{ID: userItemId})
 	changeHandItem := false
 
 	var result = "Вы надели " + userItem.Item.View
@@ -620,7 +640,7 @@ func dressUserItem(update tgbotapi.Update, charData []string) tgbotapi.MessageCo
 }
 
 func userThrowOutItem(update tgbotapi.Update, user repository.User, charData []string) tgbotapi.MessageConfig {
-	userItem, _ := repository.GetUserItem(repository.UserItem{ID: repository.ToInt(charData[1])})
+	userItem := repository.GetUserItem(repository.UserItem{ID: repository.ToInt(charData[1])})
 
 	*userItem.Count = *userItem.Count - repository.ToInt(charData[3])
 
@@ -652,7 +672,7 @@ func userThrowOutItem(update tgbotapi.Update, user repository.User, charData []s
 }
 
 func userWantsToThrowOutItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConfig {
-	userItem, _ := repository.GetUserItem(repository.UserItem{ID: repository.ToInt(charData[1])})
+	userItem := repository.GetUserItem(repository.UserItem{ID: repository.ToInt(charData[1])})
 
 	if userItem.CountUseLeft != nil && *userItem.CountUseLeft != *userItem.Item.CountUse {
 		*userItem.Count = *userItem.Count - 1
@@ -678,4 +698,182 @@ func userWantsToThrowOutItem(update tgbotapi.Update, charData []string) tgbotapi
 	}
 
 	return msg
+}
+
+func Workbench(cell *repository.Cellule, char []string) tgbotapi.MessageConfig {
+	var charData []string
+	if cell != nil {
+		charData = strings.Fields("workbench usPoint 0 1stComp nil 0 2ndComp nil 0 3rdComp nil 0")
+
+		if !repository.IsWorkbench(*cell) {
+			msg.Text = "Здесь нет верстака!"
+			return msg
+		}
+	} else {
+		charData = strings.Fields(fmt.Sprintf("workbench usPoint %s 1stComp %s %s 2ndComp %s %s 3rdComp %s %s", char[2], char[4], char[5], char[7], char[8], char[10], char[11]))
+	}
+
+	msg = OpenWorkbenchMessage(charData)
+	msg.ReplyMarkup = helpers.WorkbenchButton(charData)
+
+	return msg
+}
+
+func OpenWorkbenchMessage(char []string) tgbotapi.MessageConfig {
+	// char = workbench usPoint 0 1stComp: id 0 2ndComp id 0 3rdComp id 0
+
+	fstCnt := getViewEmojiForMsg(char, 0)
+	secCnt := getViewEmojiForMsg(char, 1)
+	trdCnt := getViewEmojiForMsg(char, 2)
+
+	fstComponentView := viewComponent(char[4])
+	secComponentView := viewComponent(char[7])
+	trdComponentView := viewComponent(char[10])
+
+	cellUser := repository.ToInt(char[2])
+	userPointer := strings.Fields("〰️ 〰️ 〰️")
+	userPointer[cellUser] = "👇"
+
+	msg.Text = fmt.Sprintf(
+		"〰️〰️〰️☁️〰️〰️〰️☀️〰️\n"+
+			"〰️〰️%s〰️%s〰️%s〰️〰️\n"+
+			"🔬〰️%s〰️%s〰️%s〰️📡\n"+
+			"\U0001F7EB\U0001F7EB%s\U0001F7EB%s\U0001F7EB%s\U0001F7EB\U0001F7EB\n"+
+			"〰️\U0001F7EB〰️〰️〰️〰️〰️\U0001F7EB〰️\n"+
+			"〰️\U0001F7EB〰️〰️〰️🍺〰️\U0001F7EB〰️\n"+
+			"\U0001F7E9\U0001F7E9\U0001F7E9\U0001F7E9\U0001F7E9\U0001F7E9\U0001F7E9\U0001F7E9\U0001F7E9",
+		userPointer[0], userPointer[1], userPointer[2],
+		fstComponentView, secComponentView, trdComponentView,
+		fstCnt, secCnt, trdCnt)
+
+	return msg
+}
+
+func viewComponent(id string) string {
+	if id != "nil" {
+		component := repository.GetUserItem(repository.UserItem{ID: repository.ToInt(id)})
+		return component.Item.View
+	}
+	return "⚪"
+}
+
+func AllReceiptsMsg() string {
+	receipts := repository.GetReceipts()
+	var msgText string
+	for _, r := range receipts {
+		var fstEl string
+		var secEl string
+		var trdEl string
+
+		if r.Component1ID != nil {
+			fstEl = fmt.Sprintf("%d⃣%s", *r.Component1Count, r.Component1.View)
+		}
+		if r.Component2ID != nil {
+			secEl = fmt.Sprintf("➕%d⃣%s", *r.Component2Count, r.Component2.View)
+		}
+		if r.Component3ID != nil {
+			trdEl = fmt.Sprintf("➕%d⃣%s", *r.Component3Count, r.Component3.View)
+		}
+		msgText = msgText + fmt.Sprintf("%s 🔚 %s%s%s\n", r.ItemResult.View, fstEl, secEl, trdEl)
+	}
+	return msgText
+}
+
+func GetRecieptFromData(char []string) repository.Receipt {
+	var result repository.Receipt
+
+	if char[4] != "nil" && char[5] != "0" {
+		fstItem := repository.GetUserItem(repository.UserItem{ID: repository.ToInt(char[4])})
+		id := int(fstItem.Item.ID)
+		c := repository.ToInt(char[5])
+
+		result.Component1ID = &id
+		result.Component1Count = &c
+	}
+
+	if char[7] != "nil" && char[8] != "0" {
+		fstItem := repository.GetUserItem(repository.UserItem{ID: repository.ToInt(char[7])})
+		id := int(fstItem.Item.ID)
+		c := repository.ToInt(char[8])
+
+		result.Component2ID = &id
+		result.Component2Count = &c
+	}
+
+	if char[10] != "nil" && char[11] != "0" {
+		fstItem := repository.GetUserItem(repository.UserItem{ID: repository.ToInt(char[10])})
+		id := int(fstItem.Item.ID)
+		c := repository.ToInt(char[11])
+
+		result.Component3ID = &id
+		result.Component3Count = &c
+	}
+
+	return result
+}
+
+func PutCountComponent(char []string) tgbotapi.MessageConfig {
+	userItemId := char[repository.ToInt(char[2])+(4+repository.ToInt(char[2])*2)] // char[x + (4+x*2 )] = char[4]
+	userItem := repository.GetUserItem(repository.UserItem{ID: repository.ToInt(userItemId)})
+
+	msg.ReplyMarkup = helpers.ChangeCountUserItem(char, userItem)
+
+	return msg
+}
+
+func UserCraftItem(user repository.User, receipt *repository.Receipt) (tgbotapi.MessageConfig, bool) {
+	deletePrevMessage := true
+	if receipt == nil {
+		msg.Text = "Такого рецепта не существует!"
+		msg.ReplyMarkup = nil
+		deletePrevMessage = false
+		return msg, deletePrevMessage
+	}
+
+	msg.ReplyMarkup = nil
+	resultItem := repository.GetUserItem(repository.UserItem{UserId: int(user.ID), ItemId: receipt.ItemResultID})
+
+	if *receipt.ItemResultCount+*resultItem.Count > *resultItem.Item.MaxCountUserHas {
+		msg.Text = fmt.Sprintf("Вы не можете иметь больше, чем %d %s!\nСори... такие правила(", *resultItem.Item.MaxCountUserHas, resultItem.Item.View)
+		msg.ReplyMarkup = nil
+		deletePrevMessage = false
+		return msg, deletePrevMessage
+	}
+
+	if receipt.Component1ID != nil && receipt.Component1Count != nil {
+		userItem := repository.GetUserItem(repository.UserItem{UserId: int(user.ID), ItemId: *receipt.Component1ID})
+		countItem1 := *userItem.Count - *receipt.Component1Count
+		repository.UpdateUserItem(user, repository.UserItem{ID: userItem.ID, ItemId: *receipt.Component1ID, Count: &countItem1, CountUseLeft: resultItem.CountUseLeft})
+	}
+	if receipt.Component2ID != nil && receipt.Component2Count != nil {
+		userItem := repository.GetUserItem(repository.UserItem{UserId: int(user.ID), ItemId: *receipt.Component2ID})
+		countItem2 := *userItem.Count - *receipt.Component2Count
+		repository.UpdateUserItem(user, repository.UserItem{ID: userItem.ID, ItemId: *receipt.Component2ID, Count: &countItem2, CountUseLeft: resultItem.CountUseLeft})
+	}
+	if receipt.Component3ID != nil && receipt.Component3Count != nil {
+		userItem := repository.GetUserItem(repository.UserItem{UserId: int(user.ID), ItemId: *receipt.Component3ID})
+		countItem3 := *userItem.Count - *receipt.Component3Count
+		repository.UpdateUserItem(user, repository.UserItem{ID: userItem.ID, ItemId: *receipt.Component3ID, Count: &countItem3, CountUseLeft: resultItem.CountUseLeft})
+	}
+
+	if *resultItem.Count == 0 {
+		resultItem.CountUseLeft = resultItem.Item.CountUse
+	}
+	*resultItem.Count = *resultItem.Count + *receipt.ItemResultCount
+	repository.UpdateUserItem(user, repository.UserItem{ID: resultItem.ID, Count: resultItem.Count, CountUseLeft: resultItem.CountUseLeft})
+
+	charData := strings.Fields("workbench usPoint 0 1stComp nil 0 2ndComp nil 0 3rdComp nil 0")
+	msg = Workbench(nil, charData)
+	msg.Text = fmt.Sprintf("%s%sСупер! Ты получил %s %d шт.!", msg.Text, messageSeparator, resultItem.Item.View, *receipt.ItemResultCount)
+	return msg, deletePrevMessage
+}
+
+func getViewEmojiForMsg(char []string, i int) string {
+	count := i + 5 + i*2
+
+	if char[count] == "0" {
+		return "\U0001F7EB"
+	}
+
+	return fmt.Sprintf("%s⃣", char[count])
 }

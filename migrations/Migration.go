@@ -16,6 +16,7 @@ func Migrate() bool {
 		repository.Map{},
 		repository.UserItem{},
 		repository.Instrument{},
+		repository.Receipt{},
 	)
 	if err != nil {
 		fmt.Println("Migration failed")

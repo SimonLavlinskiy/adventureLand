@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
 	"strings"
@@ -284,10 +285,9 @@ func calculateNightMap(user User, location Location, x int, y int) bool {
 func appendVisibleUserZone(m map[[2]int]Cellule, x int, y int, Maps [][]string) {
 	type Point [2]int
 
-	if m[Point{x, y}].Type != nil &&
-		*m[Point{x, y}].Type == "item" &&
-		m[Point{x, y}].ItemID != nil &&
-		*m[Point{x, y}].ItemCount != 0 {
+	if IsItem(m[Point{x, y}]) {
+		Maps[y] = append(Maps[y], m[Point{x, y}].Item.View)
+	} else if IsWorkbench(m[Point{x, y}]) {
 		Maps[y] = append(Maps[y], m[Point{x, y}].Item.View)
 	} else {
 		Maps[y] = append(Maps[y], m[Point{x, y}].View)
@@ -296,48 +296,65 @@ func appendVisibleUserZone(m map[[2]int]Cellule, x int, y int, Maps [][]string) 
 
 func PutButton(CellsAroundUser []Cellule, buttons MapButtons, resUser User) MapButtons {
 
-	switch true {
-	case IsDefaultCell(CellsAroundUser[0]):
-		buttons.Up = CellsAroundUser[0].View
-	case IsTeleport(CellsAroundUser[0]):
-		buttons.Up += " " + resUser.Avatar + " " + CellsAroundUser[0].View
-	case IsItem(CellsAroundUser[0]):
-		buttons.Up = isItemCost(CellsAroundUser[0], buttons.Up, resUser)
-	case CellsAroundUser[0].ID == 0:
-		buttons.Up = "🚫"
-	}
-
-	switch true {
-	case IsDefaultCell(CellsAroundUser[1]):
-		buttons.Down = CellsAroundUser[1].View
-	case IsTeleport(CellsAroundUser[1]):
-		buttons.Down += " " + resUser.Avatar + " " + CellsAroundUser[1].View
-	case IsItem(CellsAroundUser[1]):
-		buttons.Down = isItemCost(CellsAroundUser[1], buttons.Down, resUser)
-	case CellsAroundUser[1].ID == 0:
-		buttons.Down = "🚫"
-	}
-
-	switch true {
-	case IsDefaultCell(CellsAroundUser[2]):
-		buttons.Right = CellsAroundUser[2].View
-	case IsTeleport(CellsAroundUser[2]):
-		buttons.Right += " " + resUser.Avatar + " " + CellsAroundUser[2].View
-	case IsItem(CellsAroundUser[2]):
-		buttons.Right = isItemCost(CellsAroundUser[2], buttons.Right, resUser)
-	case CellsAroundUser[2].ID == 0:
-		buttons.Right = "🚫"
-	}
-
-	switch true {
-	case IsDefaultCell(CellsAroundUser[3]):
-		buttons.Left = CellsAroundUser[3].View
-	case IsTeleport(CellsAroundUser[3]):
-		buttons.Left += " " + resUser.Avatar + " " + CellsAroundUser[3].View
-	case IsItem(CellsAroundUser[3]):
-		buttons.Left = isItemCost(CellsAroundUser[3], buttons.Left, resUser)
-	case CellsAroundUser[3].ID == 0:
-		buttons.Left = "🚫"
+	for i, cell := range CellsAroundUser {
+		switch true {
+		case IsDefaultCell(cell):
+			switch i {
+			case 0:
+				buttons.Up = cell.View
+			case 1:
+				buttons.Down = cell.View
+			case 2:
+				buttons.Right = cell.View
+			case 3:
+				buttons.Left = cell.View
+			}
+		case IsTeleport(cell):
+			button := fmt.Sprintf(" %s %s", resUser.Avatar, cell.View)
+			switch i {
+			case 0:
+				buttons.Up += button
+			case 1:
+				buttons.Down += button
+			case 2:
+				buttons.Right += button
+			case 3:
+				buttons.Left += button
+			}
+		case IsWorkbench(cell):
+			switch i {
+			case 0:
+				buttons.Up = fmt.Sprintf("🔧 %s %s", buttons.Up, cell.Item.View)
+			case 1:
+				buttons.Down = fmt.Sprintf("🔧 %s %s", buttons.Down, cell.Item.View)
+			case 2:
+				buttons.Right = fmt.Sprintf("🔧 %s %s", buttons.Right, cell.Item.View)
+			case 3:
+				buttons.Left = fmt.Sprintf("🔧 %s %s", buttons.Left, cell.Item.View)
+			}
+		case IsItem(cell):
+			switch i {
+			case 0:
+				buttons.Up = isItemCost(cell, buttons.Up, resUser)
+			case 1:
+				buttons.Down = isItemCost(cell, buttons.Down, resUser)
+			case 2:
+				buttons.Right = isItemCost(cell, buttons.Right, resUser)
+			case 3:
+				buttons.Left = isItemCost(cell, buttons.Left, resUser)
+			}
+		case cell.ID == 0:
+			switch i {
+			case 0:
+				buttons.Up = "🚫"
+			case 1:
+				buttons.Down = "🚫"
+			case 2:
+				buttons.Right = "🚫"
+			case 3:
+				buttons.Left = "🚫"
+			}
+		}
 	}
 
 	return buttons
@@ -345,6 +362,13 @@ func PutButton(CellsAroundUser []Cellule, buttons MapButtons, resUser User) MapB
 
 func IsDefaultCell(cell Cellule) bool {
 	if cell.Type != nil && *cell.Type == "cell" && !cell.CanStep {
+		return true
+	}
+	return false
+}
+
+func IsWorkbench(cell Cellule) bool {
+	if cell.Type != nil && *cell.Type == "workbench" && cell.ItemID != nil {
 		return true
 	}
 	return false

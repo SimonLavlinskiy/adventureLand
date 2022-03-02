@@ -187,3 +187,117 @@ func ChooseInstrument(char []string, cell repository.Cellule, user repository.Us
 		),
 	)
 }
+
+func WorkbenchButton(char []string) tgbotapi.InlineKeyboardMarkup {
+	leftArrow := "⬅️"
+	rightArrow := "➡️"
+	userPointer := repository.ToInt(char[2])
+
+	defaultData := fmt.Sprintf("usPoint %d 1stComp %s %s 2ndComp %s %s 3rdComp %s %s", userPointer, char[4], char[5], char[7], char[8], char[10], char[11])
+	rightArrowData := fmt.Sprintf("workbench usPoint %d 1stComp %s %s 2ndComp %s %s 3rdComp %s %s", userPointer+1, char[4], char[5], char[7], char[8], char[10], char[11])
+	leftArrowData := fmt.Sprintf("workbench usPoint %d 1stComp %s %s 2ndComp %s %s 3rdComp %s %s", userPointer-1, char[4], char[5], char[7], char[8], char[10], char[11])
+	putItemData := fmt.Sprintf("putItem %s", defaultData)
+	putCountItemData := fmt.Sprintf("putCountItem %s", defaultData)
+
+	makeNewItem := fmt.Sprintf("makeNewItem %s", defaultData)
+
+	if userPointer == 0 {
+		leftArrow = "✖️"
+		leftArrowData = "nothing"
+	} else if userPointer == 2 {
+		rightArrow = "✖️"
+		rightArrowData = "nothing"
+	}
+
+	putItem := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Вставить предмет!", putItemData))
+	changeItem := tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("✏️ Изменить", putItemData),
+		tgbotapi.NewInlineKeyboardButtonData("🔢 Кол-во?", putCountItemData))
+
+	ButtonManageItem := putItem
+
+	if (userPointer == 0 && char[4] != "nil") || (userPointer == 1 && char[7] != "nil") || (userPointer == 2 && char[10] != "nil") {
+		ButtonManageItem = changeItem
+	}
+
+	//"workbench usPoint: 0 1stComp: nil 0 2ndComp: nil 0 3rdComp: nil 0"
+
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("✨⚡️ Слепить! ⚡️✨", makeNewItem),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(leftArrow, leftArrowData),
+			tgbotapi.NewInlineKeyboardButtonData(rightArrow, rightArrowData),
+		),
+		ButtonManageItem,
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("Рецепты 📚", "receipt"),
+		),
+	)
+}
+
+func ChooseUserItemButton(userItem []repository.UserItem, char []string) tgbotapi.InlineKeyboardMarkup {
+	var buttons [][]tgbotapi.InlineKeyboardButton
+
+	var itemData string
+
+	for x := 0; x < len(userItem); x = x + 5 {
+
+		var row []tgbotapi.InlineKeyboardButton
+
+		for i := 0; i < 5; i++ {
+			if i+x < len(userItem) {
+				switch char[2] {
+				case "0":
+					itemData = fmt.Sprintf("putCountItem usPoint %s 1stComp %d %s 2ndComp %s %s 3rdComp %s %s", char[2], userItem[x+i].ID, char[5], char[7], char[8], char[10], char[11])
+				case "1":
+					itemData = fmt.Sprintf("putCountItem usPoint %s 1stComp %s %s 2ndComp %d %s 3rdComp %s %s", char[2], char[4], char[5], userItem[x+i].ID, char[8], char[10], char[11])
+				case "2":
+					itemData = fmt.Sprintf("putCountItem usPoint %s 1stComp %s %s 2ndComp %s %s 3rdComp %d %s", char[2], char[4], char[5], char[7], char[8], userItem[x+i].ID, char[11])
+				}
+				row = append(row, tgbotapi.NewInlineKeyboardButtonData(userItem[x+i].Item.View, itemData))
+			}
+		}
+		buttons = append(buttons, row)
+	}
+
+	return tgbotapi.NewInlineKeyboardMarkup(buttons...)
+}
+
+func ChangeCountUserItem(charData []string, item repository.UserItem) tgbotapi.InlineKeyboardMarkup {
+	charDone := fmt.Sprintf("workbench usPoint %s 1stComp %s %s 2ndComp %s %s 3rdComp %s %s", charData[2], charData[4], charData[5], charData[7], charData[8], charData[10], charData[11])
+	itemCount := repository.ToInt(charData[repository.ToInt(charData[2])+(5+repository.ToInt(charData[2])*2)])
+	maxCountItem := item.Count
+
+	appData := strings.Fields(fmt.Sprintf("putCountItem usPoint %s 1stComp %s %s 2ndComp %s %s 3rdComp %s %s", charData[2], charData[4], charData[5], charData[7], charData[8], charData[10], charData[11]))
+	subData := strings.Fields(fmt.Sprintf("putCountItem usPoint %s 1stComp %s %s 2ndComp %s %s 3rdComp %s %s", charData[2], charData[4], charData[5], charData[7], charData[8], charData[10], charData[11]))
+
+	subCount, appCount := repository.ToString(itemCount), repository.ToString(itemCount)
+
+	if itemCount > 0 {
+		subCount = repository.ToString(itemCount - 1)
+	}
+	if itemCount < *maxCountItem {
+		appCount = repository.ToString(itemCount + 1)
+	}
+
+	subData[repository.ToInt(charData[2])+(5+repository.ToInt(charData[2])*2)] = subCount
+	appData[repository.ToInt(charData[2])+(5+repository.ToInt(charData[2])*2)] = appCount
+
+	subButData := fmt.Sprintf("putCountItem usPoint %s 1stComp %s %s 2ndComp %s %s 3rdComp %s %s", subData[2], subData[4], subData[5], subData[7], subData[8], subData[10], subData[11])
+	appButData := fmt.Sprintf("putCountItem usPoint %s 1stComp %s %s 2ndComp %s %s 3rdComp %s %s", appData[2], appData[4], appData[5], appData[7], appData[8], appData[10], appData[11])
+
+	subtractButton := tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%s⃣%s", subCount, item.Item.View), subButData)
+	appendButton := tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%s⃣%s", appCount, item.Item.View), appButData)
+
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("✅ Готово: %d⃣%s", itemCount, item.Item.View), charDone),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			subtractButton,
+			appendButton,
+		),
+	)
+}

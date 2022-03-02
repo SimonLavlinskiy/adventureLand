@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
 )
@@ -16,15 +15,26 @@ type UserItem struct {
 	Item         Item
 }
 
-func GetUserItem(userItem UserItem) (UserItem, error) {
-	var result UserItem
-	err := config.Db.Preload("Item").Preload("User").Where(userItem).First(&result).Error
+func GetUserItem(userItem UserItem) UserItem {
+	zero := 0
+	result := UserItem{
+		UserId:       int(userItem.User.ID),
+		ItemId:       userItem.ItemId,
+		Count:        &zero,
+		CountUseLeft: userItem.CountUseLeft,
+	}
+	err := config.Db.
+		Preload("Item").
+		Preload("User").
+		Where(userItem).
+		FirstOrCreate(&result).
+		Error
 
 	if err != nil {
-		fmt.Println("Item not found")
+		panic(err)
 	}
 
-	return result, err
+	return result
 }
 
 func GetOrCreateUserItem(update tgbotapi.Update, item Item) UserItem {
@@ -131,7 +141,7 @@ func EatItem(update tgbotapi.Update, user User, userItem UserItem) string {
 } // Горжусь ею)
 
 func GetFullDescriptionOfUserItem(userItem UserItem) string {
-	userItem, _ = GetUserItem(userItem)
+	userItem = GetUserItem(userItem)
 	var fullDescriptionUserItem string
 	if userItem.Item.IsInventory == true {
 		fullDescriptionUserItem = userItem.Item.View + " *" + userItem.Item.Name + "* - " + ToString(*userItem.Count) + " шт.\n" +
@@ -151,7 +161,7 @@ func GetFullDescriptionOfUserItem(userItem UserItem) string {
 }
 
 func UpdateUserInstrument(update tgbotapi.Update, user User, instrument Item) (string, string) {
-	userItem, _ := GetUserItem(UserItem{ItemId: int(instrument.ID), UserId: int(user.ID)})
+	userItem := GetUserItem(UserItem{ItemId: int(instrument.ID), UserId: int(user.ID)})
 
 	c := *userItem.CountUseLeft - 1
 	if c > 0 {
