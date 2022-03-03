@@ -41,9 +41,7 @@ func UserGetItem(update tgbotapi.Update, LocationStruct Location, char []string)
 	resultCell := GetCellule(Cellule{MapsId: *LocationStruct.MapsId, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY})
 
 	if resultCell.ItemID != nil {
-		res := UserGetItemUpdateModels(update, resultCell, char[0])
-
-		return res
+		return UserGetItemUpdateModels(update, resultCell, char[0])
 	}
 
 	return "Не получилось..."
@@ -110,8 +108,9 @@ func UserGetItemWithHand(update tgbotapi.Update, cellule Cellule, user User, use
 	}
 
 	if countAfterUserGetItem != 0 {
-		textCountLeft = fmt.Sprintf("(Осталось лежать еще %s)", ToString(countAfterUserGetItem))
+		textCountLeft = fmt.Sprintf("(Осталось лежать еще %d)", countAfterUserGetItem)
 	}
+	fmt.Println("aasdasdasd")
 	return fmt.Sprintf("Ты получил %s 1 шт. %s", userGetItem.Item.View, textCountLeft)
 }
 
@@ -155,7 +154,7 @@ func GrowingItem(update tgbotapi.Update, cellule Cellule, user User, userGetItem
 
 		if instrument.CountResultItem != nil {
 			*userGetItem.Count = *userGetItem.Count + *instrument.CountResultItem
-			result = "\nТы получил " + instrument.ItemsResult.View + " " + ToString(*instrument.CountResultItem) + " шт."
+			result = fmt.Sprintf("\nТы получил %s %d шт.", instrument.ItemsResult.View, *instrument.CountResultItem)
 		}
 
 		UpdateUser(update, User{Money: &updateUserMoney})
@@ -198,7 +197,7 @@ func DesctructionItem(update tgbotapi.Update, cellule Cellule, user User, userGe
 		var result string
 		if instrument.CountResultItem != nil {
 			*userGetItem.Count = *userGetItem.Count + *instrument.CountResultItem
-			result = "Ты получил " + instrument.ItemsResult.View + " " + ToString(*instrument.CountResultItem) + " шт."
+			result = fmt.Sprintf("Ты получил %s %d шт.", instrument.ItemsResult.View, *instrument.CountResultItem)
 		} else {
 			result = "что то не так"
 		}
@@ -317,36 +316,36 @@ func ViewItemInfo(location Location) string {
 		}
 	}
 
-	itemInfo = fmt.Sprintf("%s *%s* (_%s шт._) %s _%s_\n", cell.Item.View, cell.Item.Name, ToString(*cell.ItemCount), cell.Item.View, dressType)
+	itemInfo = fmt.Sprintf("%s *%s* (_%d шт._) %s _%s_\n", cell.Item.View, cell.Item.Name, *cell.ItemCount, cell.Item.View, dressType)
 	itemInfo = itemInfo + fmt.Sprintf("*Описание*: `%s`\n", *cell.Item.Description)
 
 	if cell.Item.Healing != nil && *cell.Item.Healing != 0 {
-		itemInfo = itemInfo + fmt.Sprintf("*Здоровье*: `+%s♥️`\n", ToString(*cell.Item.Healing))
+		itemInfo = itemInfo + fmt.Sprintf("*Здоровье*: `+%d♥️`\n", *cell.Item.Healing)
 	}
 	if cell.Item.Damage != nil && *cell.Item.Damage != 0 {
-		itemInfo = itemInfo + fmt.Sprintf("*Атака*: `+%s`💥️\n", ToString(*cell.Item.Damage))
+		itemInfo = itemInfo + fmt.Sprintf("*Атака*: `+%d`💥️\n", *cell.Item.Damage)
 	}
 	if cell.Item.Satiety != nil && *cell.Item.Satiety != 0 {
-		itemInfo = itemInfo + fmt.Sprintf("*Сытость*: `+%s`\U0001F9C3️\n", ToString(*cell.Item.Satiety))
+		itemInfo = itemInfo + fmt.Sprintf("*Сытость*: `+%d`\U0001F9C3️\n", *cell.Item.Satiety)
 	}
 	if cell.Item.Cost != nil && *cell.Item.Cost != 0 {
-		itemInfo = itemInfo + fmt.Sprintf("*Стоимость*: `%s`💰\n", ToString(*cell.Item.Cost))
+		itemInfo = itemInfo + fmt.Sprintf("*Стоимость*: `%d`💰\n", *cell.Item.Cost)
 	}
 	if cell.Item.Destruction != nil && *cell.Item.Destruction != 0 {
-		itemInfo = itemInfo + fmt.Sprintf("*Сила*: `%s %s`\n", ToString(*cell.Item.Destruction), cell.Item.View)
+		itemInfo = itemInfo + fmt.Sprintf("*Сила*: `%d %s`\n", *cell.Item.Destruction, cell.Item.View)
 	}
 	if cell.DestructionHp != nil && *cell.Item.DestructionHp != 0 {
-		itemInfo = itemInfo + fmt.Sprintf("*Прочность*: `%s`\n", ToString(*cell.DestructionHp))
+		itemInfo = itemInfo + fmt.Sprintf("*Прочность*: `%d`\n", *cell.DestructionHp)
 	} else if cell.Item.DestructionHp != nil && *cell.Item.DestructionHp != 0 {
-		itemInfo = itemInfo + fmt.Sprintf("*Прочность*: `%s`\n", ToString(*cell.Item.DestructionHp))
+		itemInfo = itemInfo + fmt.Sprintf("*Прочность*: `%d`\n", *cell.Item.DestructionHp)
 	}
 	if cell.Item.Growing != nil && cell.NextStateTime != nil {
 		itemInfo = itemInfo + fmt.Sprintf("*Вырастет*: %s\n", cell.NextStateTime.Format("15:04:05 02.01.06"))
 	} else if cell.Item.Growing != nil {
-		itemInfo = itemInfo + fmt.Sprintf("*Время роста*: `%s мин.`\n", ToString(*cell.Item.Growing))
+		itemInfo = itemInfo + fmt.Sprintf("*Время роста*: `%d мин.`\n", *cell.Item.Growing)
 	}
 	if cell.Item.IntervalGrowing != nil {
-		itemInfo = itemInfo + fmt.Sprintf("*Интервал ускорения роста*: `раз в %s мин.`\n", ToString(*cell.Item.IntervalGrowing))
+		itemInfo = itemInfo + fmt.Sprintf("*Интервал ускорения роста*: `раз в %d мин.`\n", *cell.Item.IntervalGrowing)
 	}
 	if cell.LastGrowing != nil {
 		itemInfo = itemInfo + fmt.Sprintf("*Последнее ускорение:* %s\n", cell.LastGrowing.Format("15:04:05"))

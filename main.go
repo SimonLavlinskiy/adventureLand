@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"github.com/joho/godotenv"
+	"github.com/spf13/viper"
 	"log"
 	"os"
 	"project0/config"
@@ -14,6 +16,21 @@ func main() {
 
 	if err := godotenv.Load(); err != nil {
 		log.Print("Not found .env file ")
+	}
+
+	viper.SetConfigName("config")
+	viper.AddConfigPath(".")
+	viper.AutomaticEnv()
+	viper.SetConfigType("yml")
+
+	var configuration Configurations
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Printf("Error reading config file, %s", err)
+	}
+
+	err := viper.Unmarshal(&configuration)
+	if err != nil {
+		fmt.Printf("Unable to decode into struct, %v", err)
 	}
 
 	telegramApiToken, _ := os.LookupEnv("TELEGRAM_APITOKEN")

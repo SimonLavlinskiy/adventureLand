@@ -3,6 +3,7 @@ package repository
 import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	v "github.com/spf13/viper"
 	"project0/config"
 	"strings"
 	"time"
@@ -69,14 +70,14 @@ func GetUserMap(update tgbotapi.Update) Map {
 
 func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.ReplyKeyboardMarkup) {
 	userTgId := GetUserTgId(update)
-	resUser := GetUser(User{TgId: userTgId})
-	resLocation := GetOrCreateMyLocation(update)
+	us := GetUser(User{TgId: userTgId})
+	loc := GetOrCreateMyLocation(update)
 	resMap := GetUserMap(update)
-	mapSize := CalculateUserMapBorder(resLocation, resMap)
-	messageMap := "*Карта*: _" + resLocation.Maps.Name + "_ *X*: _" + ToString(*resLocation.AxisX) + "_  *Y*: _" + ToString(*resLocation.AxisY) + "_"
+	mapSize := CalculateUserMapBorder(loc, resMap)
+	messageMap := fmt.Sprintf("*Карта*: _%s_ *X*: _%d_  *Y*: _%d_", loc.Maps.Name, *loc.AxisX, *loc.AxisY)
 
 	var onlineStatus string
-	if *resUser.OnlineMap {
+	if *us.OnlineMap {
 		onlineStatus = "📳 Онлайн 📳\n\n"
 	} else {
 		onlineStatus = "📴 Офлайн 📴\n\n"
@@ -95,7 +96,7 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.Repl
 		Preload("Item.Instruments.Good").
 		Preload("Item.Instruments.ItemsResult").
 		Preload("Item.Instruments.NextStageItem").
-		Where(Cellule{MapsId: *resLocation.MapsId}).
+		Where(Cellule{MapsId: *loc.MapsId}).
 		Where("axis_x >= " + ToString(mapSize.leftIndent)).
 		Where("axis_x <= " + ToString(mapSize.rightIndent)).
 		Where("axis_y >= " + ToString(mapSize.downIndent)).
@@ -111,8 +112,8 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.Repl
 		m[Point{cell.AxisX, cell.AxisY}] = cell
 	}
 
-	if *resUser.OnlineMap {
-		resultLocationsOnlineUser := GetLocationOnlineUser(resLocation, mapSize)
+	if *us.OnlineMap {
+		resultLocationsOnlineUser := GetLocationOnlineUser(loc, mapSize)
 		for _, user := range resultLocationsOnlineUser {
 			if user.User.ID != 0 && *user.User.OnlineMap {
 				m[Point{*user.AxisX, *user.AxisY}] = Cellule{View: user.User.Avatar, ID: m[Point{*user.AxisX, *user.AxisY}].ID}
@@ -120,15 +121,15 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.Repl
 		}
 	}
 
-	buttons = CalculateButtonMap(resLocation, resUser, m)
+	buttons = CalculateButtonMap(loc, us, m)
 
-	m[Point{*resLocation.AxisX, *resLocation.AxisY}] = Cellule{View: resUser.Avatar, ID: m[Point{*resLocation.AxisX, *resLocation.AxisY}].ID}
+	m[Point{*loc.AxisX, *loc.AxisY}] = Cellule{View: us.Avatar, ID: m[Point{*loc.AxisX, *loc.AxisY}].ID}
 
-	Maps := configurationMap(mapSize, resMap, resLocation, resUser, m)
+	Maps := configurationMap(mapSize, resMap, loc, us, m)
 
 	for i, row := range Maps {
 		if i >= mapSize.downIndent && i <= mapSize.upperIndent {
-			messageMap = strings.Join(row, "") + "\n" + messageMap
+			messageMap = fmt.Sprintf("%s\n%s", strings.Join(row, ""), messageMap)
 		}
 	}
 
@@ -204,7 +205,7 @@ func CreateMapKeyboard(user User, buttons MapButtons) tgbotapi.ReplyKeyboardMark
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(onlineButton),
 			tgbotapi.NewKeyboardButton(buttons.Down),
-			tgbotapi.NewKeyboardButton("Меню"),
+			tgbotapi.NewKeyboardButton(v.GetString("user_location.menu")),
 		),
 	)
 }
@@ -255,26 +256,26 @@ func NigthMap(Maps [][]string, mapSize UserMap, m map[[2]int]Cellule, resLocatio
 	}
 }
 
-func calculateNightMap(user User, location Location, x int, y int) bool {
+func calculateNightMap(user User, l Location, x int, y int) bool {
 
-	if (*location.AxisX == x-2 || *location.AxisX == x+2) && (*location.AxisY >= y-1 && *location.AxisY <= y+1) {
+	if (*l.AxisX == x-2 || *l.AxisX == x+2) && (*l.AxisY >= y-1 && *l.AxisY <= y+1) {
 		return true
 	}
-	if (*location.AxisX >= x-1 && *location.AxisX <= x+1) && (*location.AxisY >= y-2 && *location.AxisY <= y+2) {
+	if (*l.AxisX >= x-1 && *l.AxisX <= x+1) && (*l.AxisY >= y-2 && *l.AxisY <= y+2) {
 		return true
 	}
 
 	if user.LeftHandId != nil && user.LeftHand.Type == "light" || user.RightHandId != nil && user.RightHand.Type == "light" {
-		if (*location.AxisX == x-4 || *location.AxisX == x+4) && (*location.AxisY >= y-1 && *location.AxisY <= y+1) {
+		if (*l.AxisX == x-4 || *l.AxisX == x+4) && (*l.AxisY >= y-1 && *l.AxisY <= y+1) {
 			return true
 		}
-		if (*location.AxisX == x-3 || *location.AxisX == x+3) && (*location.AxisY >= y-2 && *location.AxisY <= y+2) {
+		if (*l.AxisX == x-3 || *l.AxisX == x+3) && (*l.AxisY >= y-2 && *l.AxisY <= y+2) {
 			return true
 		}
-		if (*location.AxisX == x-2 || *location.AxisX == x+2) && (*location.AxisY >= y-3 && *location.AxisY <= y+3) {
+		if (*l.AxisX == x-2 || *l.AxisX == x+2) && (*l.AxisY >= y-3 && *l.AxisY <= y+3) {
 			return true
 		}
-		if (*location.AxisX >= x-1 && *location.AxisX <= x+1) && (*location.AxisY >= y-4 && *location.AxisY <= y+4) {
+		if (*l.AxisX >= x-1 && *l.AxisX <= x+1) && (*l.AxisY >= y-4 && *l.AxisY <= y+4) {
 			return true
 		}
 	}
@@ -285,79 +286,77 @@ func calculateNightMap(user User, location Location, x int, y int) bool {
 func appendVisibleUserZone(m map[[2]int]Cellule, x int, y int, Maps [][]string) {
 	type Point [2]int
 
-	if IsItem(m[Point{x, y}]) {
-		Maps[y] = append(Maps[y], m[Point{x, y}].Item.View)
-	} else if IsWorkbench(m[Point{x, y}]) {
+	if IsItem(m[Point{x, y}]) || IsWorkbench(m[Point{x, y}]) {
 		Maps[y] = append(Maps[y], m[Point{x, y}].Item.View)
 	} else {
 		Maps[y] = append(Maps[y], m[Point{x, y}].View)
 	}
 }
 
-func PutButton(CellsAroundUser []Cellule, buttons MapButtons, resUser User) MapButtons {
+func PutButton(CellsAroundUser []Cellule, btn MapButtons, resUser User) MapButtons {
 
 	for i, cell := range CellsAroundUser {
 		switch true {
 		case IsDefaultCell(cell):
 			switch i {
 			case 0:
-				buttons.Up = cell.View
+				btn.Up = cell.View
 			case 1:
-				buttons.Down = cell.View
+				btn.Down = cell.View
 			case 2:
-				buttons.Right = cell.View
+				btn.Right = cell.View
 			case 3:
-				buttons.Left = cell.View
+				btn.Left = cell.View
 			}
 		case IsTeleport(cell):
 			button := fmt.Sprintf(" %s %s", resUser.Avatar, cell.View)
 			switch i {
 			case 0:
-				buttons.Up += button
+				btn.Up += button
 			case 1:
-				buttons.Down += button
+				btn.Down += button
 			case 2:
-				buttons.Right += button
+				btn.Right += button
 			case 3:
-				buttons.Left += button
+				btn.Left += button
 			}
 		case IsWorkbench(cell):
 			switch i {
 			case 0:
-				buttons.Up = fmt.Sprintf("🔧 %s %s", buttons.Up, cell.Item.View)
+				btn.Up = fmt.Sprintf("🔧 %s %s", btn.Up, cell.Item.View)
 			case 1:
-				buttons.Down = fmt.Sprintf("🔧 %s %s", buttons.Down, cell.Item.View)
+				btn.Down = fmt.Sprintf("🔧 %s %s", btn.Down, cell.Item.View)
 			case 2:
-				buttons.Right = fmt.Sprintf("🔧 %s %s", buttons.Right, cell.Item.View)
+				btn.Right = fmt.Sprintf("🔧 %s %s", btn.Right, cell.Item.View)
 			case 3:
-				buttons.Left = fmt.Sprintf("🔧 %s %s", buttons.Left, cell.Item.View)
+				btn.Left = fmt.Sprintf("🔧 %s %s", btn.Left, cell.Item.View)
 			}
 		case IsItem(cell):
 			switch i {
 			case 0:
-				buttons.Up = isItemCost(cell, buttons.Up, resUser)
+				btn.Up = isItemCost(cell, btn.Up, resUser)
 			case 1:
-				buttons.Down = isItemCost(cell, buttons.Down, resUser)
+				btn.Down = isItemCost(cell, btn.Down, resUser)
 			case 2:
-				buttons.Right = isItemCost(cell, buttons.Right, resUser)
+				btn.Right = isItemCost(cell, btn.Right, resUser)
 			case 3:
-				buttons.Left = isItemCost(cell, buttons.Left, resUser)
+				btn.Left = isItemCost(cell, btn.Left, resUser)
 			}
 		case cell.ID == 0:
 			switch i {
 			case 0:
-				buttons.Up = "🚫"
+				btn.Up = "🚫"
 			case 1:
-				buttons.Down = "🚫"
+				btn.Down = "🚫"
 			case 2:
-				buttons.Right = "🚫"
+				btn.Right = "🚫"
 			case 3:
-				buttons.Left = "🚫"
+				btn.Left = "🚫"
 			}
 		}
 	}
 
-	return buttons
+	return btn
 }
 
 func IsDefaultCell(cell Cellule) bool {

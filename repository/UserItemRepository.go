@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
 )
@@ -144,17 +145,14 @@ func GetFullDescriptionOfUserItem(userItem UserItem) string {
 	userItem = GetUserItem(userItem)
 	var fullDescriptionUserItem string
 	if userItem.Item.IsInventory == true {
-		fullDescriptionUserItem = userItem.Item.View + " *" + userItem.Item.Name + "* - " + ToString(*userItem.Count) + " шт.\n" +
-			"*Сила*: +" + ToString(*userItem.Item.Damage) + "💥\n"
+		fullDescriptionUserItem = fmt.Sprintf("%s *%s* - %d шт.\n*Сила*: + %d💥\n", userItem.Item.View, userItem.Item.Name, *userItem.Count, *userItem.Item.Damage)
 	} else if userItem.Item.IsBackpack == true {
-		fullDescriptionUserItem = userItem.Item.View + " *" + userItem.Item.Name + "* - " + ToString(*userItem.Count) + " шт.\n" +
-			"*Здоровье*: +" + ToString(*userItem.Item.Healing) + " ♥️️\n" +
-			"*Сытость*: +" + ToString(*userItem.Item.Satiety) + " \U0001F9C3 \n"
+		fullDescriptionUserItem = fmt.Sprintf("%s *%s* - %dшт.\n*Здоровье*: +%d ♥️️\n*Сытость*: +%d  \U0001F9C3\n", userItem.Item.View, userItem.Item.Name, *userItem.Count, *userItem.Item.Healing, *userItem.Item.Satiety)
 	}
 	itemDescription := "Описания нет("
 
 	if userItem.Item.Description != nil {
-		itemDescription = "*Описание*: " + *userItem.Item.Description
+		itemDescription = fmt.Sprintf("*Описание*: %s", *userItem.Item.Description)
 	}
 
 	return fullDescriptionUserItem + itemDescription
@@ -166,7 +164,7 @@ func UpdateUserInstrument(update tgbotapi.Update, user User, instrument Item) (s
 	c := *userItem.CountUseLeft - 1
 	if c > 0 {
 		UpdateUserItem(user, UserItem{ID: userItem.ID, CountUseLeft: &c})
-		return "Ok", ""
+		return "Ok", "Ok"
 	}
 
 	zeroValue := 0
@@ -196,5 +194,5 @@ func UpdateUserInstrument(update tgbotapi.Update, user User, instrument Item) (s
 		}
 	}
 
-	return "Not ok", "\n💥 Инструмент «" + userItem.Item.View + " " + userItem.Item.Name + "» был сломан! 💥"
+	return "Not ok", fmt.Sprintf("\n💥 Инструмент «%s %s» был сломан! 💥", userItem.Item.View, userItem.Item.Name)
 }

@@ -1,7 +1,9 @@
 package repository
 
 import (
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	v "github.com/spf13/viper"
 	"project0/config"
 	"strings"
 	"time"
@@ -124,20 +126,15 @@ func GetUserInfo(update tgbotapi.Update) string {
 		userIsOnline = "📴 Откл"
 	}
 
-	messageMap := "🔅 🔆 *Профиль* 🔆 🔅\n" +
-		"\n*Твое имя*: " + user.Username +
-		"\n*Аватар*: " + user.Avatar +
-		"\n*Золото*: " + ToString(*user.Money) + "💰" +
-		"\n*Здоровье*: _" + ToString(int(user.Health)) + "_ ❤️" +
-		"\n*Сытость*: _" + ToString(int(user.Satiety)) + "_ 😋️" +
-		"\n*Онлайн*: _" + userIsOnline + "_"
+	messageMap := fmt.Sprintf("🔅 🔆 *Профиль* 🔆 🔅\n\n*Твое имя*: %s\n*Аватар*: %s\n*Золото*: %d 💰\n*Здоровье*: _%d_ ❤️\n*Сытость*: _%d_ 😋️\n*Онлайн*: _%s_",
+		user.Username, user.Avatar, *user.Money, user.Health, user.Satiety, userIsOnline)
 
 	return messageMap
 }
 
 func IsDressedItem(user User, userItem UserItem) (string, string) {
 	dressItem := "Надеть ✅"
-	dressItemData := "dressGood"
+	dressItemData := v.GetString("callback_char.dress_good")
 
 	if user.HeadId != nil && userItem.ItemId == *user.HeadId ||
 		user.LeftHandId != nil && userItem.ItemId == *user.LeftHandId ||
@@ -147,7 +144,7 @@ func IsDressedItem(user User, userItem UserItem) (string, string) {
 		user.ShoesId != nil && userItem.ItemId == *user.ShoesId {
 
 		dressItem = "Снять ❎"
-		dressItemData = "takeOffGood"
+		dressItemData = v.GetString("callback_char.take_off_good")
 	}
 
 	return dressItem, dressItemData
@@ -175,5 +172,5 @@ func CheckUserHasLighter(update tgbotapi.Update, user User) string {
 		_, res := UpdateUserInstrument(update, user, *user.RightHand)
 		return res
 	}
-	return ""
+	return "Ok"
 }

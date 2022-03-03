@@ -1,0 +1,45 @@
+msg_separator: "\n\n〰️〰️〰️〰️〰️〰️〰️〰️〰️\n"
+
+user_location:
+  menu: "Меню"
+  maps: "Карта"
+  profile: "Профиль"
+
+callback_char:
+  cancel: "cancel"
+  backpack_moving: "backpackMoving"
+  goods_moving: "goodsMoving"
+  eat_food: "eatFood"
+  delete_item: "deleteItem"
+  dress_good: "dressGood"
+  take_off_good: "takeOffGood"
+  change_left_hand: "changeLeftHand"
+  change_right_hand: "changeRightHand"
+  change_avatar: "changeAvatar"
+  description: "description"
+  workbench: "workbench"
+  receipt: "receipt"
+  put_item: "putItem"
+  put_count_item: "putCountItem"
+  make_new_item: "makeNewItem"
+  throw_out_item: "throwOutItem"
+  count_of_delete: "countOfDelete"
+
+message:
+  doing:
+    up: "🔼"
+    down:  "🔽"
+    left: "◀️️"
+    right: "▶️"
+  emoji:
+    water: "\U0001F7E6"
+    clock: "🕦"
+    casino: "🎰"
+    forbidden: "🚫"
+    wrench: "🔧"
+    offline: "📳"
+    online: "📴"
+    stop_use: "🚷"
+    exclamation_mark: "❗"
+    hand: "👋"
+    foot: "\U0001F9B6"

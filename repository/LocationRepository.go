@@ -43,7 +43,7 @@ func GetOrCreateMyLocation(update tgbotapi.Update) Location {
 	return result
 }
 
-func UpdateLocation(update tgbotapi.Update, LocationStruct Location) (Location, string) {
+func UpdateLocation(update tgbotapi.Update, locStruct Location) (Location, string) {
 	var char []string
 	if update.Message != nil {
 		char = strings.Fields(update.Message.Text)
@@ -51,39 +51,42 @@ func UpdateLocation(update tgbotapi.Update, LocationStruct Location) (Location, 
 		char = strings.Fields(update.CallbackQuery.Data)
 	}
 	userTgId := GetUserTgId(update)
-	myLocation := GetOrCreateMyLocation(update)
-	resCellule := GetCellule(Cellule{MapsId: *LocationStruct.MapsId, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY})
+	usLoc := GetOrCreateMyLocation(update)
+	cell := GetCellule(Cellule{MapsId: *locStruct.MapsId, AxisX: *locStruct.AxisX, AxisY: *locStruct.AxisY})
 
-	if len(char) != 1 && *resCellule.Type == "teleport" && resCellule.TeleportID != nil {
-		LocationStruct = Location{
-			AxisX:  &resCellule.Teleport.StartX,
-			AxisY:  &resCellule.Teleport.StartY,
-			MapsId: &resCellule.Teleport.MapId,
+	if len(char) != 1 && *cell.Type == "teleport" && cell.TeleportID != nil {
+		locStruct = Location{
+			AxisX:  &cell.Teleport.StartX,
+			AxisY:  &cell.Teleport.StartY,
+			MapsId: &cell.Teleport.MapId,
 		}
 	}
 
 	var result Cellule
 	var err error
 
-	err = config.Db.Preload("Item").First(&result, &Cellule{MapsId: *LocationStruct.MapsId, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY}).Error
+	err = config.Db.
+		Preload("Item").
+		First(&result, &Cellule{MapsId: *locStruct.MapsId, AxisX: *locStruct.AxisX, AxisY: *locStruct.AxisY}).
+		Error
 	if err != nil {
 		if err.Error() == "record not found" {
-			return myLocation, "\nСюда никак не пройти("
+			return usLoc, "\nСюда никак не пройти("
 		}
 		panic(err)
 	}
 
 	if !result.CanStep || result.Item != nil && *result.ItemCount > 0 && !result.Item.CanStep {
-		return myLocation, "\nСюда никак не пройти("
-	} else {
-		err = config.Db.Where(&Location{UserTgId: userTgId}).Updates(LocationStruct).Error
-		if err != nil {
-			panic(err)
-		}
+		return usLoc, "\nСюда никак не пройти("
 	}
 
-	myLocation = GetOrCreateMyLocation(update)
-	return myLocation, "Ok"
+	err = config.Db.Where(&Location{UserTgId: userTgId}).Updates(locStruct).Error
+	if err != nil {
+		panic(err)
+	}
+
+	usLoc = GetOrCreateMyLocation(update)
+	return usLoc, "Ok"
 }
 
 func GetLocationOnlineUser(userlocation Location, mapSize UserMap) []Location {
