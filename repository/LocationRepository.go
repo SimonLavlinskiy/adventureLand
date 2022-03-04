@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"encoding/json"
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
 	"strings"
@@ -80,7 +82,12 @@ func UpdateLocation(update tgbotapi.Update, locStruct Location) (Location, strin
 		return usLoc, "\nСюда никак не пройти("
 	}
 
-	err = config.Db.Where(&Location{UserTgId: userTgId}).Updates(locStruct).Error
+	j, _ := json.Marshal(locStruct)
+	fmt.Println(string(j))
+	err = config.Db.
+		Where(&Location{UserTgId: userTgId}).
+		Updates(locStruct).
+		Error
 	if err != nil {
 		panic(err)
 	}

@@ -49,15 +49,15 @@ type Doing struct {
 }
 
 type Emoji struct {
-	water            string
-	clock            string
-	casino           string
-	forbidden        string
-	wrench           string
-	offline          string
-	online           string
-	stop_use         string
-	exclamation_mark string
-	hand             string
-	foot             string
+	water           string
+	clock           string
+	casino          string
+	forbidden       string
+	wrench          string
+	offline         string
+	online          string
+	stopUse         string
+	exclamationMark string
+	hand            string
+	foot            string
 }

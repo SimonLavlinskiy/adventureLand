@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
@@ -32,7 +33,7 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 }
 
 func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
-	msg.BaseChat.ChatID = update.CallbackQuery.Message.Chat.ID
+	msg.ChatID = update.CallbackQuery.Message.Chat.ID
 	buttons := tgbotapi.ReplyKeyboardMarkup{}
 	charData := strings.Fields(update.CallbackQuery.Data)
 	deletePrevMessage := true
@@ -79,7 +80,7 @@ func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 	case v.GetString("callback_char.workbench"):
 		msg = Workbench(nil, charData)
 	case v.GetString("callback_char.receipt"):
-		msg.Text = "📖 *Рецепты*: 📖\n---------------------------\n" + AllReceiptsMsg()
+		msg.Text = fmt.Sprintf("📖 *Рецепты*: 📖%s%s", v.GetString("msg_separator"), AllReceiptsMsg())
 		msg.ReplyMarkup = nil
 		deletePrevMessage = false
 	case v.GetString("callback_char.put_item"):
@@ -96,24 +97,11 @@ func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 		receipt := r.FindReceiptForUser(resp)
 		msg, deletePrevMessage = UserCraftItem(user, receipt)
 	case v.GetString("message.emoji.hand"), ItemLeftHand.View, ItemRightHand.View:
-		res := directionMovement(update, charData[1])
-		resultOfGetItem := r.UserGetItem(update, res, charData)
-		resText, buttons := r.GetMyMap(update)
-		msg.Text = fmt.Sprintf("%s%s%s", resText, v.GetString("msg_separator"), resultOfGetItem)
-		msg.ReplyMarkup = buttons
+		msg = UserUseHandOrInstrument(update, charData)
 	case v.GetString("message.emoji.foot"):
-		res := directionMovement(update, charData[1])
-		r.UpdateLocation(update, res)
-		var text string
-		lighterMsg := r.CheckUserHasLighter(update, user)
-		if lighterMsg != "Ok" {
-			text = fmt.Sprintf("%s%s", v.GetString("msg_separator"), lighterMsg)
-		}
-		msg.Text, buttons = r.GetMyMap(update)
-		msg.Text = msg.Text + text
-		msg.ReplyMarkup = buttons
+		msg = UserMoving(update, user, charData[1])
 	case ItemHead.View:
-		res := directionMovement(update, charData[1])
+		res := directionCell(update, charData[1])
 		status, text := r.UpdateUserInstrument(update, user, ItemHead)
 		if status != "Ok" {
 			msg.Text = fmt.Sprintf("%s%s%s", r.ViewItemInfo(res), v.GetString("msg_separator"), text)
@@ -137,35 +125,13 @@ func useSpecialCell(update tgbotapi.Update, char []string, user r.User) tgbotapi
 
 	switch char[0] {
 	case v.GetString("message.doing.up"), v.GetString("message.doing.down"), v.GetString("message.doing.left"), v.GetString("message.doing.right"):
-		var text string
-		res := directionMovement(update, char[0])
-		r.UpdateLocation(update, res)
-		lighterMsg := r.CheckUserHasLighter(update, user)
-		if lighterMsg != "Ok" {
-			text = fmt.Sprintf("%s%s", v.GetString("msg_separator"), lighterMsg)
-		}
-		msg.Text, buttons = r.GetMyMap(update)
-		msg.Text = msg.Text + text
-		msg.ReplyMarkup = buttons
+		msg = UserMoving(update, user, char[0])
 	case v.GetString("message.emoji.foot"):
-		var text string
-		res := directionMovement(update, char[1])
-		r.UpdateLocation(update, res)
-		lighterMsg := r.CheckUserHasLighter(update, user)
-		if lighterMsg != "Ok" {
-			text = fmt.Sprintf("%s%s", v.GetString("msg_separator"), lighterMsg)
-		}
-		msg.Text, buttons = r.GetMyMap(update)
-		msg.Text = msg.Text + text
-		msg.ReplyMarkup = buttons
+		msg = UserMoving(update, user, char[1])
 	case v.GetString("message.emoji.hand"), ItemLeftHand.View, ItemRightHand.View:
-		res := directionMovement(update, char[1])
-		resultOfGetItem := r.UserGetItem(update, res, char)
-		msg.Text, buttons = r.GetMyMap(update)
-		msg.Text = fmt.Sprintf("%s%s%s", msg.Text, v.GetString("msg_separator"), resultOfGetItem)
-		msg.ReplyMarkup = buttons
+		msg = UserUseHandOrInstrument(update, char)
 	case v.GetString("message.emoji.exclamation_mark"):
-		cellLocation := directionMovement(update, char[3])
+		cellLocation := directionCell(update, char[3])
 		cell := r.GetCellule(r.Cellule{MapsId: *cellLocation.MapsId, AxisX: *cellLocation.AxisX, AxisY: *cellLocation.AxisY})
 		msg.Text = "В зависимости от предмета в твоих руках ты можешь получить разный результат. Выбирай..."
 		msg.ReplyMarkup = helpers.ChooseInstrument(char, cell, user)
@@ -192,7 +158,7 @@ func useSpecialCell(update tgbotapi.Update, char []string, user r.User) tgbotapi
 		msg.Text = fmt.Sprintf("%s%sОнлайн выключен!", msg.Text, v.GetString("msg_separator"))
 		msg.ReplyMarkup = buttons
 	case ItemHead.View:
-		res := directionMovement(update, char[1])
+		res := directionCell(update, char[1])
 		status, text := r.UpdateUserInstrument(update, user, ItemHead)
 		if status != "Ok" {
 			msg.Text = fmt.Sprintf("%s%s%s", r.ViewItemInfo(res), v.GetString("msg_separator"), text)
@@ -200,7 +166,7 @@ func useSpecialCell(update tgbotapi.Update, char []string, user r.User) tgbotapi
 			msg.Text = r.ViewItemInfo(res)
 		}
 	case v.GetString("message.emoji.wrench"):
-		loc := directionMovement(update, char[1])
+		loc := directionCell(update, char[1])
 		cell := r.GetCellule(r.Cellule{MapsId: *loc.MapsId, AxisX: *loc.AxisX, AxisY: *loc.AxisY})
 		charWorkbench := strings.Fields("workbench usPoint 0 1stComp null 0 2ndComp null 0 3rdComp null 0")
 		msg = Workbench(&cell, charWorkbench)
@@ -214,21 +180,19 @@ func useSpecialCell(update tgbotapi.Update, char []string, user r.User) tgbotapi
 }
 
 func userMenuLocation(update tgbotapi.Update, user r.User) tgbotapi.MessageConfig {
-	buttons := tgbotapi.ReplyKeyboardMarkup{}
 	newMessage := update.Message.Text
+	msg.ChatID = update.Message.Chat.ID
 
 	switch newMessage {
 	case "🗺 Карта 🗺":
-		msg.Text, buttons = r.GetMyMap(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text)
-		msg.ReplyMarkup = buttons
+		msg.Text, msg.ReplyMarkup = r.GetMyMap(update)
 		r.UpdateUser(update, r.User{MenuLocation: "Карта"})
 	case fmt.Sprintf("%s Профиль 👔", user.Avatar):
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, r.GetUserInfo(update))
+		msg.Text = r.GetUserInfo(update)
 		msg.ReplyMarkup = helpers.ProfileKeyboard(user)
 		r.UpdateUser(update, r.User{MenuLocation: "Профиль"})
 	default:
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Меню")
+		msg.Text = "Меню"
 		msg.ReplyMarkup = helpers.MainKeyboard(user)
 		r.UpdateUser(update, r.User{MenuLocation: "Меню"})
 	}
@@ -278,7 +242,41 @@ func userProfileLocation(update tgbotapi.Update, user r.User) tgbotapi.MessageCo
 	return msg
 }
 
-func directionMovement(update tgbotapi.Update, direction string) r.Location {
+func useDefaultCell(update tgbotapi.Update, user r.User) tgbotapi.MessageConfig {
+	newMessage := update.Message.Text
+	msg.ChatID = update.Message.Chat.ID
+	buttons := tgbotapi.ReplyKeyboardMarkup{}
+	currentTime := time.Now()
+
+	switch newMessage {
+	case v.GetString("message.doing.up"), v.GetString("message.doing.down"), v.GetString("message.doing.left"), v.GetString("message.doing.right"):
+		msg = UserMoving(update, user, newMessage)
+	case v.GetString("message.emoji.water"):
+		msg.Text = "Ты не похож на Jesus! 👮‍♂️"
+	case v.GetString("message.emoji.clock"):
+		msg.Text = fmt.Sprintf("%s\nЧасики тикают...", currentTime.Format("15:04:05"))
+	case user.Avatar:
+		msg.Text, buttons = r.GetMyMap(update)
+		msg.Text = fmt.Sprintf("%s \n\n %s", r.GetUserInfo(update), msg.Text)
+		msg.ReplyMarkup = buttons
+	case "/menu", v.GetString("user_location.menu"):
+		msg.Text = "Меню"
+		msg.ReplyMarkup = helpers.MainKeyboard(user)
+		r.UpdateUser(update, r.User{MenuLocation: "Меню"})
+	case v.GetString("message.emoji.casino"):
+		msg.Text = "💰💵🤑 Ставки на JOY CASINO дот COM! 🤑💵💰"
+	case v.GetString("message.emoji.forbidden"):
+		msg.Text = "🚫 Сюда нельзя! 🚫"
+	default:
+		msg.Text, buttons = r.GetMyMap(update)
+		msg.Text = fmt.Sprintf("%s%sХммм....🤔", msg.Text, v.GetString("msg_separator"))
+		msg.ReplyMarkup = buttons
+	}
+
+	return msg
+}
+
+func directionCell(update tgbotapi.Update, direction string) r.Location {
 	res := r.GetOrCreateMyLocation(update)
 
 	switch direction {
@@ -296,48 +294,6 @@ func directionMovement(update tgbotapi.Update, direction string) r.Location {
 		return r.Location{MapsId: res.MapsId, AxisX: &x, AxisY: res.AxisY}
 	}
 	return res
-}
-
-func useDefaultCell(update tgbotapi.Update, user r.User) tgbotapi.MessageConfig {
-	newMessage := update.Message.Text
-	buttons := tgbotapi.ReplyKeyboardMarkup{}
-	currentTime := time.Now()
-
-	switch newMessage {
-	case v.GetString("message.doing.up"), v.GetString("message.doing.down"), v.GetString("message.doing.left"), v.GetString("message.doing.right"):
-		var text string
-		res := directionMovement(update, newMessage)
-		r.UpdateLocation(update, res)
-		lighterMsg := r.CheckUserHasLighter(update, user)
-		if lighterMsg != "Ok" {
-			text = fmt.Sprintf("%s%s", v.GetString("msg_separator"), lighterMsg)
-		}
-		msg.Text, buttons = r.GetMyMap(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, msg.Text+text)
-		msg.ReplyMarkup = buttons
-	case v.GetString("message.emoji.water"):
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Ты не похож на Jesus! 👮‍♂️")
-	case v.GetString("message.emoji.clock"):
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("%s\nЧасики тикают...", currentTime.Format("15:04:05")))
-	case user.Avatar:
-		msg.Text, buttons = r.GetMyMap(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("%s \n\n %s", r.GetUserInfo(update), msg.Text))
-		msg.ReplyMarkup = buttons
-	case "/menu", v.GetString("user_location.menu"):
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Меню")
-		msg.ReplyMarkup = helpers.MainKeyboard(user)
-		r.UpdateUser(update, r.User{MenuLocation: "Меню"})
-	case v.GetString("message.emoji.casino"):
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "💰💵🤑 Ставки на JOY CASINO дот COM! 🤑💵💰 ")
-	case v.GetString("message.emoji.forbidden"):
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "🚫 Сюда нельзя! 🚫")
-	default:
-		msg.Text, buttons = r.GetMyMap(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("%s%sХммм....🤔", msg.Text, v.GetString("msg_separator")))
-		msg.ReplyMarkup = buttons
-	}
-
-	return msg
 }
 
 func MessageBackpackUserItems(userItems []r.UserItem, rowUser int) string {
@@ -877,7 +833,31 @@ func updateUserHand(update tgbotapi.Update, char []string, userItem r.UserItem) 
 		r.UpdateUser(update, r.User{LeftHandId: &userItem.ItemId})
 	case v.GetString("callback_char.change_right_hand"):
 		r.UpdateUser(update, r.User{RightHandId: &userItem.ItemId})
-
 	}
+}
 
+func UserMoving(update tgbotapi.Update, user r.User, char string) tgbotapi.MessageConfig {
+	var text string
+	res := directionCell(update, char)
+	j, _ := json.Marshal(res)
+	fmt.Println(string(j))
+	r.UpdateLocation(update, res)
+	lighterMsg := r.CheckUserHasLighter(update, user)
+	if lighterMsg != "Ok" {
+		text = fmt.Sprintf("%s%s", v.GetString("msg_separator"), lighterMsg)
+	}
+	msg.Text, msg.ReplyMarkup = r.GetMyMap(update)
+	msg.Text = msg.Text + text
+
+	return msg
+}
+
+func UserUseHandOrInstrument(update tgbotapi.Update, char []string) tgbotapi.MessageConfig {
+	res := directionCell(update, char[1])
+	resultOfGetItem := r.UserGetItem(update, res, char)
+	resText, buttons := r.GetMyMap(update)
+	msg.Text = fmt.Sprintf("%s%s%s", resText, v.GetString("msg_separator"), resultOfGetItem)
+	msg.ReplyMarkup = buttons
+
+	return msg
 }
