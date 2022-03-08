@@ -1,6 +1,6 @@
 package main
 
-type Configurations struct {
+type Messages struct {
 	MsgSeparator string
 	UserLocation
 	CallbackChar
@@ -37,6 +37,7 @@ type CallbackChar struct {
 }
 
 type Message struct {
+	ListOfAvatar string
 	Doing
 	Emoji
 }

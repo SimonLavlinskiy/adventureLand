@@ -23,7 +23,7 @@ func main() {
 	viper.AutomaticEnv()
 	viper.SetConfigType("yml")
 
-	var configuration Configurations
+	var configuration Messages
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Printf("Error reading config file, %s", err)
 	}
@@ -41,6 +41,8 @@ func main() {
 	if mysqlStatus != true {
 		runtime.Goexit()
 	}
+
+	//handlers.RequestHandler()
 
 	handlers.GetMessage(telegramApiToken)
 }

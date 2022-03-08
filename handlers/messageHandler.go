@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
@@ -65,17 +64,17 @@ func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 	case v.GetString("callback_char.take_off_good"):
 		userTakeOffGood(update, charData)
 	case v.GetString("callback_char.change_left_hand"), v.GetString("callback_char.change_right_hand"):
-		userItem := r.GetUserItem(r.UserItem{ID: r.ToInt(charData[1])})
+		userItem := r.UserItem{ID: r.ToInt(charData[1])}.GetUserItem()
 		updateUserHand(update, charData, userItem)
 		charDataForOpenGoods := strings.Fields(fmt.Sprintf("%s %s", v.GetString("callback_char.goods_moving"), charData[2]))
 		msg = GoodsMoving(charDataForOpenGoods, update)
 		msg.Text = fmt.Sprintf("%s%sВы надели %s", msg.Text, v.GetString("msg_separator"), userItem.Item.View)
 	case v.GetString("callback_char.change_avatar"):
-		res := r.UpdateUser(update, r.User{Avatar: charData[1]})
+		res := r.User{Avatar: charData[1]}.UpdateUser(update)
 		msg.Text = r.GetUserInfo(update)
 		msg.ReplyMarkup = helpers.ProfileKeyboard(res)
 	case v.GetString("callback_char.description"):
-		msg.Text = r.GetFullDescriptionOfUserItem(r.UserItem{ID: r.ToInt(charData[1])})
+		msg.Text = r.UserItem{ID: r.ToInt(charData[1])}.GetFullDescriptionOfUserItem()
 		deletePrevMessage = false
 	case v.GetString("callback_char.workbench"):
 		msg = Workbench(nil, charData)
@@ -132,7 +131,8 @@ func useSpecialCell(update tgbotapi.Update, char []string, user r.User) tgbotapi
 		msg = UserUseHandOrInstrument(update, char)
 	case v.GetString("message.emoji.exclamation_mark"):
 		cellLocation := directionCell(update, char[3])
-		cell := r.GetCellule(r.Cellule{MapsId: *cellLocation.MapsId, AxisX: *cellLocation.AxisX, AxisY: *cellLocation.AxisY})
+		cell := r.Cell{MapsId: *cellLocation.MapsId, AxisX: *cellLocation.AxisX, AxisY: *cellLocation.AxisY}
+		cell = cell.GetCell()
 		msg.Text = "В зависимости от предмета в твоих руках ты можешь получить разный результат. Выбирай..."
 		msg.ReplyMarkup = helpers.ChooseInstrument(char, cell, user)
 	case v.GetString("message.emoji.stop_use"):
@@ -147,13 +147,13 @@ func useSpecialCell(update tgbotapi.Update, char []string, user r.User) tgbotapi
 		msg.ReplyMarkup = helpers.GoodsInlineKeyboard(user, userItems, 0)
 	case v.GetString("message.emoji.online"):
 		userOnline := true
-		user = r.UpdateUser(update, r.User{OnlineMap: &userOnline})
+		user = r.User{OnlineMap: &userOnline}.UpdateUser(update)
 		msg.Text, buttons = r.GetMyMap(update)
 		msg.Text = fmt.Sprintf("%s%sОнлайн включен!", msg.Text, v.GetString("msg_separator"))
 		msg.ReplyMarkup = buttons
 	case v.GetString("message.emoji.offline"):
 		userOnline := false
-		user = r.UpdateUser(update, r.User{OnlineMap: &userOnline})
+		user = r.User{OnlineMap: &userOnline}.UpdateUser(update)
 		msg.Text, buttons = r.GetMyMap(update)
 		msg.Text = fmt.Sprintf("%s%sОнлайн выключен!", msg.Text, v.GetString("msg_separator"))
 		msg.ReplyMarkup = buttons
@@ -167,7 +167,8 @@ func useSpecialCell(update tgbotapi.Update, char []string, user r.User) tgbotapi
 		}
 	case v.GetString("message.emoji.wrench"):
 		loc := directionCell(update, char[1])
-		cell := r.GetCellule(r.Cellule{MapsId: *loc.MapsId, AxisX: *loc.AxisX, AxisY: *loc.AxisY})
+		cell := r.Cell{MapsId: *loc.MapsId, AxisX: *loc.AxisX, AxisY: *loc.AxisY}
+		cell = cell.GetCell()
 		charWorkbench := strings.Fields("workbench usPoint 0 1stComp null 0 2ndComp null 0 3rdComp null 0")
 		msg = Workbench(&cell, charWorkbench)
 	default:
@@ -186,15 +187,15 @@ func userMenuLocation(update tgbotapi.Update, user r.User) tgbotapi.MessageConfi
 	switch newMessage {
 	case "🗺 Карта 🗺":
 		msg.Text, msg.ReplyMarkup = r.GetMyMap(update)
-		r.UpdateUser(update, r.User{MenuLocation: "Карта"})
+		r.User{MenuLocation: "Карта"}.UpdateUser(update)
 	case fmt.Sprintf("%s Профиль 👔", user.Avatar):
 		msg.Text = r.GetUserInfo(update)
 		msg.ReplyMarkup = helpers.ProfileKeyboard(user)
-		r.UpdateUser(update, r.User{MenuLocation: "Профиль"})
+		r.User{MenuLocation: "Профиль"}.UpdateUser(update)
 	default:
 		msg.Text = "Меню"
 		msg.ReplyMarkup = helpers.MainKeyboard(user)
-		r.UpdateUser(update, r.User{MenuLocation: "Меню"})
+		r.User{MenuLocation: "Меню"}.UpdateUser(update)
 	}
 
 	return msg
@@ -217,13 +218,13 @@ func userProfileLocation(update tgbotapi.Update, user r.User) tgbotapi.MessageCo
 	newMessage := update.Message.Text
 
 	if user.Username == "waiting" {
-		r.UpdateUser(update, r.User{Username: newMessage})
+		r.User{Username: newMessage}.UpdateUser(update)
 		msg = tgbotapi.NewMessage(update.Message.Chat.ID, r.GetUserInfo(update))
 		msg.ReplyMarkup = helpers.ProfileKeyboard(user)
 	} else {
 		switch newMessage {
 		case "📝 Изменить имя? 📝":
-			r.UpdateUser(update, r.User{Username: "waiting"})
+			r.User{Username: "waiting"}.UpdateUser(update)
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "‼️ *ВНИМАНИЕ*: ‼️‼\nТы должен вписать новое имя?\n‼️‼️‼️‼️‼️‼️‼️")
 			msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 		case fmt.Sprintf("%s Изменить аватар? %s", user.Avatar, user.Avatar):
@@ -232,7 +233,7 @@ func userProfileLocation(update tgbotapi.Update, user r.User) tgbotapi.MessageCo
 		case "/menu", v.GetString("user_location.menu"):
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Меню")
 			msg.ReplyMarkup = helpers.MainKeyboard(user)
-			r.UpdateUser(update, r.User{MenuLocation: "Меню"})
+			r.User{MenuLocation: "Меню"}.UpdateUser(update)
 		default:
 			msg = tgbotapi.NewMessage(update.Message.Chat.ID, r.GetUserInfo(update))
 			msg.ReplyMarkup = helpers.ProfileKeyboard(user)
@@ -262,7 +263,7 @@ func useDefaultCell(update tgbotapi.Update, user r.User) tgbotapi.MessageConfig 
 	case "/menu", v.GetString("user_location.menu"):
 		msg.Text = "Меню"
 		msg.ReplyMarkup = helpers.MainKeyboard(user)
-		r.UpdateUser(update, r.User{MenuLocation: "Меню"})
+		r.User{MenuLocation: "Меню"}.UpdateUser(update)
 	case v.GetString("message.emoji.casino"):
 		msg.Text = "💰💵🤑 Ставки на JOY CASINO дот COM! 🤑💵💰"
 	case v.GetString("message.emoji.forbidden"):
@@ -331,7 +332,7 @@ func MessageGoodsUserItems(user r.User, userItems []r.UserItem, rowUser int) str
 	}
 
 	for i, item := range userItems {
-		_, res := r.IsDressedItem(user, userItems[i])
+		_, res := user.IsDressedItem(userItems[i])
 
 		if res == v.GetString("callback_char.take_off_good") {
 			res = "✅"
@@ -397,9 +398,9 @@ func UserEatItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConf
 	userItemId := r.ToInt(charData[1])
 
 	user := r.GetUser(r.User{TgId: userTgId})
-	userItem := r.GetUserItem(r.UserItem{ID: userItemId})
+	userItem := r.UserItem{ID: userItemId}.GetUserItem()
 
-	res := r.EatItem(update, user, userItem)
+	res := userItem.EatItem(update, user)
 	charDataForOpenBackPack := strings.Fields(fmt.Sprintf("%s %s", v.GetString("callback_char.backpack_moving"), charData[2]))
 	msg = BackPackMoving(charDataForOpenBackPack, update)
 	msg.Text = fmt.Sprintf("%s%s%s", msg.Text, v.GetString("msg_separator"), res)
@@ -411,7 +412,7 @@ func UserDeleteItem(update tgbotapi.Update, charData []string) tgbotapi.MessageC
 	userItemId := r.ToInt(charData[1])
 	userTgId := r.GetUserTgId(update)
 	user := r.GetUser(r.User{TgId: userTgId})
-	userItem := r.GetUserItem(r.UserItem{ID: userItemId})
+	userItem := r.UserItem{ID: userItemId}.GetUserItem()
 
 	countAfterUserThrowOutItem := 0
 	var updateUserItemStruct = r.UserItem{
@@ -419,7 +420,7 @@ func UserDeleteItem(update tgbotapi.Update, charData []string) tgbotapi.MessageC
 		Count: &countAfterUserThrowOutItem,
 	}
 
-	r.UpdateUserItem(user, updateUserItemStruct)
+	updateUserItemStruct.UpdateUserItem(user)
 
 	var charDataForOpenList []string
 	switch charData[3] {
@@ -510,7 +511,7 @@ func userTakeOffGood(update tgbotapi.Update, charData []string) {
 	userItemId := r.ToInt(charData[1])
 	userTgId := r.GetUserTgId(update)
 	user := r.GetUser(r.User{TgId: userTgId})
-	userItem := r.GetUserItem(r.UserItem{ID: userItemId})
+	userItem := r.UserItem{ID: userItemId}.GetUserItem()
 
 	if user.HeadId != nil && userItem.ItemId == *user.HeadId {
 		r.SetNullUserField(update, "head_id")
@@ -535,7 +536,7 @@ func dressUserItem(update tgbotapi.Update, charData []string) tgbotapi.MessageCo
 	userItemId := r.ToInt(charData[1])
 	userTgId := r.GetUserTgId(update)
 	user := r.GetUser(r.User{TgId: userTgId})
-	userItem := r.GetUserItem(r.UserItem{ID: userItemId})
+	userItem := r.UserItem{ID: userItemId}.GetUserItem()
 	changeHandItem := false
 
 	var result = fmt.Sprintf("Вы надели %s", userItem.Item.View)
@@ -543,34 +544,34 @@ func dressUserItem(update tgbotapi.Update, charData []string) tgbotapi.MessageCo
 	switch *userItem.Item.DressType {
 	case "hand":
 		if user.LeftHandId == nil {
-			r.UpdateUser(update, r.User{LeftHandId: &userItem.ItemId})
+			r.User{LeftHandId: &userItem.ItemId}.UpdateUser(update)
 		} else if user.RightHandId == nil {
-			r.UpdateUser(update, r.User{RightHandId: &userItem.ItemId})
+			r.User{RightHandId: &userItem.ItemId}.UpdateUser(update)
 		} else {
 			result = "У вас заняты все руки! Что хочешь снять?"
 			changeHandItem = true
 		}
 	case "head":
 		if user.HeadId == nil {
-			r.UpdateUser(update, r.User{HeadId: &userItem.ItemId})
+			r.User{HeadId: &userItem.ItemId}.UpdateUser(update)
 		} else {
 			result = "Сначала снимите предмет, чтоб надеть другой"
 		}
 	case "body":
 		if user.BodyId == nil {
-			r.UpdateUser(update, r.User{BodyId: &userItem.ItemId})
+			r.User{BodyId: &userItem.ItemId}.UpdateUser(update)
 		} else {
 			result = "Сначала снимите предмет, чтоб надеть другой"
 		}
 	case "foot":
 		if user.FootId == nil {
-			r.UpdateUser(update, r.User{FootId: &userItem.ItemId})
+			r.User{FootId: &userItem.ItemId}.UpdateUser(update)
 		} else {
 			result = "Сначала снимите предмет, чтоб надеть другой"
 		}
 	case "shoes":
 		if user.ShoesId == nil {
-			r.UpdateUser(update, r.User{ShoesId: &userItem.ItemId})
+			r.User{ShoesId: &userItem.ItemId}.UpdateUser(update)
 		} else {
 			result = "Сначала снимите предмет, чтоб надеть другой"
 		}
@@ -589,7 +590,7 @@ func dressUserItem(update tgbotapi.Update, charData []string) tgbotapi.MessageCo
 }
 
 func userThrowOutItem(update tgbotapi.Update, user r.User, charData []string) tgbotapi.MessageConfig {
-	userItem := r.GetUserItem(r.UserItem{ID: r.ToInt(charData[1])})
+	userItem := r.UserItem{ID: r.ToInt(charData[1])}.GetUserItem()
 
 	*userItem.Count = *userItem.Count - r.ToInt(charData[3])
 
@@ -599,7 +600,7 @@ func userThrowOutItem(update tgbotapi.Update, user r.User, charData []string) tg
 		msgtext = fmt.Sprintf("%s%s", v.GetString("msg_separator"), res)
 	} else {
 		msgtext = fmt.Sprintf("%sВы сбросили %s %sшт. на карту!", v.GetString("msg_separator"), userItem.Item.View, charData[3])
-		r.UpdateUserItem(user, r.UserItem{ID: userItem.ID, Count: userItem.Count})
+		r.UserItem{ID: userItem.ID, Count: userItem.Count}.UpdateUserItem(user)
 	}
 
 	var charDataForOpenList []string
@@ -621,7 +622,7 @@ func userThrowOutItem(update tgbotapi.Update, user r.User, charData []string) tg
 }
 
 func userWantsToThrowOutItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConfig {
-	userItem := r.GetUserItem(r.UserItem{ID: r.ToInt(charData[1])})
+	userItem := r.UserItem{ID: r.ToInt(charData[1])}.GetUserItem()
 
 	if userItem.CountUseLeft != nil && *userItem.CountUseLeft != *userItem.Item.CountUse {
 		*userItem.Count = *userItem.Count - 1
@@ -649,7 +650,7 @@ func userWantsToThrowOutItem(update tgbotapi.Update, charData []string) tgbotapi
 	return msg
 }
 
-func Workbench(cell *r.Cellule, char []string) tgbotapi.MessageConfig {
+func Workbench(cell *r.Cell, char []string) tgbotapi.MessageConfig {
 	var charData []string
 	if cell != nil {
 		charData = strings.Fields("workbench usPoint 0 1stComp nil 0 2ndComp nil 0 3rdComp nil 0")
@@ -700,7 +701,7 @@ func OpenWorkbenchMessage(char []string) tgbotapi.MessageConfig {
 
 func viewComponent(id string) string {
 	if id != "nil" {
-		component := r.GetUserItem(r.UserItem{ID: r.ToInt(id)})
+		component := r.UserItem{ID: r.ToInt(id)}.GetUserItem()
 		return component.Item.View
 	}
 	return "⚪"
@@ -732,7 +733,7 @@ func GetRecieptFromData(char []string) r.Receipt {
 	var result r.Receipt
 
 	if char[4] != "nil" && char[5] != "0" {
-		fstItem := r.GetUserItem(r.UserItem{ID: r.ToInt(char[4])})
+		fstItem := r.UserItem{ID: r.ToInt(char[4])}.GetUserItem()
 		id := int(fstItem.Item.ID)
 		c := r.ToInt(char[5])
 
@@ -741,7 +742,7 @@ func GetRecieptFromData(char []string) r.Receipt {
 	}
 
 	if char[7] != "nil" && char[8] != "0" {
-		fstItem := r.GetUserItem(r.UserItem{ID: r.ToInt(char[7])})
+		fstItem := r.UserItem{ID: r.ToInt(char[7])}.GetUserItem()
 		id := int(fstItem.Item.ID)
 		c := r.ToInt(char[8])
 
@@ -750,7 +751,7 @@ func GetRecieptFromData(char []string) r.Receipt {
 	}
 
 	if char[10] != "nil" && char[11] != "0" {
-		fstItem := r.GetUserItem(r.UserItem{ID: r.ToInt(char[10])})
+		fstItem := r.UserItem{ID: r.ToInt(char[10])}.GetUserItem()
 		id := int(fstItem.Item.ID)
 		c := r.ToInt(char[11])
 
@@ -763,7 +764,7 @@ func GetRecieptFromData(char []string) r.Receipt {
 
 func PutCountComponent(char []string) tgbotapi.MessageConfig {
 	userItemId := char[r.ToInt(char[2])+(4+r.ToInt(char[2])*2)] // char[x + (4+x*2 )] = char[4]
-	userItem := r.GetUserItem(r.UserItem{ID: r.ToInt(userItemId)})
+	userItem := r.UserItem{ID: r.ToInt(userItemId)}.GetUserItem()
 
 	msg.ReplyMarkup = helpers.ChangeCountUserItem(char, userItem)
 
@@ -780,7 +781,7 @@ func UserCraftItem(user r.User, receipt *r.Receipt) (tgbotapi.MessageConfig, boo
 	}
 
 	msg.ReplyMarkup = nil
-	resultItem := r.GetUserItem(r.UserItem{UserId: int(user.ID), ItemId: receipt.ItemResultID})
+	resultItem := r.UserItem{UserId: int(user.ID), ItemId: receipt.ItemResultID}.GetUserItem()
 
 	if *receipt.ItemResultCount+*resultItem.Count > *resultItem.Item.MaxCountUserHas {
 		msg.Text = fmt.Sprintf("Вы не можете иметь больше, чем %d %s!\nСори... такие правила(", *resultItem.Item.MaxCountUserHas, resultItem.Item.View)
@@ -790,26 +791,26 @@ func UserCraftItem(user r.User, receipt *r.Receipt) (tgbotapi.MessageConfig, boo
 	}
 
 	if receipt.Component1ID != nil && receipt.Component1Count != nil {
-		userItem := r.GetUserItem(r.UserItem{UserId: int(user.ID), ItemId: *receipt.Component1ID})
+		userItem := r.UserItem{UserId: int(user.ID), ItemId: *receipt.Component1ID}.GetUserItem()
 		countItem1 := *userItem.Count - *receipt.Component1Count
-		r.UpdateUserItem(user, r.UserItem{ID: userItem.ID, ItemId: *receipt.Component1ID, Count: &countItem1, CountUseLeft: resultItem.CountUseLeft})
+		r.UserItem{ID: userItem.ID, ItemId: *receipt.Component1ID, Count: &countItem1, CountUseLeft: resultItem.CountUseLeft}.UpdateUserItem(user)
 	}
 	if receipt.Component2ID != nil && receipt.Component2Count != nil {
-		userItem := r.GetUserItem(r.UserItem{UserId: int(user.ID), ItemId: *receipt.Component2ID})
+		userItem := r.UserItem{UserId: int(user.ID), ItemId: *receipt.Component2ID}.GetUserItem()
 		countItem2 := *userItem.Count - *receipt.Component2Count
-		r.UpdateUserItem(user, r.UserItem{ID: userItem.ID, ItemId: *receipt.Component2ID, Count: &countItem2, CountUseLeft: resultItem.CountUseLeft})
+		r.UserItem{ID: userItem.ID, ItemId: *receipt.Component2ID, Count: &countItem2, CountUseLeft: resultItem.CountUseLeft}.UpdateUserItem(user)
 	}
 	if receipt.Component3ID != nil && receipt.Component3Count != nil {
-		userItem := r.GetUserItem(r.UserItem{UserId: int(user.ID), ItemId: *receipt.Component3ID})
+		userItem := r.UserItem{UserId: int(user.ID), ItemId: *receipt.Component3ID}.GetUserItem()
 		countItem3 := *userItem.Count - *receipt.Component3Count
-		r.UpdateUserItem(user, r.UserItem{ID: userItem.ID, ItemId: *receipt.Component3ID, Count: &countItem3, CountUseLeft: resultItem.CountUseLeft})
+		r.UserItem{ID: userItem.ID, ItemId: *receipt.Component3ID, Count: &countItem3, CountUseLeft: resultItem.CountUseLeft}.UpdateUserItem(user)
 	}
 
 	if *resultItem.Count == 0 {
 		resultItem.CountUseLeft = resultItem.Item.CountUse
 	}
 	*resultItem.Count = *resultItem.Count + *receipt.ItemResultCount
-	r.UpdateUserItem(user, r.UserItem{ID: resultItem.ID, Count: resultItem.Count, CountUseLeft: resultItem.CountUseLeft})
+	r.UserItem{ID: resultItem.ID, Count: resultItem.Count, CountUseLeft: resultItem.CountUseLeft}.UpdateUserItem(user)
 
 	charData := strings.Fields("workbench usPoint 0 1stComp nil 0 2ndComp nil 0 3rdComp nil 0")
 	msg = Workbench(nil, charData)
@@ -830,19 +831,18 @@ func getViewEmojiForMsg(char []string, i int) string {
 func updateUserHand(update tgbotapi.Update, char []string, userItem r.UserItem) {
 	switch char[0] {
 	case v.GetString("callback_char.change_left_hand"):
-		r.UpdateUser(update, r.User{LeftHandId: &userItem.ItemId})
+		r.User{LeftHandId: &userItem.ItemId}.UpdateUser(update)
 	case v.GetString("callback_char.change_right_hand"):
-		r.UpdateUser(update, r.User{RightHandId: &userItem.ItemId})
+		r.User{RightHandId: &userItem.ItemId}.UpdateUser(update)
 	}
 }
 
 func UserMoving(update tgbotapi.Update, user r.User, char string) tgbotapi.MessageConfig {
 	var text string
 	res := directionCell(update, char)
-	j, _ := json.Marshal(res)
-	fmt.Println(string(j))
+
 	r.UpdateLocation(update, res)
-	lighterMsg := r.CheckUserHasLighter(update, user)
+	lighterMsg := user.CheckUserHasLighter(update)
 	if lighterMsg != "Ok" {
 		text = fmt.Sprintf("%s%s", v.GetString("msg_separator"), lighterMsg)
 	}

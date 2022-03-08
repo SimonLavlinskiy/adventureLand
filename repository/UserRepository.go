@@ -95,10 +95,10 @@ func GetUser(user User) User {
 	return result
 }
 
-func UpdateUser(update tgbotapi.Update, UserStruct User) User {
+func (u User) UpdateUser(update tgbotapi.Update) User {
 	var err error
 	userTgId := GetUserTgId(update)
-	err = config.Db.Where(&User{TgId: userTgId}).Updates(UserStruct).Error
+	err = config.Db.Where(&User{TgId: userTgId}).Updates(u).Error
 	if err != nil {
 		panic(err)
 	}
@@ -119,29 +119,35 @@ func SetNullUserField(update tgbotapi.Update, queryFeild string) {
 
 func GetUserInfo(update tgbotapi.Update) string {
 	userTgId := GetUserTgId(update)
-	user := GetUser(User{TgId: userTgId})
+	u := GetUser(User{TgId: userTgId})
 	userIsOnline := "📳 Вкл"
 
-	if !*user.OnlineMap {
+	if !*u.OnlineMap {
 		userIsOnline = "📴 Откл"
 	}
 
-	messageMap := fmt.Sprintf("🔅 🔆 *Профиль* 🔆 🔅\n\n*Твое имя*: %s\n*Аватар*: %s\n*Золото*: %d 💰\n*Здоровье*: _%d_ ❤️\n*Сытость*: _%d_ 😋️\n*Онлайн*: _%s_",
-		user.Username, user.Avatar, *user.Money, user.Health, user.Satiety, userIsOnline)
+	messageMap := fmt.Sprintf("🔅 🔆 *Профиль* 🔆 🔅\n\n"+
+		"*Твое имя*: %s\n"+
+		"*Аватар*: %s\n"+
+		"*Золото*: %d 💰\n"+
+		"*Здоровье*: _%d_ ❤️\n"+
+		"*Сытость*: _%d_ 😋️\n"+
+		"*Онлайн*: _%s_",
+		u.Username, u.Avatar, *u.Money, u.Health, u.Satiety, userIsOnline)
 
 	return messageMap
 }
 
-func IsDressedItem(user User, userItem UserItem) (string, string) {
+func (u User) IsDressedItem(userItem UserItem) (string, string) {
 	dressItem := "Надеть ✅"
 	dressItemData := v.GetString("callback_char.dress_good")
 
-	if user.HeadId != nil && userItem.ItemId == *user.HeadId ||
-		user.LeftHandId != nil && userItem.ItemId == *user.LeftHandId ||
-		user.RightHandId != nil && userItem.ItemId == *user.RightHandId ||
-		user.BodyId != nil && userItem.ItemId == *user.BodyId ||
-		user.FootId != nil && userItem.ItemId == *user.FootId ||
-		user.ShoesId != nil && userItem.ItemId == *user.ShoesId {
+	if u.HeadId != nil && userItem.ItemId == *u.HeadId ||
+		u.LeftHandId != nil && userItem.ItemId == *u.LeftHandId ||
+		u.RightHandId != nil && userItem.ItemId == *u.RightHandId ||
+		u.BodyId != nil && userItem.ItemId == *u.BodyId ||
+		u.FootId != nil && userItem.ItemId == *u.FootId ||
+		u.ShoesId != nil && userItem.ItemId == *u.ShoesId {
 
 		dressItem = "Снять ❎"
 		dressItemData = v.GetString("callback_char.take_off_good")
@@ -150,26 +156,26 @@ func IsDressedItem(user User, userItem UserItem) (string, string) {
 	return dressItem, dressItemData
 }
 
-func CheckUserHasInstrument(user User, instrument Instrument) (string, Item) {
+func (u User) CheckUserHasInstrument(instrument Instrument) (string, Item) {
 	if instrument.Type == "hand" {
 		return "Ok", *instrument.Good
 	}
-	if user.LeftHandId != nil && *user.LeftHandId == *instrument.GoodId {
-		return "Ok", *user.LeftHand
+	if u.LeftHandId != nil && *u.LeftHandId == *instrument.GoodId {
+		return "Ok", *u.LeftHand
 	}
-	if user.RightHandId != nil && *user.RightHandId == *instrument.GoodId {
-		return "Ok", *user.RightHand
+	if u.RightHandId != nil && *u.RightHandId == *instrument.GoodId {
+		return "Ok", *u.RightHand
 	}
 	return "User dont have instrument", Item{}
 }
 
-func CheckUserHasLighter(update tgbotapi.Update, user User) string {
-	if user.LeftHandId != nil && user.LeftHand.Type == "light" {
-		_, res := UpdateUserInstrument(update, user, *user.LeftHand)
+func (u User) CheckUserHasLighter(update tgbotapi.Update) string {
+	if u.LeftHandId != nil && u.LeftHand.Type == "light" {
+		_, res := UpdateUserInstrument(update, u, *u.LeftHand)
 		return res
 	}
-	if user.RightHandId != nil && user.RightHand.Type == "light" {
-		_, res := UpdateUserInstrument(update, user, *user.RightHand)
+	if u.RightHandId != nil && u.RightHand.Type == "light" {
+		_, res := UpdateUserInstrument(update, u, *u.RightHand)
 		return res
 	}
 	return "Ok"

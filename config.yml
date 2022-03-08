@@ -26,9 +26,10 @@ callback_char:
   count_of_delete: "countOfDelete"
 
 message:
+  list_of_avatar: "🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 ‍️🐨 🐯 🦁 🐮 🐷 🐸 🐵 🐦 🐧 🐔 🐤 🐥 🦆 🐴 🦄 🐺 🐗 🐝 🦋 🐛 🐌 🐞 🪲 🪰 🐜 🕷 🪳 🦖 🦕 🐙 🦀 🐟 🐠 🐡 🦭"
   doing:
     up: "🔼"
-    down:  "🔽"
+    down: "🔽"
     left: "◀️️"
     right: "▶️"
   emoji:
@@ -43,3 +44,6 @@ message:
     exclamation_mark: "❗"
     hand: "👋"
     foot: "\U0001F9B6"
+  user:
+    online: "📴 ♻️ 📳"
+    offline: "📳 ♻️ 📴"

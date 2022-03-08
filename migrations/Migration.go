@@ -12,7 +12,7 @@ func Migrate() bool {
 		repository.Location{},
 		repository.Teleport{},
 		repository.Item{},
-		repository.Cellule{},
+		repository.Cell{},
 		repository.Map{},
 		repository.UserItem{},
 		repository.Instrument{},

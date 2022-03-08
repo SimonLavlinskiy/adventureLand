@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"encoding/json"
-	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
 	"strings"
@@ -54,7 +52,8 @@ func UpdateLocation(update tgbotapi.Update, locStruct Location) (Location, strin
 	}
 	userTgId := GetUserTgId(update)
 	usLoc := GetOrCreateMyLocation(update)
-	cell := GetCellule(Cellule{MapsId: *locStruct.MapsId, AxisX: *locStruct.AxisX, AxisY: *locStruct.AxisY})
+	cell := Cell{MapsId: *locStruct.MapsId, AxisX: *locStruct.AxisX, AxisY: *locStruct.AxisY}
+	cell = cell.GetCell()
 
 	if len(char) != 1 && *cell.Type == "teleport" && cell.TeleportID != nil {
 		locStruct = Location{
@@ -64,12 +63,12 @@ func UpdateLocation(update tgbotapi.Update, locStruct Location) (Location, strin
 		}
 	}
 
-	var result Cellule
+	var result Cell
 	var err error
 
 	err = config.Db.
 		Preload("Item").
-		First(&result, &Cellule{MapsId: *locStruct.MapsId, AxisX: *locStruct.AxisX, AxisY: *locStruct.AxisY}).
+		First(&result, &Cell{MapsId: *locStruct.MapsId, AxisX: *locStruct.AxisX, AxisY: *locStruct.AxisY}).
 		Error
 	if err != nil {
 		if err.Error() == "record not found" {
@@ -82,8 +81,6 @@ func UpdateLocation(update tgbotapi.Update, locStruct Location) (Location, strin
 		return usLoc, "\nСюда никак не пройти("
 	}
 
-	j, _ := json.Marshal(locStruct)
-	fmt.Println(string(j))
 	err = config.Db.
 		Where(&Location{UserTgId: userTgId}).
 		Updates(locStruct).
@@ -101,7 +98,7 @@ func GetLocationOnlineUser(userlocation Location, mapSize UserMap) []Location {
 
 	err := config.Db.
 		Preload("User", "online_map", true).
-		Where(Cellule{MapsId: *userlocation.MapsId}).
+		Where(Cell{MapsId: *userlocation.MapsId}).
 		Where("axis_x >= " + ToString(mapSize.leftIndent)).
 		Where("axis_x <= " + ToString(mapSize.rightIndent)).
 		Where("axis_y >= " + ToString(mapSize.downIndent)).

@@ -14,26 +14,31 @@ type Instrument struct {
 	Items              []Item `gorm:"many2many:instrument_item;"`
 }
 
-func GetInstrumentsUserCanUse(user User, cell Cellule) []string {
-	var instrumentsUserCanUse []string
+type Y struct {
+	i int
+	s string
+}
+
+func GetInstrumentsUserCanUse(user User, cell Cell) map[string]string {
+	instrumentsUserCanUse := map[string]string{}
 	instruments := cell.Item.Instruments
 
 	for _, instrument := range instruments {
 		if user.LeftHandId != nil && user.LeftHand.Type == instrument.Good.Type {
-			instrumentsUserCanUse = append(instrumentsUserCanUse, user.LeftHand.View)
+			instrumentsUserCanUse[user.LeftHand.View] = user.LeftHand.Type
 		}
 		if user.RightHandId != nil && user.RightHand.Type == instrument.Good.Type {
-			instrumentsUserCanUse = append(instrumentsUserCanUse, user.RightHand.View)
+			instrumentsUserCanUse[user.RightHand.View] = user.RightHand.Type
 		}
 		if user.HeadId != nil && user.Head.Type == instrument.Good.Type {
-			instrumentsUserCanUse = append(instrumentsUserCanUse, user.Head.View)
+			instrumentsUserCanUse[user.Head.View] = user.Head.Type
 		}
 	}
 	if cell.Item.CanTake {
-		instrumentsUserCanUse = append(instrumentsUserCanUse, "👋")
+		instrumentsUserCanUse["👋"] = "hand"
 	}
 	if cell.Item.CanStep {
-		instrumentsUserCanUse = append(instrumentsUserCanUse, "\U0001F9B6")
+		instrumentsUserCanUse["\U0001F9B6"] = "step"
 	}
 
 	return instrumentsUserCanUse

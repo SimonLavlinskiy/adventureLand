@@ -16,18 +16,18 @@ type UserItem struct {
 	Item         Item
 }
 
-func GetUserItem(userItem UserItem) UserItem {
+func (ui UserItem) GetUserItem() UserItem {
 	zero := 0
 	result := UserItem{
-		UserId:       int(userItem.User.ID),
-		ItemId:       userItem.ItemId,
+		UserId:       int(ui.User.ID),
+		ItemId:       ui.ItemId,
 		Count:        &zero,
-		CountUseLeft: userItem.CountUseLeft,
+		CountUseLeft: ui.CountUseLeft,
 	}
 	err := config.Db.
 		Preload("Item").
 		Preload("User").
-		Where(userItem).
+		Where(ui).
 		FirstOrCreate(&result).
 		Error
 
@@ -106,43 +106,43 @@ func GetInventoryItems(userId uint) []UserItem {
 	return inventoryUserItem
 }
 
-func UpdateUserItem(user User, userItem UserItem) {
-	err := config.Db.Where(UserItem{UserId: int(user.ID), ID: userItem.ID}).Updates(userItem).Error
+func (ui UserItem) UpdateUserItem(user User) {
+	err := config.Db.Where(UserItem{UserId: int(user.ID), ID: ui.ID}).Updates(ui).Error
 	if err != nil {
 		panic(err)
 	}
 }
 
-func EatItem(update tgbotapi.Update, user User, userItem UserItem) string {
-	userItemCount := userItem.Count
+func (ui UserItem) EatItem(update tgbotapi.Update, user User) string {
+	userItemCount := ui.Count
 
 	if *userItemCount > 0 {
-		itemHeal := uint(*userItem.Item.Healing)
-		itemSatiety := uint(*userItem.Item.Satiety)
-		itemDamage := uint(*userItem.Item.Damage)
+		itemHeal := uint(*ui.Item.Healing)
+		itemSatiety := uint(*ui.Item.Satiety)
+		itemDamage := uint(*ui.Item.Damage)
 
-		*userItem.Count = *userItem.Count - 1
+		*ui.Count = *ui.Count - 1
 		user.Health = user.Health + itemHeal - itemDamage
 		user.Satiety = user.Satiety + itemSatiety
 
-		UpdateUser(update, User{
+		User{
 			Health:  user.Health,
 			Satiety: user.Satiety,
-		})
+		}.UpdateUser(update)
 
-		UpdateUserItem(user, UserItem{
-			ID:    userItem.ID,
-			Count: userItem.Count,
-		})
+		UserItem{
+			ID:    ui.ID,
+			Count: ui.Count,
+		}.UpdateUserItem(user)
 	}
 
-	message := "🍽 Ты съел 1 " + userItem.Item.View + ""
+	message := fmt.Sprintf("🍽 Ты съел 1 %s", ui.Item.View)
 
 	return message
-} // Горжусь ею)
+}
 
-func GetFullDescriptionOfUserItem(userItem UserItem) string {
-	userItem = GetUserItem(userItem)
+func (ui UserItem) GetFullDescriptionOfUserItem() string {
+	userItem := ui.GetUserItem()
 	var fullDescriptionUserItem string
 	if userItem.Item.IsInventory == true {
 		fullDescriptionUserItem = fmt.Sprintf("%s *%s* - %d шт.\n*Сила*: + %d💥\n", userItem.Item.View, userItem.Item.Name, *userItem.Count, *userItem.Item.Damage)
@@ -159,11 +159,11 @@ func GetFullDescriptionOfUserItem(userItem UserItem) string {
 }
 
 func UpdateUserInstrument(update tgbotapi.Update, user User, instrument Item) (string, string) {
-	userItem := GetUserItem(UserItem{ItemId: int(instrument.ID), UserId: int(user.ID)})
+	userItem := UserItem{ItemId: int(instrument.ID), UserId: int(user.ID)}.GetUserItem()
 
 	c := *userItem.CountUseLeft - 1
 	if c > 0 {
-		UpdateUserItem(user, UserItem{ID: userItem.ID, CountUseLeft: &c})
+		UserItem{ID: userItem.ID, CountUseLeft: &c}.UpdateUserItem(user)
 		return "Ok", "Ok"
 	}
 
@@ -172,19 +172,17 @@ func UpdateUserInstrument(update tgbotapi.Update, user User, instrument Item) (s
 	if *userItem.Count > 1 {
 		userItemCount := *userItem.Count - 1
 		countUseLeft := userItem.Item.CountUse
-		UpdateUserItem(user,
-			UserItem{
-				ID:           userItem.ID,
-				CountUseLeft: countUseLeft,
-				Count:        &userItemCount,
-			})
+		UserItem{
+			ID:           userItem.ID,
+			CountUseLeft: countUseLeft,
+			Count:        &userItemCount,
+		}.UpdateUserItem(user)
 	} else {
-		UpdateUserItem(user,
-			UserItem{
-				ID:           userItem.ID,
-				CountUseLeft: &zeroValue,
-				Count:        &zeroValue,
-			})
+		UserItem{
+			ID:           userItem.ID,
+			CountUseLeft: &zeroValue,
+			Count:        &zeroValue,
+		}.UpdateUserItem(user)
 
 		if user.LeftHandId != nil && *user.LeftHandId == int(userItem.Item.ID) {
 			SetNullUserField(update, "left_hand_id")
