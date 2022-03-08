@@ -814,7 +814,7 @@ func UserCraftItem(user r.User, receipt *r.Receipt) (tgbotapi.MessageConfig, boo
 
 	charData := strings.Fields("workbench usPoint 0 1stComp nil 0 2ndComp nil 0 3rdComp nil 0")
 	msg = Workbench(nil, charData)
-	msg.Text = fmt.Sprintf("%s%sСупер! Ты получил %s %d шт.!", msg.Text, v.GetString("msg_separator"), resultItem.Item.View, *receipt.ItemResultCount)
+	msg.Text = fmt.Sprintf("%s%sСупер! Ты получил %s %d шт. %s!", msg.Text, v.GetString("msg_separator"), resultItem.Item.View, *receipt.ItemResultCount, receipt.ItemResult.Name)
 	return msg, deletePrevMessage
 }
 

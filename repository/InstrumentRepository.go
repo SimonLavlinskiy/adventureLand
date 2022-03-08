@@ -37,7 +37,7 @@ func GetInstrumentsUserCanUse(user User, cell Cell) map[string]string {
 	if cell.Item.CanTake {
 		instrumentsUserCanUse["👋"] = "hand"
 	}
-	if cell.Item.CanStep {
+	if cell.Item.CanStep && *cell.Type != "swap" {
 		instrumentsUserCanUse["\U0001F9B6"] = "step"
 	}
 

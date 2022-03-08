@@ -95,7 +95,6 @@ func UserGetItemWithInstrument(update tgbotapi.Update, cell Cell, user User, ins
 
 func UserGetItemWithHand(update tgbotapi.Update, cell Cell, user User, userGetItem UserItem) string {
 	sumCountItem := *userGetItem.Count + 1
-	countAfterUserGetItem := *cell.ItemCount - 1
 	updateUserMoney := *user.Money - *cell.Item.Cost
 	var countUseLeft = userGetItem.Item.CountUse
 
@@ -109,16 +108,16 @@ func UserGetItemWithHand(update tgbotapi.Update, cell Cell, user User, userGetIt
 	UserItem{ID: userGetItem.ID, Count: &sumCountItem, CountUseLeft: countUseLeft}.UpdateUserItem(User{ID: user.ID})
 	User{Money: &updateUserMoney}.UpdateUser(update)
 
+	var countAfterUserGetItem *int
 	textCountLeft := ""
-	if countAfterUserGetItem != 0 || cell.PrevItemID == nil {
-		Cell{ItemCount: &countAfterUserGetItem}.UpdateCell(cell.ID)
-	} else {
+	if *cell.Type != "swap" && (*countAfterUserGetItem != 0 || cell.PrevItemID == nil) {
+		*countAfterUserGetItem = *cell.ItemCount - 1
+		Cell{ItemCount: countAfterUserGetItem}.UpdateCell(cell.ID)
+		textCountLeft = fmt.Sprintf("(Осталось лежать еще %d)", countAfterUserGetItem)
+	} else if cell.PrevItemID != nil {
 		cell.UpdateCellOnPrevItem()
 	}
 
-	if countAfterUserGetItem != 0 {
-		textCountLeft = fmt.Sprintf("(Осталось лежать еще %d)", countAfterUserGetItem)
-	}
 	return fmt.Sprintf("Ты получил %s 1 шт. %s", userGetItem.Item.View, textCountLeft)
 }
 
@@ -165,7 +164,7 @@ func GrowingItem(update tgbotapi.Update, cell Cell, user User, userGetItem UserI
 
 		if instrument.CountResultItem != nil {
 			*userGetItem.Count = *userGetItem.Count + *instrument.CountResultItem
-			result = fmt.Sprintf("\nТы получил %s %d шт.", instrument.ItemsResult.View, *instrument.CountResultItem)
+			result = fmt.Sprintf("\nТы получил %s %d шт. %s", instrument.ItemsResult.View, *instrument.CountResultItem, instrument.ItemsResult.Name)
 		}
 
 		User{Money: &updateUserMoney}.UpdateUser(update)
@@ -205,7 +204,7 @@ func DestructItem(update tgbotapi.Update, cellule Cell, user User, userGetItem U
 		var result string
 		if instrument.CountResultItem != nil {
 			*userGetItem.Count = *userGetItem.Count + *instrument.CountResultItem
-			result = fmt.Sprintf("Ты получил %s %d шт.", instrument.ItemsResult.View, *instrument.CountResultItem)
+			result = fmt.Sprintf("Ты получил %s %d шт. %s", instrument.ItemsResult.View, *instrument.CountResultItem, instrument.ItemsResult.Name)
 		} else {
 			result = "что то не так"
 		}
