@@ -2,7 +2,7 @@ package repository
 
 import (
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
 	"project0/config"
 	"strings"
@@ -19,6 +19,7 @@ type User struct {
 	LastName     string `gorm:"embedded"`
 	Health       uint   `gorm:"embedded"`
 	Satiety      uint   `gorm:"embedded"`
+	Experience   int    `gorm:"embedded"`
 	Money        *int   `gorm:"embedded"`
 	Head         *Item
 	HeadId       *int
@@ -38,7 +39,7 @@ type User struct {
 	OnlineMap    *bool     `gorm:"embedded"`
 }
 
-func GetOrCreateUser(update tgbotapi.Update) User {
+func GetOrCreateUser(update tg.Update) User {
 	userTgId := GetUserTgId(update)
 	MoneyUserStart := 10
 	UserOnline := false
@@ -48,16 +49,17 @@ func GetOrCreateUser(update tgbotapi.Update) User {
 	outUsername = replacer.Replace(update.Message.From.UserName)
 
 	result := User{
-		TgId:      userTgId,
-		TgChatId:  uint(update.Message.Chat.ID),
-		Username:  outUsername,
-		FirstName: update.Message.From.FirstName,
-		LastName:  update.Message.From.LastName,
-		Avatar:    "👤",
-		Satiety:   100,
-		Health:    100,
-		Money:     &MoneyUserStart,
-		OnlineMap: &UserOnline,
+		TgId:       userTgId,
+		TgChatId:   uint(update.Message.Chat.ID),
+		Username:   outUsername,
+		FirstName:  update.Message.From.FirstName,
+		LastName:   update.Message.From.LastName,
+		Avatar:     "👤",
+		Satiety:    100,
+		Health:     100,
+		Experience: 0,
+		Money:      &MoneyUserStart,
+		OnlineMap:  &UserOnline,
 	}
 	err := config.Db.
 		Preload("Head").
@@ -95,7 +97,7 @@ func GetUser(user User) User {
 	return result
 }
 
-func (u User) UpdateUser(update tgbotapi.Update) User {
+func (u User) UpdateUser(update tg.Update) User {
 	var err error
 	userTgId := GetUserTgId(update)
 	err = config.Db.Where(&User{TgId: userTgId}).Updates(u).Error
@@ -107,7 +109,7 @@ func (u User) UpdateUser(update tgbotapi.Update) User {
 	return res
 }
 
-func SetNullUserField(update tgbotapi.Update, queryFeild string) {
+func SetNullUserField(update tg.Update, queryFeild string) {
 	var err error
 	userTgId := GetUserTgId(update)
 	err = config.Db.Model(&User{}).Where(&User{TgId: userTgId}).Update(queryFeild, nil).Error
@@ -117,7 +119,7 @@ func SetNullUserField(update tgbotapi.Update, queryFeild string) {
 	}
 }
 
-func GetUserInfo(update tgbotapi.Update) string {
+func GetUserInfo(update tg.Update) string {
 	userTgId := GetUserTgId(update)
 	u := GetUser(User{TgId: userTgId})
 	userIsOnline := "📳 Вкл"
@@ -169,7 +171,7 @@ func (u User) CheckUserHasInstrument(instrument Instrument) (string, Item) {
 	return "User dont have instrument", Item{}
 }
 
-func (u User) CheckUserHasLighter(update tgbotapi.Update) string {
+func (u User) CheckUserHasLighter(update tg.Update) string {
 	if u.LeftHandId != nil && u.LeftHand.Type == "light" {
 		_, res := UpdateUserInstrument(update, u, *u.LeftHand)
 		return res
@@ -179,4 +181,22 @@ func (u User) CheckUserHasLighter(update tgbotapi.Update) string {
 		return res
 	}
 	return "Ok"
+}
+
+func (u User) GetUserQuests() []UserQuest {
+	var result []UserQuest
+
+	err := config.Db.
+		Preload("Quest").
+		Preload("Quest.Task").
+		Preload("Quest.Result").
+		Where(UserQuest{UserId: u.ID}).
+		Find(&result).
+		Error
+
+	if err != nil {
+		fmt.Println(fmt.Sprintf("У юзера (id = %d) нет квестов", u.ID))
+	}
+
+	return result
 }

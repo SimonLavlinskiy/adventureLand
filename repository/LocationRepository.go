@@ -1,7 +1,7 @@
 package repository
 
 import (
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
 	"strings"
 )
@@ -17,7 +17,7 @@ type Location struct {
 	Maps     Map
 }
 
-func GetOrCreateMyLocation(update tgbotapi.Update) Location {
+func GetOrCreateMyLocation(update tg.Update) Location {
 	userTgId := GetUserTgId(update)
 	user := GetUser(User{TgId: userTgId})
 
@@ -43,7 +43,7 @@ func GetOrCreateMyLocation(update tgbotapi.Update) Location {
 	return result
 }
 
-func UpdateLocation(update tgbotapi.Update, locStruct Location) (Location, string) {
+func UpdateLocation(update tg.Update, locStruct Location) (Location, string) {
 	var char []string
 	if update.Message != nil {
 		char = strings.Fields(update.Message.Text)

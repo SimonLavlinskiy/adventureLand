@@ -24,13 +24,13 @@ func GetInstrumentsUserCanUse(user User, cell Cell) map[string]string {
 	instruments := cell.Item.Instruments
 
 	for _, instrument := range instruments {
-		if user.LeftHandId != nil && user.LeftHand.Type == instrument.Good.Type {
+		if user.LeftHandId != nil && user.LeftHand.ID == instrument.Good.ID {
 			instrumentsUserCanUse[user.LeftHand.View] = user.LeftHand.Type
 		}
-		if user.RightHandId != nil && user.RightHand.Type == instrument.Good.Type {
+		if user.RightHandId != nil && user.RightHand.ID == instrument.Good.ID {
 			instrumentsUserCanUse[user.RightHand.View] = user.RightHand.Type
 		}
-		if user.HeadId != nil && user.Head.Type == instrument.Good.Type {
+		if user.HeadId != nil && user.Head.ID == instrument.Good.ID {
 			instrumentsUserCanUse[user.Head.View] = user.Head.Type
 		}
 	}

@@ -18,6 +18,23 @@ func main() {
 		log.Print("Not found .env file ")
 	}
 
+	ViperConfiguration()
+
+	telegramApiToken, _ := os.LookupEnv("TELEGRAM_APITOKEN")
+
+	mysqlStatus := config.InitMySQL()
+	migrations.Migrate()
+
+	if !mysqlStatus {
+		runtime.Goexit()
+	}
+
+	go handlers.RequestHandler()
+
+	handlers.GetMessage(telegramApiToken)
+}
+
+func ViperConfiguration() {
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
 	viper.AutomaticEnv()
@@ -32,17 +49,4 @@ func main() {
 	if err != nil {
 		fmt.Printf("Unable to decode into struct, %v", err)
 	}
-
-	telegramApiToken, _ := os.LookupEnv("TELEGRAM_APITOKEN")
-
-	mysqlStatus := config.InitMySQL()
-	migrations.Migrate()
-
-	if mysqlStatus != true {
-		runtime.Goexit()
-	}
-
-	//handlers.RequestHandler()
-
-	handlers.GetMessage(telegramApiToken)
 }

@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
 	"project0/helpers"
 	r "project0/repository"
@@ -10,9 +10,9 @@ import (
 	"time"
 )
 
-var msg tgbotapi.MessageConfig
+var msg tg.MessageConfig
 
-func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
+func messageResolver(update tg.Update) tg.MessageConfig {
 	user := r.GetOrCreateUser(update)
 
 	switch user.MenuLocation {
@@ -31,9 +31,9 @@ func messageResolver(update tgbotapi.Update) tgbotapi.MessageConfig {
 	return msg
 }
 
-func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
+func CallbackResolver(update tg.Update) (tg.MessageConfig, bool) {
 	msg.ChatID = update.CallbackQuery.Message.Chat.ID
-	buttons := tgbotapi.ReplyKeyboardMarkup{}
+	buttons := tg.ReplyKeyboardMarkup{}
 	charData := strings.Fields(update.CallbackQuery.Data)
 	deletePrevMessage := true
 
@@ -45,7 +45,7 @@ func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 		switch charData[0] {
 		case v.GetString("callback_char.cancel"):
 			msg.Text, buttons = r.GetMyMap(update)
-			msg = tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, msg.Text)
+			msg = tg.NewMessage(update.CallbackQuery.Message.Chat.ID, msg.Text)
 			msg.ReplyMarkup = buttons
 		}
 	}
@@ -111,14 +111,19 @@ func CallbackResolver(update tgbotapi.Update) (tgbotapi.MessageConfig, bool) {
 		userWantsToThrowOutItem(update, charData)
 	case v.GetString("callback_char.count_of_delete"):
 		msg = userThrowOutItem(update, user, charData)
+	case "quests":
+		msg.Text = v.GetString("user_location.tasks_menu_message")
+		msg.ReplyMarkup = helpers.AllQuestsMessageKeyboard()
+	case "quest":
+		msg = OpenQuest(charData, user)
 	}
 
 	msg.ParseMode = "markdown"
 	return msg, deletePrevMessage
 }
 
-func useSpecialCell(update tgbotapi.Update, char []string, user r.User) tgbotapi.MessageConfig {
-	buttons := tgbotapi.ReplyKeyboardMarkup{}
+func useSpecialCell(update tg.Update, char []string, user r.User) tg.MessageConfig {
+	buttons := tg.ReplyKeyboardMarkup{}
 	ItemLeftHand, ItemRightHand, ItemHead := usersHandItemsView(user)
 	msg.ChatID = update.Message.Chat.ID
 
@@ -136,7 +141,7 @@ func useSpecialCell(update tgbotapi.Update, char []string, user r.User) tgbotapi
 		msg.Text = "В зависимости от предмета в твоих руках ты можешь получить разный результат. Выбирай..."
 		msg.ReplyMarkup = helpers.ChooseInstrument(char, cell, user)
 	case v.GetString("message.emoji.stop_use"):
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Нельзя взять без инструмента в руке")
+		msg = tg.NewMessage(update.Message.Chat.ID, v.GetString("errors.user_not_has_item_in_hand"))
 	case "Рюкзак":
 		resUserItems := r.GetBackpackItems(user.ID)
 		msg.Text = MessageBackpackUserItems(resUserItems, 0)
@@ -167,20 +172,23 @@ func useSpecialCell(update tgbotapi.Update, char []string, user r.User) tgbotapi
 		}
 	case v.GetString("message.emoji.wrench"):
 		loc := directionCell(update, char[1])
-		cell := r.Cell{MapsId: *loc.MapsId, AxisX: *loc.AxisX, AxisY: *loc.AxisY}
-		cell = cell.GetCell()
+		cell := r.Cell{MapsId: *loc.MapsId, AxisX: *loc.AxisX, AxisY: *loc.AxisY}.GetCell()
 		charWorkbench := strings.Fields("workbench usPoint 0 1stComp null 0 2ndComp null 0 3rdComp null 0")
 		msg = Workbench(&cell, charWorkbench)
+	case v.GetString("message.emoji.quest"):
+		loc := directionCell(update, char[1])
+		cell := r.Cell{MapsId: *loc.MapsId, AxisX: *loc.AxisX, AxisY: *loc.AxisY}.GetCell()
+		msg = Quest(&cell)
 	default:
 		msg.Text, buttons = r.GetMyMap(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf("%s\n\nНет инструмента в руке!", msg.Text))
+		msg = tg.NewMessage(update.Message.Chat.ID, fmt.Sprintf("%s\n\nНет инструмента в руке!", msg.Text))
 		msg.ReplyMarkup = buttons
 	}
 
 	return msg
 }
 
-func userMenuLocation(update tgbotapi.Update, user r.User) tgbotapi.MessageConfig {
+func userMenuLocation(update tg.Update, user r.User) tg.MessageConfig {
 	newMessage := update.Message.Text
 	msg.ChatID = update.Message.Chat.ID
 
@@ -201,7 +209,7 @@ func userMenuLocation(update tgbotapi.Update, user r.User) tgbotapi.MessageConfi
 	return msg
 }
 
-func userMapLocation(update tgbotapi.Update, user r.User) tgbotapi.MessageConfig {
+func userMapLocation(update tg.Update, user r.User) tg.MessageConfig {
 	newMessage := update.Message.Text
 	char := strings.Fields(newMessage)
 
@@ -214,28 +222,28 @@ func userMapLocation(update tgbotapi.Update, user r.User) tgbotapi.MessageConfig
 	return msg
 }
 
-func userProfileLocation(update tgbotapi.Update, user r.User) tgbotapi.MessageConfig {
+func userProfileLocation(update tg.Update, user r.User) tg.MessageConfig {
 	newMessage := update.Message.Text
 
 	if user.Username == "waiting" {
 		r.User{Username: newMessage}.UpdateUser(update)
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, r.GetUserInfo(update))
+		msg = tg.NewMessage(update.Message.Chat.ID, r.GetUserInfo(update))
 		msg.ReplyMarkup = helpers.ProfileKeyboard(user)
 	} else {
 		switch newMessage {
 		case "📝 Изменить имя? 📝":
 			r.User{Username: "waiting"}.UpdateUser(update)
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "‼️ *ВНИМАНИЕ*: ‼️‼\nТы должен вписать новое имя?\n‼️‼️‼️‼️‼️‼️‼️")
-			msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+			msg = tg.NewMessage(update.Message.Chat.ID, "‼️ *ВНИМАНИЕ*: ‼️‼\nТы должен вписать новое имя?\n‼️‼️‼️‼️‼️‼️‼️")
+			msg.ReplyMarkup = tg.NewRemoveKeyboard(true)
 		case fmt.Sprintf("%s Изменить аватар? %s", user.Avatar, user.Avatar):
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "‼️ *ВНИМАНИЕ*: ‼️‼\nВыбери себе аватар...")
-			msg.ReplyMarkup = helpers.EmodjiInlineKeyboard()
+			msg = tg.NewMessage(update.Message.Chat.ID, "‼️ *ВНИМАНИЕ*: ‼️‼\nВыбери себе аватар...")
+			msg.ReplyMarkup = helpers.EmojiInlineKeyboard()
 		case "/menu", v.GetString("user_location.menu"):
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, "Меню")
+			msg = tg.NewMessage(update.Message.Chat.ID, "Меню")
 			msg.ReplyMarkup = helpers.MainKeyboard(user)
 			r.User{MenuLocation: "Меню"}.UpdateUser(update)
 		default:
-			msg = tgbotapi.NewMessage(update.Message.Chat.ID, r.GetUserInfo(update))
+			msg = tg.NewMessage(update.Message.Chat.ID, r.GetUserInfo(update))
 			msg.ReplyMarkup = helpers.ProfileKeyboard(user)
 		}
 	}
@@ -243,10 +251,10 @@ func userProfileLocation(update tgbotapi.Update, user r.User) tgbotapi.MessageCo
 	return msg
 }
 
-func useDefaultCell(update tgbotapi.Update, user r.User) tgbotapi.MessageConfig {
+func useDefaultCell(update tg.Update, user r.User) tg.MessageConfig {
 	newMessage := update.Message.Text
 	msg.ChatID = update.Message.Chat.ID
-	buttons := tgbotapi.ReplyKeyboardMarkup{}
+	buttons := tg.ReplyKeyboardMarkup{}
 	currentTime := time.Now()
 
 	switch newMessage {
@@ -277,7 +285,7 @@ func useDefaultCell(update tgbotapi.Update, user r.User) tgbotapi.MessageConfig 
 	return msg
 }
 
-func directionCell(update tgbotapi.Update, direction string) r.Location {
+func directionCell(update tg.Update, direction string) r.Location {
 	res := r.GetOrCreateMyLocation(update)
 
 	switch direction {
@@ -358,7 +366,7 @@ func MessageGoodsUserItems(user r.User, userItems []r.UserItem, rowUser int) str
 	return userItemMsg
 }
 
-func BackPackMoving(charData []string, update tgbotapi.Update) tgbotapi.MessageConfig {
+func BackPackMoving(charData []string, update tg.Update) tg.MessageConfig {
 	i := r.ToInt(charData[1])
 	userTgId := r.GetUserTgId(update)
 	user := r.GetUser(r.User{TgId: userTgId})
@@ -375,7 +383,7 @@ func BackPackMoving(charData []string, update tgbotapi.Update) tgbotapi.MessageC
 	return msg
 }
 
-func GoodsMoving(charData []string, update tgbotapi.Update) tgbotapi.MessageConfig {
+func GoodsMoving(charData []string, update tg.Update) tg.MessageConfig {
 	i := r.ToInt(charData[1])
 
 	userTgId := r.GetUserTgId(update)
@@ -393,7 +401,7 @@ func GoodsMoving(charData []string, update tgbotapi.Update) tgbotapi.MessageConf
 	return msg
 }
 
-func UserEatItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConfig {
+func UserEatItem(update tg.Update, charData []string) tg.MessageConfig {
 	userTgId := r.GetUserTgId(update)
 	userItemId := r.ToInt(charData[1])
 
@@ -408,7 +416,7 @@ func UserEatItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConf
 	return msg
 }
 
-func UserDeleteItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConfig {
+func UserDeleteItem(update tg.Update, charData []string) tg.MessageConfig {
 	userItemId := r.ToInt(charData[1])
 	userTgId := r.GetUserTgId(update)
 	user := r.GetUser(r.User{TgId: userTgId})
@@ -507,7 +515,7 @@ func messageUserDressedGoods(user r.User) string {
 	return messageUserGoods
 }
 
-func userTakeOffGood(update tgbotapi.Update, charData []string) {
+func userTakeOffGood(update tg.Update, charData []string) {
 	userItemId := r.ToInt(charData[1])
 	userTgId := r.GetUserTgId(update)
 	user := r.GetUser(r.User{TgId: userTgId})
@@ -532,7 +540,7 @@ func userTakeOffGood(update tgbotapi.Update, charData []string) {
 	msg.Text = fmt.Sprintf("%s%sВещь снята!", msg.Text, v.GetString("msg_separator"))
 }
 
-func dressUserItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConfig {
+func dressUserItem(update tg.Update, charData []string) tg.MessageConfig {
 	userItemId := r.ToInt(charData[1])
 	userTgId := r.GetUserTgId(update)
 	user := r.GetUser(r.User{TgId: userTgId})
@@ -555,25 +563,25 @@ func dressUserItem(update tgbotapi.Update, charData []string) tgbotapi.MessageCo
 		if user.HeadId == nil {
 			r.User{HeadId: &userItem.ItemId}.UpdateUser(update)
 		} else {
-			result = "Сначала снимите предмет, чтоб надеть другой"
+			result = v.GetString("errors.user_has_other_item")
 		}
 	case "body":
 		if user.BodyId == nil {
 			r.User{BodyId: &userItem.ItemId}.UpdateUser(update)
 		} else {
-			result = "Сначала снимите предмет, чтоб надеть другой"
+			result = v.GetString("errors.user_has_other_item")
 		}
 	case "foot":
 		if user.FootId == nil {
 			r.User{FootId: &userItem.ItemId}.UpdateUser(update)
 		} else {
-			result = "Сначала снимите предмет, чтоб надеть другой"
+			result = v.GetString("errors.user_has_other_item")
 		}
 	case "shoes":
 		if user.ShoesId == nil {
 			r.User{ShoesId: &userItem.ItemId}.UpdateUser(update)
 		} else {
-			result = "Сначала снимите предмет, чтоб надеть другой"
+			result = v.GetString("errors.user_has_other_item")
 		}
 	}
 
@@ -589,7 +597,7 @@ func dressUserItem(update tgbotapi.Update, charData []string) tgbotapi.MessageCo
 	return msg
 }
 
-func userThrowOutItem(update tgbotapi.Update, user r.User, charData []string) tgbotapi.MessageConfig {
+func userThrowOutItem(update tg.Update, user r.User, charData []string) tg.MessageConfig {
 	userItem := r.UserItem{ID: r.ToInt(charData[1])}.GetUserItem()
 
 	*userItem.Count = *userItem.Count - r.ToInt(charData[3])
@@ -621,7 +629,7 @@ func userThrowOutItem(update tgbotapi.Update, user r.User, charData []string) tg
 	return msg
 }
 
-func userWantsToThrowOutItem(update tgbotapi.Update, charData []string) tgbotapi.MessageConfig {
+func userWantsToThrowOutItem(update tg.Update, charData []string) tg.MessageConfig {
 	userItem := r.UserItem{ID: r.ToInt(charData[1])}.GetUserItem()
 
 	if userItem.CountUseLeft != nil && *userItem.CountUseLeft != *userItem.Item.CountUse {
@@ -650,15 +658,27 @@ func userWantsToThrowOutItem(update tgbotapi.Update, charData []string) tgbotapi
 	return msg
 }
 
-func Workbench(cell *r.Cell, char []string) tgbotapi.MessageConfig {
+func Quest(cell *r.Cell) tg.MessageConfig {
+	if !cell.IsQuest() {
+		msg.Text = v.GetString("error.no_quest_item")
+		return msg
+	}
+
+	msg.Text = v.GetString("user_location.tasks_menu_message")
+	msg.ReplyMarkup = helpers.AllQuestsMessageKeyboard()
+
+	return msg
+}
+
+func Workbench(cell *r.Cell, char []string) tg.MessageConfig {
 	var charData []string
+	if !cell.IsWorkbench() {
+		msg.Text = "Здесь нет верстака!"
+		return msg
+	}
+
 	if cell != nil {
 		charData = strings.Fields("workbench usPoint 0 1stComp nil 0 2ndComp nil 0 3rdComp nil 0")
-
-		if !r.IsWorkbench(*cell) {
-			msg.Text = "Здесь нет верстака!"
-			return msg
-		}
 	} else {
 		charData = strings.Fields(fmt.Sprintf("workbench usPoint %s 1stComp %s %s 2ndComp %s %s 3rdComp %s %s", char[2], char[4], char[5], char[7], char[8], char[10], char[11]))
 	}
@@ -669,7 +689,7 @@ func Workbench(cell *r.Cell, char []string) tgbotapi.MessageConfig {
 	return msg
 }
 
-func OpenWorkbenchMessage(char []string) tgbotapi.MessageConfig {
+func OpenWorkbenchMessage(char []string) tg.MessageConfig {
 	// char = workbench usPoint 0 1stComp: id 0 2ndComp id 0 3rdComp id 0
 
 	fstCnt := getViewEmojiForMsg(char, 0)
@@ -762,7 +782,7 @@ func GetRecieptFromData(char []string) r.Receipt {
 	return result
 }
 
-func PutCountComponent(char []string) tgbotapi.MessageConfig {
+func PutCountComponent(char []string) tg.MessageConfig {
 	userItemId := char[r.ToInt(char[2])+(4+r.ToInt(char[2])*2)] // char[x + (4+x*2 )] = char[4]
 	userItem := r.UserItem{ID: r.ToInt(userItemId)}.GetUserItem()
 
@@ -771,7 +791,7 @@ func PutCountComponent(char []string) tgbotapi.MessageConfig {
 	return msg
 }
 
-func UserCraftItem(user r.User, receipt *r.Receipt) (tgbotapi.MessageConfig, bool) {
+func UserCraftItem(user r.User, receipt *r.Receipt) (tg.MessageConfig, bool) {
 	deletePrevMessage := true
 	if receipt == nil {
 		msg.Text = "Такого рецепта не существует!"
@@ -828,7 +848,7 @@ func getViewEmojiForMsg(char []string, i int) string {
 	return fmt.Sprintf("%s⃣", char[count])
 }
 
-func updateUserHand(update tgbotapi.Update, char []string, userItem r.UserItem) {
+func updateUserHand(update tg.Update, char []string, userItem r.UserItem) {
 	switch char[0] {
 	case v.GetString("callback_char.change_left_hand"):
 		r.User{LeftHandId: &userItem.ItemId}.UpdateUser(update)
@@ -837,7 +857,7 @@ func updateUserHand(update tgbotapi.Update, char []string, userItem r.UserItem) 
 	}
 }
 
-func UserMoving(update tgbotapi.Update, user r.User, char string) tgbotapi.MessageConfig {
+func UserMoving(update tg.Update, user r.User, char string) tg.MessageConfig {
 	var text string
 	res := directionCell(update, char)
 
@@ -852,12 +872,26 @@ func UserMoving(update tgbotapi.Update, user r.User, char string) tgbotapi.Messa
 	return msg
 }
 
-func UserUseHandOrInstrument(update tgbotapi.Update, char []string) tgbotapi.MessageConfig {
+func UserUseHandOrInstrument(update tg.Update, char []string) tg.MessageConfig {
 	res := directionCell(update, char[1])
 	resultOfGetItem := r.UserGetItem(update, res, char)
 	resText, buttons := r.GetMyMap(update)
 	msg.Text = fmt.Sprintf("%s%s%s", resText, v.GetString("msg_separator"), resultOfGetItem)
 	msg.ReplyMarkup = buttons
+
+	return msg
+}
+
+func OpenQuest(char []string, user r.User) tg.MessageConfig {
+	questId := uint(r.ToInt(char[2]))
+
+	quest := r.Quest{ID: questId}.GetQuest()
+	userQuest := r.UserQuest{UserId: user.ID, QuestId: questId}.GetUserQuest()
+
+	fmt.Println(userQuest)
+
+	msg.Text = quest.QuestInfo(userQuest)
+	msg.ReplyMarkup = helpers.OpenQuestKeyboard(quest, userQuest)
 
 	return msg
 }

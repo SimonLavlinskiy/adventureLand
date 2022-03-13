@@ -2,7 +2,7 @@ package repository
 
 import (
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
 	"time"
 )
@@ -37,7 +37,7 @@ type InstrumentItem struct {
 	InstrumentID int `gorm:"primaryKey"`
 }
 
-func UserGetItem(update tgbotapi.Update, LocationStruct Location, char []string) string {
+func UserGetItem(update tg.Update, LocationStruct Location, char []string) string {
 	resultCell := Cell{MapsId: *LocationStruct.MapsId, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY}
 	resultCell = resultCell.GetCell()
 
@@ -60,7 +60,7 @@ func checkItemsOnNeededInstrument(cell Cell, msgInstrumentView string) (string, 
 	return "Not ok", nil
 }
 
-func UserGetItemWithInstrument(update tgbotapi.Update, cell Cell, user User, instrument Instrument, userGetItem UserItem) string {
+func UserGetItemWithInstrument(update tg.Update, cell Cell, user User, instrument Instrument, userGetItem UserItem) string {
 	var result string
 	var instrumentMsg string
 
@@ -93,7 +93,7 @@ func UserGetItemWithInstrument(update tgbotapi.Update, cell Cell, user User, ins
 	return result
 }
 
-func UserGetItemWithHand(update tgbotapi.Update, cell Cell, user User, userGetItem UserItem) string {
+func UserGetItemWithHand(update tg.Update, cell Cell, user User, userGetItem UserItem) string {
 	sumCountItem := *userGetItem.Count + 1
 	updateUserMoney := *user.Money - *cell.Item.Cost
 	var countUseLeft = userGetItem.Item.CountUse
@@ -108,11 +108,12 @@ func UserGetItemWithHand(update tgbotapi.Update, cell Cell, user User, userGetIt
 	UserItem{ID: userGetItem.ID, Count: &sumCountItem, CountUseLeft: countUseLeft}.UpdateUserItem(User{ID: user.ID})
 	User{Money: &updateUserMoney}.UpdateUser(update)
 
-	var countAfterUserGetItem *int
+	var countAfterUserGetItem int
+	countAfterUserGetItem = *cell.ItemCount - 1
+
 	textCountLeft := ""
-	if *cell.Type != "swap" && (*countAfterUserGetItem != 0 || cell.PrevItemID == nil) {
-		*countAfterUserGetItem = *cell.ItemCount - 1
-		Cell{ItemCount: countAfterUserGetItem}.UpdateCell(cell.ID)
+	if *cell.Type != "swap" && (countAfterUserGetItem != 0 || cell.PrevItemID == nil) {
+		Cell{ItemCount: &countAfterUserGetItem}.UpdateCell(cell.ID)
 		textCountLeft = fmt.Sprintf("(Осталось лежать еще %d)", countAfterUserGetItem)
 	} else if cell.PrevItemID != nil {
 		cell.UpdateCellOnPrevItem()
@@ -142,7 +143,7 @@ func itemHpLeft(cell Cell, instrument Instrument) string {
 	return result
 }
 
-func GrowingItem(update tgbotapi.Update, cell Cell, user User, userGetItem UserItem, instrument Instrument) (string, string) {
+func GrowingItem(update tg.Update, cell Cell, user User, userGetItem UserItem, instrument Instrument) (string, string) {
 	var updateItemTime = time.Now()
 
 	if cell.LastGrowing != nil && time.Now().Before(cell.LastGrowing.Add(time.Duration(*cell.Item.IntervalGrowing)*time.Minute)) {
@@ -158,7 +159,7 @@ func GrowingItem(update tgbotapi.Update, cell Cell, user User, userGetItem UserI
 	}
 	updateItemTime = updateItemTime.Add(-time.Duration(*instrument.Good.GrowingUpTime) * time.Minute)
 
-	if isItemGrowed(cell, updateItemTime) {
+	if isItemGrown(cell, updateItemTime) {
 		var result string
 		updateUserMoney := *user.Money - *cell.Item.Cost
 
@@ -190,17 +191,17 @@ func GrowingItem(update tgbotapi.Update, cell Cell, user User, userGetItem UserI
 	}
 }
 
-func DestructItem(update tgbotapi.Update, cellule Cell, user User, userGetItem UserItem, instrument Instrument) string {
+func DestructItem(update tg.Update, cell Cell, user User, userGetItem UserItem, instrument Instrument) string {
 	var ItemDestructionHp int
-	if cellule.DestructionHp == nil {
-		ItemDestructionHp = *cellule.Item.DestructionHp
+	if cell.DestructionHp == nil {
+		ItemDestructionHp = *cell.Item.DestructionHp
 	} else {
-		ItemDestructionHp = *cellule.DestructionHp
+		ItemDestructionHp = *cell.DestructionHp
 	}
 
 	ItemDestructionHp = ItemDestructionHp - *instrument.Good.Destruction
 
-	if isItemCrushed(cellule, ItemDestructionHp) {
+	if isItemCrushed(cell, ItemDestructionHp) {
 		var result string
 		if instrument.CountResultItem != nil {
 			*userGetItem.Count = *userGetItem.Count + *instrument.CountResultItem
@@ -208,7 +209,7 @@ func DestructItem(update tgbotapi.Update, cellule Cell, user User, userGetItem U
 		} else {
 			result = "что то не так"
 		}
-		updateUserMoney := *user.Money - *cellule.Item.Cost
+		updateUserMoney := *user.Money - *cell.Item.Cost
 
 		User{Money: &updateUserMoney}.UpdateUser(update)
 		UserItem{
@@ -217,13 +218,13 @@ func DestructItem(update tgbotapi.Update, cellule Cell, user User, userGetItem U
 			CountUseLeft: userGetItem.Item.CountUse,
 		}.UpdateUserItem(User{ID: user.ID})
 
-		cellule.UpdateCellAfterDestruction(instrument)
+		cell.UpdateCellAfterDestruction(instrument)
 
 		return result
 	} else {
 		err := config.Db.
-			Where(&Cell{ID: cellule.ID}).
-			Updates(Cell{ID: cellule.ID, DestructionHp: &ItemDestructionHp}).
+			Where(&Cell{ID: cell.ID}).
+			Updates(Cell{ID: cell.ID, DestructionHp: &ItemDestructionHp}).
 			Update("next_state_time", nil).
 			Update("last_growing", nil).
 			Error
@@ -231,39 +232,39 @@ func DestructItem(update tgbotapi.Update, cellule Cell, user User, userGetItem U
 			panic(err)
 		}
 
-		return "Попробуй еще.. (" + itemHpLeft(cellule, instrument) + ")"
+		return "Попробуй еще.. (" + itemHpLeft(cell, instrument) + ")"
 	}
 }
 
-func isItemGrowed(cellule Cell, updateItemTime time.Time) bool {
-	if cellule.Item.Growing != nil && updateItemTime.Before(time.Now()) {
+func isItemGrown(cell Cell, updateItemTime time.Time) bool {
+	if cell.Item.Growing != nil && updateItemTime.Before(time.Now()) {
 		return true
 	} else {
 		return false
 	}
 }
 
-func isItemCrushed(cellule Cell, ItemHp int) bool {
-	if cellule.Item.DestructionHp != nil && ItemHp <= 0 {
+func isItemCrushed(cell Cell, ItemHp int) bool {
+	if cell.Item.DestructionHp != nil && ItemHp <= 0 {
 		return true
 	} else {
 		return false
 	}
 }
 
-func UserGetItemUpdateModels(update tgbotapi.Update, cellule Cell, instrumentView string) string {
-	userTgid := GetUserTgId(update)
-	user := GetUser(User{TgId: userTgid})
+func UserGetItemUpdateModels(update tg.Update, cell Cell, instrumentView string) string {
+	userTgId := GetUserTgId(update)
+	user := GetUser(User{TgId: userTgId})
 
 	var userGetItem UserItem
 
-	status, instrument := checkItemsOnNeededInstrument(cellule, instrumentView)
+	status, instrument := checkItemsOnNeededInstrument(cell, instrumentView)
 	if status != "Ok" {
 		return "Предмет не поддается под таким инструментом"
 	}
 
 	if instrument == nil || instrument.ItemsResultId == nil {
-		userGetItem = GetOrCreateUserItem(update, *cellule.Item)
+		userGetItem = GetOrCreateUserItem(update, *cell.Item)
 	} else {
 		userGetItem = GetOrCreateUserItem(update, *instrument.ItemsResult)
 	}
@@ -272,22 +273,22 @@ func UserGetItemUpdateModels(update tgbotapi.Update, cellule Cell, instrumentVie
 		return "У тебя уже есть такой!"
 	}
 
-	if !canUserPayItem(user, cellule) {
+	if !canUserPayItem(user, cell) {
 		return "Не хватает деняк!"
 	}
 
 	if instrumentView == "👋" {
-		return UserGetItemWithHand(update, cellule, user, userGetItem)
-	} else if instrumentView != "👋" && len(cellule.Item.Instruments) != 0 {
-		return UserGetItemWithInstrument(update, cellule, user, *instrument, userGetItem)
+		return UserGetItemWithHand(update, cell, user, userGetItem)
+	} else if instrumentView != "👋" && len(cell.Item.Instruments) != 0 {
+		return UserGetItemWithInstrument(update, cell, user, *instrument, userGetItem)
 	}
 
 	return "Нельзя взять!"
 
 }
 
-func canUserPayItem(user User, cellule Cell) bool {
-	return cellule.Item.Cost == nil || *user.Money >= *cellule.Item.Cost
+func canUserPayItem(user User, cell Cell) bool {
+	return cell.Item.Cost == nil || *user.Money >= *cell.Item.Cost
 }
 
 func isUserHasMaxCountItem(item UserItem) bool {
@@ -324,7 +325,7 @@ func ViewItemInfo(location Location) string {
 
 	itemInfo = fmt.Sprintf("%s *%s* _%s_\n", cell.Item.View, cell.Item.Name, dressType)
 	if cell.ItemCount != nil {
-		itemInfo = fmt.Sprintf("_%d шт._\n", *cell.ItemCount)
+		itemInfo += fmt.Sprintf("*Кол-во*: _%d шт._\n", *cell.ItemCount)
 	}
 	itemInfo = itemInfo + fmt.Sprintf("*Описание*: `%s`\n", *cell.Item.Description)
 
@@ -370,7 +371,7 @@ func ViewItemInfo(location Location) string {
 	return itemInfo
 }
 
-func swapItem(update tgbotapi.Update, user User, cell Cell, userGetItem UserItem, instrument Instrument, userInstrument Item) string {
+func swapItem(update tg.Update, user User, cell Cell, userGetItem UserItem, instrument Instrument, userInstrument Item) string {
 	*userGetItem.Count = *userGetItem.Count + *instrument.CountResultItem
 	result := fmt.Sprintf("Ты получил %s %d шт. %s", instrument.ItemsResult.View, *instrument.CountResultItem, instrument.ItemsResult.Name)
 

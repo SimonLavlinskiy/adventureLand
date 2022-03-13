@@ -1,7 +1,7 @@
 package repository
 
 import (
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"strconv"
 )
 
@@ -14,7 +14,7 @@ func ToInt(string string) int {
 	return int(numInt64)
 }
 
-func GetUserTgId(update tgbotapi.Update) uint {
+func GetUserTgId(update tg.Update) uint {
 	var userTgId uint
 	if update.CallbackQuery != nil {
 		userTgId = uint(update.CallbackQuery.From.ID)

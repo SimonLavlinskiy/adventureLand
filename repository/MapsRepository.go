@@ -2,7 +2,7 @@ package repository
 
 import (
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
 	"project0/config"
 	"strings"
@@ -10,13 +10,14 @@ import (
 )
 
 type Map struct {
-	ID      uint   `gorm:"primaryKey"`
-	Name    string `gorm:"embedded"`
-	SizeX   int    `gorm:"embedded"`
-	SizeY   int    `gorm:"embedded"`
-	StartX  int    `gorm:"embedded"`
-	StartY  int    `gorm:"embedded"`
-	DayType string `gorm:"embedded"`
+	ID               uint   `gorm:"primaryKey"`
+	Name             string `gorm:"embedded"`
+	SizeX            int    `gorm:"embedded"`
+	SizeY            int    `gorm:"embedded"`
+	StartX           int    `gorm:"embedded"`
+	StartY           int    `gorm:"embedded"`
+	DayType          string `gorm:"embedded"`
+	EmptySpaceSymbol string `gorm:"embedded"`
 }
 
 type MapButtons struct {
@@ -55,7 +56,7 @@ func DefaultUserMap(location Location, displaySize int) UserMap {
 	}
 }
 
-func GetUserMap(update tgbotapi.Update) Map {
+func GetUserMap(update tg.Update) Map {
 	resLocation := GetOrCreateMyLocation(update)
 	result := Map{}
 
@@ -68,20 +69,25 @@ func GetUserMap(update tgbotapi.Update) Map {
 	return result
 }
 
-func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.ReplyKeyboardMarkup) {
+func GetMaps() []Map {
+	var result []Map
+
+	err := config.Db.Find(&result).Error
+
+	if err != nil {
+		fmt.Println("Нет карт!")
+	}
+
+	return result
+}
+
+func GetMyMap(update tg.Update) (textMessage string, buttons tg.ReplyKeyboardMarkup) {
 	userTgId := GetUserTgId(update)
 	us := GetUser(User{TgId: userTgId})
 	loc := GetOrCreateMyLocation(update)
 	resMap := GetUserMap(update)
 	mapSize := CalculateUserMapBorder(loc, resMap)
 	messageMap := fmt.Sprintf("*Карта*: _%s_ *X*: _%d_  *Y*: _%d_", loc.Maps.Name, *loc.AxisX, *loc.AxisY)
-
-	var onlineStatus string
-	if *us.OnlineMap {
-		onlineStatus = "📳 Онлайн 📳\n\n"
-	} else {
-		onlineStatus = "📴 Офлайн 📴\n\n"
-	}
 
 	type Point = [2]int
 	m := map[Point]Cell{}
@@ -131,7 +137,7 @@ func GetMyMap(update tgbotapi.Update) (textMessage string, buttons tgbotapi.Repl
 		}
 	}
 
-	return onlineStatus + messageMap, buttons
+	return messageMap, buttons
 }
 
 func CalculateUserMapBorder(resLocation Location, resMap Map) UserMap {
@@ -165,12 +171,12 @@ func CalculateUserMapBorder(resLocation Location, resMap Map) UserMap {
 	return mapSize
 }
 
-func CalculateButtonMap(resLocation Location, resUser User, m map[[2]int]Cell) tgbotapi.ReplyKeyboardMarkup {
+func CalculateButtonMap(resLocation Location, resUser User, m map[[2]int]Cell) tg.ReplyKeyboardMarkup {
 	type Point = [2]int
 
 	buttons := DefaultButtons(resUser.Avatar)
 
-	var CellsAroundUser = []Cell{}
+	var CellsAroundUser []Cell
 	CellsAroundUser = append(CellsAroundUser,
 		m[Point{*resLocation.AxisX, *resLocation.AxisY + 1}],
 		m[Point{*resLocation.AxisX, *resLocation.AxisY - 1}],
@@ -180,10 +186,11 @@ func CalculateButtonMap(resLocation Location, resUser User, m map[[2]int]Cell) t
 
 	buttons = PutButton(CellsAroundUser, buttons, resUser)
 
-	return CreateMapKeyboard(resUser, buttons)
+	return CreateMapKeyboard(buttons)
 }
 
-func CreateMapKeyboard(user User, buttons MapButtons) tgbotapi.ReplyKeyboardMarkup {
+func CreateMapKeyboard(buttons MapButtons) tg.ReplyKeyboardMarkup {
+	// Цэ кнопка была включения онлайна и офлайна
 	//onlineButton := v.GetString("message.user.online")
 	//if *user.OnlineMap {
 	//	onlineButton = v.GetString("message.user.offline")
@@ -191,21 +198,21 @@ func CreateMapKeyboard(user User, buttons MapButtons) tgbotapi.ReplyKeyboardMark
 
 	nearUsers := "👥"
 
-	return tgbotapi.NewReplyKeyboard(
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("Вещи 🧥"),
-			tgbotapi.NewKeyboardButton(buttons.Up),
-			tgbotapi.NewKeyboardButton("Рюкзак 🎒"),
+	return tg.NewReplyKeyboard(
+		tg.NewKeyboardButtonRow(
+			tg.NewKeyboardButton("Вещи 🧥"),
+			tg.NewKeyboardButton(buttons.Up),
+			tg.NewKeyboardButton("Рюкзак 🎒"),
 		),
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton(buttons.Left),
-			tgbotapi.NewKeyboardButton(buttons.Center),
-			tgbotapi.NewKeyboardButton(buttons.Right),
+		tg.NewKeyboardButtonRow(
+			tg.NewKeyboardButton(buttons.Left),
+			tg.NewKeyboardButton(buttons.Center),
+			tg.NewKeyboardButton(buttons.Right),
 		),
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton(nearUsers), //onlineButton),
-			tgbotapi.NewKeyboardButton(buttons.Down),
-			tgbotapi.NewKeyboardButton(v.GetString("user_location.menu")),
+		tg.NewKeyboardButtonRow(
+			tg.NewKeyboardButton(nearUsers), //onlineButton),
+			tg.NewKeyboardButton(buttons.Down),
+			tg.NewKeyboardButton(v.GetString("user_location.menu")),
 		),
 	)
 }
@@ -219,7 +226,7 @@ func configurationMap(mapSize UserMap, resMap Map, resLocation Location, user Us
 	if (day && resLocation.Maps.DayType == "default") || resLocation.Maps.DayType == "alwaysDay" {
 		DayMap(Maps, mapSize, m, resLocation)
 	} else {
-		NigthMap(Maps, mapSize, m, resLocation, user)
+		NightMap(Maps, mapSize, m, resLocation, user)
 	}
 	return Maps
 }
@@ -232,13 +239,13 @@ func DayMap(Maps [][]string, mapSize UserMap, m map[[2]int]Cell, resLocation Loc
 			if m[Point{x, y}].ID != 0 || m[Point{x, y}] == m[Point{*resLocation.AxisX, *resLocation.AxisY}] {
 				appendVisibleUserZone(m, x, y, Maps)
 			} else {
-				Maps[y] = append(Maps[y], "\U0001FAA8")
+				Maps[y] = append(Maps[y], resLocation.Maps.EmptySpaceSymbol)
 			}
 		}
 	}
 }
 
-func NigthMap(Maps [][]string, mapSize UserMap, m map[[2]int]Cell, resLocation Location, user User) {
+func NightMap(Maps [][]string, mapSize UserMap, m map[[2]int]Cell, resLocation Location, user User) {
 	type Point [2]int
 
 	for y := range Maps {
@@ -250,7 +257,7 @@ func NigthMap(Maps [][]string, mapSize UserMap, m map[[2]int]Cell, resLocation L
 			} else if (y+x)%2 == 0 || m[Point{x, y}].ID != 0 && (y+x)%2 == 0 {
 				Maps[y] = append(Maps[y], "✨")
 			} else {
-				Maps[y] = append(Maps[y], "")
+				Maps[y] = append(Maps[y], resLocation.Maps.EmptySpaceSymbol)
 			}
 		}
 	}
@@ -286,7 +293,7 @@ func calculateNightMap(user User, l Location, x int, y int) bool {
 func appendVisibleUserZone(m map[[2]int]Cell, x int, y int, Maps [][]string) {
 	type Point [2]int
 
-	if IsItem(m[Point{x, y}]) || IsWorkbench(m[Point{x, y}]) || IsSwap(m[Point{x, y}]) {
+	if m[Point{x, y}].IsItem() || m[Point{x, y}].IsWorkbench() || m[Point{x, y}].IsSwap() || m[Point{x, y}].IsQuest() {
 		Maps[y] = append(Maps[y], m[Point{x, y}].Item.View)
 	} else {
 		Maps[y] = append(Maps[y], m[Point{x, y}].View)
@@ -297,7 +304,7 @@ func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons 
 
 	for i, cell := range CellsAroundUser {
 		switch true {
-		case IsDefaultCell(cell):
+		case cell.IsDefaultCell():
 			switch i {
 			case 0:
 				btn.Up = cell.View
@@ -308,7 +315,7 @@ func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons 
 			case 3:
 				btn.Left = cell.View
 			}
-		case IsTeleport(cell):
+		case cell.IsTeleport():
 			button := fmt.Sprintf(" %s %s", resUser.Avatar, cell.View)
 			switch i {
 			case 0:
@@ -320,7 +327,7 @@ func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons 
 			case 3:
 				btn.Left += button
 			}
-		case IsWorkbench(cell):
+		case cell.IsWorkbench():
 			switch i {
 			case 0:
 				btn.Up = fmt.Sprintf("🔧 %s %s", btn.Up, cell.Item.View)
@@ -331,16 +338,27 @@ func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons 
 			case 3:
 				btn.Left = fmt.Sprintf("🔧 %s %s", btn.Left, cell.Item.View)
 			}
-		case IsItem(cell) || IsSwap(cell):
+		case cell.IsItem() || cell.IsSwap():
 			switch i {
 			case 0:
-				btn.Up = isItemCost(cell, btn.Up, resUser)
+				btn.Up = cell.isItemCost(btn.Up, resUser)
 			case 1:
-				btn.Down = isItemCost(cell, btn.Down, resUser)
+				btn.Down = cell.isItemCost(btn.Down, resUser)
 			case 2:
-				btn.Right = isItemCost(cell, btn.Right, resUser)
+				btn.Right = cell.isItemCost(btn.Right, resUser)
 			case 3:
-				btn.Left = isItemCost(cell, btn.Left, resUser)
+				btn.Left = cell.isItemCost(btn.Left, resUser)
+			}
+		case cell.IsQuest():
+			switch i {
+			case 0:
+				btn.Up = fmt.Sprintf("📟 %s %s", btn.Up, cell.Item.View)
+			case 1:
+				btn.Down = fmt.Sprintf("📟 %s %s", btn.Down, cell.Item.View)
+			case 2:
+				btn.Right = fmt.Sprintf("📟 %s %s", btn.Right, cell.Item.View)
+			case 3:
+				btn.Left = fmt.Sprintf("📟 %s %s", btn.Left, cell.Item.View)
 			}
 		case cell.ID == 0:
 			switch i {
@@ -359,43 +377,50 @@ func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons 
 	return btn
 }
 
-func IsDefaultCell(cell Cell) bool {
-	if cell.Type != nil && *cell.Type == "cell" && !cell.CanStep {
+func (c Cell) IsDefaultCell() bool {
+	if c.Type != nil && *c.Type == "cell" && !c.CanStep {
 		return true
 	}
 	return false
 }
 
-func IsWorkbench(cell Cell) bool {
-	if cell.Type != nil && *cell.Type == "workbench" && cell.ItemID != nil {
+func (c Cell) IsWorkbench() bool {
+	if c.Type != nil && *c.Type == "workbench" && c.ItemID != nil {
 		return true
 	}
 	return false
 }
 
-func IsTeleport(cell Cell) bool {
-	if cell.Type != nil && *cell.Type == "teleport" && cell.TeleportID != nil {
+func (c Cell) IsTeleport() bool {
+	if c.Type != nil && *c.Type == "teleport" && c.TeleportID != nil {
 		return true
 	}
 	return false
 }
 
-func IsItem(cell Cell) bool {
-	if cell.Type != nil && *cell.Type == "item" && cell.ItemID != nil && *cell.ItemCount > 0 {
+func (c Cell) IsItem() bool {
+	if c.Type != nil && *c.Type == "item" && c.ItemID != nil && *c.ItemCount > 0 {
 		return true
 	}
 	return false
 }
 
-func IsSwap(cell Cell) bool {
-	if cell.Type != nil && *cell.Type == "swap" && cell.ItemID != nil {
+func (c Cell) IsSwap() bool {
+	if c.Type != nil && *c.Type == "swap" && c.ItemID != nil {
 		return true
 	}
 	return false
 }
 
-func IsSpecialItem(cell Cell, user User) string {
-	instrumentsUserCanUse := GetInstrumentsUserCanUse(user, cell)
+func (c Cell) IsQuest() bool {
+	if c.Type != nil && *c.Type == "quest" && c.ItemID != nil {
+		return true
+	}
+	return false
+}
+
+func (c Cell) IsSpecialItem(user User) string {
+	instrumentsUserCanUse := GetInstrumentsUserCanUse(user, c)
 
 	if len(instrumentsUserCanUse) > 1 {
 		return "❗ 🛠 ❓"
@@ -408,13 +433,13 @@ func IsSpecialItem(cell Cell, user User) string {
 	return "🚷"
 }
 
-func isItemCost(cell Cell, button string, resUser User) string {
-	var firstElem = IsSpecialItem(cell, resUser)
+func (c Cell) isItemCost(button string, resUser User) string {
+	var firstElem = c.IsSpecialItem(resUser)
 
-	button = firstElem + " " + button + " " + cell.Item.View
+	button = firstElem + " " + button + " " + c.Item.View
 
-	if cell.Item.Cost != nil && *cell.Item.Cost > 0 && firstElem != "❗ 🛠 ❓" {
-		button = button + " ( " + ToString(*cell.Item.Cost) + "💰 )"
+	if c.Item.Cost != nil && *c.Item.Cost > 0 && firstElem != "❗ 🛠 ❓" {
+		button = button + " ( " + ToString(*c.Item.Cost) + "💰 )"
 	}
 
 	return button

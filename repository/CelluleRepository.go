@@ -1,9 +1,8 @@
 package repository
 
 import (
-	"encoding/json"
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
 	"time"
 )
@@ -213,7 +212,7 @@ func (c Cell) UpdateCellOnPrevItem() {
 	}
 }
 
-func UpdateCellUnderUser(update tgbotapi.Update, userItem UserItem, count int) string {
+func UpdateCellUnderUser(update tg.Update, userItem UserItem, count int) string {
 	location := GetOrCreateMyLocation(update)
 
 	cell := Cell{AxisX: *location.AxisX, AxisY: *location.AxisY, MapsId: *location.MapsId}
@@ -241,21 +240,22 @@ func UpdateCellUnderUser(update tgbotapi.Update, userItem UserItem, count int) s
 
 }
 
-func GetFullMap() string {
+func GetFullMap(id int) []Cell {
 	var results []Cell
 
 	err := config.Db.
-		Where(Cell{MapsId: 1}).
+		Preload("Item").
+		Where(Cell{MapsId: id}).
 		Find(&results).
 		Error
 
 	if err != nil {
-		return "Map not found!"
+		fmt.Println("Map not found!")
 	}
 
-	j, _ := json.Marshal(results)
-	resultsJson := string(j)
+	//j, _ := json.Marshal(results)
+	//resultsJson := string(j)
 
-	return resultsJson
+	return results
 
 }

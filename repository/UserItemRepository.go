@@ -2,7 +2,7 @@ package repository
 
 import (
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
 )
 
@@ -38,7 +38,7 @@ func (ui UserItem) GetUserItem() UserItem {
 	return result
 }
 
-func GetOrCreateUserItem(update tgbotapi.Update, item Item) UserItem {
+func GetOrCreateUserItem(update tg.Update, item Item) UserItem {
 	userTgId := GetUserTgId(update)
 	resUser := GetUser(User{TgId: userTgId})
 	userId := int(resUser.ID)
@@ -113,7 +113,7 @@ func (ui UserItem) UpdateUserItem(user User) {
 	}
 }
 
-func (ui UserItem) EatItem(update tgbotapi.Update, user User) string {
+func (ui UserItem) EatItem(update tg.Update, user User) string {
 	userItemCount := ui.Count
 
 	if *userItemCount > 0 {
@@ -158,7 +158,7 @@ func (ui UserItem) GetFullDescriptionOfUserItem() string {
 	return fullDescriptionUserItem + itemDescription
 }
 
-func UpdateUserInstrument(update tgbotapi.Update, user User, instrument Item) (string, string) {
+func UpdateUserInstrument(update tg.Update, user User, instrument Item) (string, string) {
 	userItem := UserItem{ItemId: int(instrument.ID), UserId: int(user.ID)}.GetUserItem()
 
 	c := *userItem.CountUseLeft - 1

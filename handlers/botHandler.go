@@ -2,18 +2,18 @@ package handlers
 
 import (
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-var deleteBotMsg tgbotapi.DeleteMessageConfig
+var deleteBotMsg tg.DeleteMessageConfig
 
 func GetMessage(telegramApiToken string) {
-	bot, err := tgbotapi.NewBotAPI(telegramApiToken)
+	bot, err := tg.NewBotAPI(telegramApiToken)
 	if err != nil {
 		panic(err)
 	}
 	bot.Debug = false
-	updateConfig := tgbotapi.NewUpdate(0)
+	updateConfig := tg.NewUpdate(0)
 
 	updateConfig.Timeout = 30
 
@@ -22,7 +22,7 @@ func GetMessage(telegramApiToken string) {
 	for update := range updates {
 
 		if update.CallbackQuery != nil {
-			deleteBotMsg = tgbotapi.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
+			deleteBotMsg = tg.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
 			msg, delMes := CallbackResolver(update)
 			SendMessage(msg, bot)
 			if delMes {
@@ -40,21 +40,21 @@ func GetMessage(telegramApiToken string) {
 
 }
 
-func DeleteMessage(message tgbotapi.DeleteMessageConfig, bot *tgbotapi.BotAPI) {
+func DeleteMessage(message tg.DeleteMessageConfig, bot *tg.BotAPI) {
 	if _, err := bot.Request(message); err != nil {
 		fmt.Print("Error delete msg: " + err.Error())
 	}
 }
 
-func SendMessage(message tgbotapi.MessageConfig, bot *tgbotapi.BotAPI) {
+func SendMessage(message tg.MessageConfig, bot *tg.BotAPI) {
 	_, err := bot.Send(message)
 	if err != nil {
 		panic("Error send msg: " + err.Error())
 	}
 }
 
-//func UpdateMessage(updateMsg tgbotapi.EditMessageTextConfig, telegramApiToken string) {
-//	bot, err := tgbotapi.NewBotAPI(telegramApiToken)
+//func UpdateMessage(updateMsg tg.EditMessageTextConfig, telegramApiToken string) {
+//	bot, err := tg.NewBotAPI(telegramApiToken)
 //	if err != nil {
 //		panic(err)
 //	}

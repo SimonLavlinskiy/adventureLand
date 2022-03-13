@@ -2,63 +2,63 @@ package helpers
 
 import (
 	"fmt"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
 	r "project0/repository"
 	str "strings"
 )
 
-func BackpackInlineKeyboard(items []r.UserItem, i int) tgbotapi.InlineKeyboardMarkup {
+func BackpackInlineKeyboard(items []r.UserItem, i int) tg.InlineKeyboardMarkup {
 	if len(items) == 0 {
-		return tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("Пусто...(", "emptyBackPack"),
+		return tg.NewInlineKeyboardMarkup(
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Пусто...(", "emptyBackPack"),
 			),
 		)
 	}
-	return tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(
+	return tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData(
 				fmt.Sprintf("%s %dшт.   +%d ♥️️   +%d\U0001F9C3", items[i].Item.View, *items[i].Count, *items[i].Item.Healing, *items[i].Item.Satiety),
 				fmt.Sprintf("%s %d", v.GetString("callback_char.description"), items[i].ID)),
 		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🍽 1шт", fmt.Sprintf("%s %d %d", v.GetString("callback_char.eat_food"), items[i].ID, i)),
-			tgbotapi.NewInlineKeyboardButtonData("🔺", fmt.Sprintf("%s %d", v.GetString("callback_char.backpack_moving"), i-1)),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("🍽 1шт", fmt.Sprintf("%s %d %d", v.GetString("callback_char.eat_food"), items[i].ID, i)),
+			tg.NewInlineKeyboardButtonData("🔺", fmt.Sprintf("%s %d", v.GetString("callback_char.backpack_moving"), i-1)),
 		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("👋🗑🗺", fmt.Sprintf("%s %d %d backpack", v.GetString("callback_char.throw_out_item"), items[i].ID, i)),
-			tgbotapi.NewInlineKeyboardButtonData("🔻", fmt.Sprintf("%s %d", v.GetString("callback_char.backpack_moving"), i+1)),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("👋🗑🗺", fmt.Sprintf("%s %d %d backpack", v.GetString("callback_char.throw_out_item"), items[i].ID, i)),
+			tg.NewInlineKeyboardButtonData("🔻", fmt.Sprintf("%s %d", v.GetString("callback_char.backpack_moving"), i+1)),
 		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %d %d backpack", v.GetString("callback_char.delete_item"), items[i].ID, i)),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %d %d backpack", v.GetString("callback_char.delete_item"), items[i].ID, i)),
 		),
 	)
 }
 
-func ChangeItemInHand(user r.User, itemId int, charData2 string) tgbotapi.InlineKeyboardMarkup {
-	return tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(
+func ChangeItemInHand(user r.User, itemId int, charData2 string) tg.InlineKeyboardMarkup {
+	return tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData(
 				fmt.Sprintf("❓ %s ❔", user.LeftHand.View),
 				fmt.Sprintf("%s %d %s", v.GetString("callback_char.change_left_hand"), itemId, charData2),
 			),
-			tgbotapi.NewInlineKeyboardButtonData(
+			tg.NewInlineKeyboardButtonData(
 				fmt.Sprintf("❓ %s ❔", user.RightHand.View),
 				fmt.Sprintf("%s %d %s", v.GetString("callback_char.change_right_hand"), itemId, charData2),
 			),
 		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Отмена", fmt.Sprintf("%s %s", v.GetString("callback_char.goods_moving"), charData2)),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("Отмена", fmt.Sprintf("%s %s", v.GetString("callback_char.goods_moving"), charData2)),
 		),
 	)
 }
 
-func GoodsInlineKeyboard(user r.User, userItems []r.UserItem, i int) tgbotapi.InlineKeyboardMarkup {
+func GoodsInlineKeyboard(user r.User, userItems []r.UserItem, i int) tg.InlineKeyboardMarkup {
 	if len(userItems) == 0 {
-		return tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("Пусто...(", "emptyGoods"),
+		return tg.NewInlineKeyboardMarkup(
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Пусто...(", "emptyGoods"),
 			),
 		)
 	}
@@ -69,33 +69,33 @@ func GoodsInlineKeyboard(user r.User, userItems []r.UserItem, i int) tgbotapi.In
 		itemDescription = *userItems[i].Item.Description
 	}
 
-	return tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(
+	return tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData(
 				fmt.Sprintf("%s %dшт. %s  %s", userItems[i].Item.View, *userItems[i].Count, userItems[i].Item.Name, itemDescription),
 				fmt.Sprintf("%s %d", v.GetString("callback_char.description"), userItems[i].ID),
 			),
 		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(text, fmt.Sprintf("%s %d %d", data, userItems[i].ID, i)),
-			tgbotapi.NewInlineKeyboardButtonData("🔺", fmt.Sprintf("%s %d", v.GetString("callback_char.goods_moving"), i-1)),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData(text, fmt.Sprintf("%s %d %d", data, userItems[i].ID, i)),
+			tg.NewInlineKeyboardButtonData("🔺", fmt.Sprintf("%s %d", v.GetString("callback_char.goods_moving"), i-1)),
 		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("👋🗑🗺", fmt.Sprintf("%s %d %d good", v.GetString("callback_char.throw_out_item"), userItems[i].ID, i)),
-			tgbotapi.NewInlineKeyboardButtonData("🔻", fmt.Sprintf("%s %d", v.GetString("callback_char.goods_moving"), i+1)),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("👋🗑🗺", fmt.Sprintf("%s %d %d good", v.GetString("callback_char.throw_out_item"), userItems[i].ID, i)),
+			tg.NewInlineKeyboardButtonData("🔻", fmt.Sprintf("%s %d", v.GetString("callback_char.goods_moving"), i+1)),
 		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %d %d good", v.GetString("callback_char.delete_item"), userItems[i].ID, i)),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %d %d good", v.GetString("callback_char.delete_item"), userItems[i].ID, i)),
 		),
 	)
 }
 
-func CountItemUserWantsToThrow(buttonData []string, userItem r.UserItem) tgbotapi.InlineKeyboardMarkup {
+func CountItemUserWantsToThrow(buttonData []string, userItem r.UserItem) tg.InlineKeyboardMarkup {
 	maxCountItem := *userItem.Count
-	var buttons [][]tgbotapi.InlineKeyboardButton
+	var buttons [][]tg.InlineKeyboardButton
 
 	for x := 1; x < 10; x = x + 5 {
-		var row []tgbotapi.InlineKeyboardButton
+		var row []tg.InlineKeyboardButton
 		if x > maxCountItem {
 			break
 		}
@@ -103,7 +103,7 @@ func CountItemUserWantsToThrow(buttonData []string, userItem r.UserItem) tgbotap
 			if x+y > maxCountItem {
 				break
 			}
-			row = append(row, tgbotapi.NewInlineKeyboardButtonData(
+			row = append(row, tg.NewInlineKeyboardButtonData(
 				fmt.Sprintf("%d шт.", x+y),
 				fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.count_of_delete"), buttonData[1], buttonData[2], x+y, buttonData[3])),
 			)
@@ -112,16 +112,16 @@ func CountItemUserWantsToThrow(buttonData []string, userItem r.UserItem) tgbotap
 	}
 
 	for y := 20; y <= maxCountItem; y = y + 20 {
-		var row []tgbotapi.InlineKeyboardButton
+		var row []tg.InlineKeyboardButton
 		if y < maxCountItem {
-			row = append(row, tgbotapi.NewInlineKeyboardButtonData(
+			row = append(row, tg.NewInlineKeyboardButtonData(
 				fmt.Sprintf("%d шт.", y),
 				fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.count_of_delete"), buttonData[1], buttonData[2], y, buttonData[3])),
 			)
 		}
 		x := y + 10
 		if y < maxCountItem {
-			row = append(row, tgbotapi.NewInlineKeyboardButtonData(
+			row = append(row, tg.NewInlineKeyboardButtonData(
 				fmt.Sprintf("%d шт.", x),
 				fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.count_of_delete"), buttonData[1], buttonData[2], x, buttonData[3])),
 			)
@@ -129,26 +129,26 @@ func CountItemUserWantsToThrow(buttonData []string, userItem r.UserItem) tgbotap
 		buttons = append(buttons, row)
 	}
 
-	var row []tgbotapi.InlineKeyboardButton
-	row = append(row, tgbotapi.NewInlineKeyboardButtonData("Все!",
+	var row []tg.InlineKeyboardButton
+	row = append(row, tg.NewInlineKeyboardButtonData("Все!",
 		fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.count_of_delete"), buttonData[1], buttonData[2], maxCountItem, buttonData[3])),
 	)
 	buttons = append(buttons, row)
 
-	return tgbotapi.NewInlineKeyboardMarkup(buttons...)
+	return tg.NewInlineKeyboardMarkup(buttons...)
 }
 
-func EmodjiInlineKeyboard() tgbotapi.InlineKeyboardMarkup {
-	var buttons [][]tgbotapi.InlineKeyboardButton
+func EmojiInlineKeyboard() tg.InlineKeyboardMarkup {
+	var buttons [][]tg.InlineKeyboardButton
 	var listOfAvatar []string
 	listOfAvatar = str.Fields(v.GetString("message.list_of_avatar"))
 
 	for x := 0; x < len(listOfAvatar); x = x + 8 {
-		var row []tgbotapi.InlineKeyboardButton
+		var row []tg.InlineKeyboardButton
 		for i := 0; i < 8; i++ {
 			sum := x + i
 			if len(listOfAvatar) > sum {
-				row = append(row, tgbotapi.NewInlineKeyboardButtonData(listOfAvatar[sum],
+				row = append(row, tg.NewInlineKeyboardButtonData(listOfAvatar[sum],
 					fmt.Sprintf("%s %s", v.GetString("callback_char.change_avatar"), listOfAvatar[sum])),
 				)
 			}
@@ -156,66 +156,68 @@ func EmodjiInlineKeyboard() tgbotapi.InlineKeyboardMarkup {
 		buttons = append(buttons, row)
 	}
 
-	return tgbotapi.NewInlineKeyboardMarkup(buttons...)
+	return tg.NewInlineKeyboardMarkup(buttons...)
 }
 
-func ProfileKeyboard(user r.User) tgbotapi.ReplyKeyboardMarkup {
-	return tgbotapi.NewReplyKeyboard(
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("📝 Изменить имя? 📝"),
-			tgbotapi.NewKeyboardButton(fmt.Sprintf("%s Изменить аватар? %s", user.Avatar, user.Avatar)),
+func ProfileKeyboard(user r.User) tg.ReplyKeyboardMarkup {
+	return tg.NewReplyKeyboard(
+		tg.NewKeyboardButtonRow(
+			tg.NewKeyboardButton("📝 Изменить имя? 📝"),
+			tg.NewKeyboardButton(fmt.Sprintf("%s Изменить аватар? %s", user.Avatar, user.Avatar)),
 		),
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("Меню"),
-		),
-	)
-}
-
-func MainKeyboard(user r.User) tgbotapi.ReplyKeyboardMarkup {
-	return tgbotapi.NewReplyKeyboard(
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton("🗺 Карта 🗺"),
-			tgbotapi.NewKeyboardButton(user.Avatar+" Профиль 👔"),
+		tg.NewKeyboardButtonRow(
+			tg.NewKeyboardButton("Меню"),
 		),
 	)
 }
 
-func ChooseInstrument(char []string, cell r.Cell, user r.User) tgbotapi.InlineKeyboardMarkup {
+func MainKeyboard(user r.User) tg.ReplyKeyboardMarkup {
+	return tg.NewReplyKeyboard(
+		tg.NewKeyboardButtonRow(
+			tg.NewKeyboardButton("🗺 Карта 🗺"),
+			tg.NewKeyboardButton(user.Avatar+" Профиль 👔"),
+		),
+	)
+}
+
+func ChooseInstrument(char []string, cell r.Cell, user r.User) tg.InlineKeyboardMarkup {
 	instruments := r.GetInstrumentsUserCanUse(user, cell)
 
+	fmt.Println(instruments)
+
 	if len(instruments) != 0 {
-		var row []tgbotapi.InlineKeyboardButton
+		var row []tg.InlineKeyboardButton
 
 		for instrument, i := range instruments {
 			if cell.Item.Cost != nil && *cell.Item.Cost > 0 && (i == "hand" || i == "swap") {
-				row = append(row, tgbotapi.NewInlineKeyboardButtonData(
+				row = append(row, tg.NewInlineKeyboardButtonData(
 					fmt.Sprintf("%s ( %d💰 )", instrument, *cell.Item.Cost),
 					fmt.Sprintf("%s %s %s", instrument, char[3], char[4])),
 				)
 			} else {
-				row = append(row, tgbotapi.NewInlineKeyboardButtonData(
+				row = append(row, tg.NewInlineKeyboardButtonData(
 					instrument,
 					fmt.Sprintf("%s %s %s", instrument, char[3], char[4])),
 				)
 			}
 		}
 
-		return tgbotapi.NewInlineKeyboardMarkup(
+		return tg.NewInlineKeyboardMarkup(
 			row,
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("Отмена", v.GetString("callback_char.cancel")),
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Отмена", v.GetString("callback_char.cancel")),
 			),
 		)
 	}
 
-	return tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("На карту?", v.GetString("callback_char.cancel")),
+	return tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("На карту?", v.GetString("callback_char.cancel")),
 		),
 	)
 }
 
-func WorkbenchButton(char []string) tgbotapi.InlineKeyboardMarkup {
+func WorkbenchButton(char []string) tg.InlineKeyboardMarkup {
 	leftArrow := "⬅️"
 	rightArrow := "➡️"
 	userPointer := r.ToInt(char[2])
@@ -236,10 +238,10 @@ func WorkbenchButton(char []string) tgbotapi.InlineKeyboardMarkup {
 		rightArrowData = "nothing"
 	}
 
-	putItem := tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData("Вставить предмет!", putItemData))
-	changeItem := tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("✏️ Изменить", putItemData),
-		tgbotapi.NewInlineKeyboardButtonData("🔢 Кол-во?", putCountItemData))
+	putItem := tg.NewInlineKeyboardRow(tg.NewInlineKeyboardButtonData("Вставить предмет!", putItemData))
+	changeItem := tg.NewInlineKeyboardRow(
+		tg.NewInlineKeyboardButtonData("✏️ Изменить", putItemData),
+		tg.NewInlineKeyboardButtonData("🔢 Кол-во?", putCountItemData))
 
 	ButtonManageItem := putItem
 
@@ -249,29 +251,29 @@ func WorkbenchButton(char []string) tgbotapi.InlineKeyboardMarkup {
 
 	//"workbench usPoint: 0 1stComp: nil 0 2ndComp: nil 0 3rdComp: nil 0"
 
-	return tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("✨⚡️ Слепить! ⚡️✨", makeNewItem),
+	return tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("✨⚡️ Слепить! ⚡️✨", makeNewItem),
 		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(leftArrow, leftArrowData),
-			tgbotapi.NewInlineKeyboardButtonData(rightArrow, rightArrowData),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData(leftArrow, leftArrowData),
+			tg.NewInlineKeyboardButtonData(rightArrow, rightArrowData),
 		),
 		ButtonManageItem,
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("Рецепты 📚", v.GetString("callback_char.receipt")),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("Рецепты 📚", v.GetString("callback_char.receipt")),
 		),
 	)
 }
 
-func ChooseUserItemButton(userItem []r.UserItem, char []string) tgbotapi.InlineKeyboardMarkup {
-	var buttons [][]tgbotapi.InlineKeyboardButton
+func ChooseUserItemButton(userItem []r.UserItem, char []string) tg.InlineKeyboardMarkup {
+	var buttons [][]tg.InlineKeyboardButton
 
 	var itemData string
 
 	for x := 0; x < len(userItem); x = x + 5 {
 
-		var row []tgbotapi.InlineKeyboardButton
+		var row []tg.InlineKeyboardButton
 
 		for i := 0; i < 5; i++ {
 			if i+x < len(userItem) {
@@ -283,16 +285,16 @@ func ChooseUserItemButton(userItem []r.UserItem, char []string) tgbotapi.InlineK
 				case "2":
 					itemData = fmt.Sprintf("%s usPoint %s 1stComp %s %s 2ndComp %s %s 3rdComp %d %s", v.GetString("callback_char.put_count_item"), char[2], char[4], char[5], char[7], char[8], userItem[x+i].ID, char[11])
 				}
-				row = append(row, tgbotapi.NewInlineKeyboardButtonData(userItem[x+i].Item.View, itemData))
+				row = append(row, tg.NewInlineKeyboardButtonData(userItem[x+i].Item.View, itemData))
 			}
 		}
 		buttons = append(buttons, row)
 	}
 
-	return tgbotapi.NewInlineKeyboardMarkup(buttons...)
+	return tg.NewInlineKeyboardMarkup(buttons...)
 }
 
-func ChangeCountUserItem(charData []string, item r.UserItem) tgbotapi.InlineKeyboardMarkup {
+func ChangeCountUserItem(charData []string, item r.UserItem) tg.InlineKeyboardMarkup {
 	charDone := fmt.Sprintf("%s usPoint %s 1stComp %s %s 2ndComp %s %s 3rdComp %s %s", v.GetString("callback_char.workbench"), charData[2], charData[4], charData[5], charData[7], charData[8], charData[10], charData[11])
 	itemCount := r.ToInt(charData[r.ToInt(charData[2])+(5+r.ToInt(charData[2])*2)])
 	maxCountItem := item.Count
@@ -315,16 +317,73 @@ func ChangeCountUserItem(charData []string, item r.UserItem) tgbotapi.InlineKeyb
 	subButData := fmt.Sprintf("%s usPoint %s 1stComp %s %s 2ndComp %s %s 3rdComp %s %s", v.GetString("callback_char.put_count_item"), subData[2], subData[4], subData[5], subData[7], subData[8], subData[10], subData[11])
 	appButData := fmt.Sprintf("%s usPoint %s 1stComp %s %s 2ndComp %s %s 3rdComp %s %s", v.GetString("callback_char.put_count_item"), appData[2], appData[4], appData[5], appData[7], appData[8], appData[10], appData[11])
 
-	subtractButton := tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%s⃣%s", subCount, item.Item.View), subButData)
-	appendButton := tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("%s⃣%s", appCount, item.Item.View), appButData)
+	subtractButton := tg.NewInlineKeyboardButtonData(fmt.Sprintf("%s⃣%s", subCount, item.Item.View), subButData)
+	appendButton := tg.NewInlineKeyboardButtonData(fmt.Sprintf("%s⃣%s", appCount, item.Item.View), appButData)
 
-	return tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(fmt.Sprintf("✅ Готово: %d⃣%s", itemCount, item.Item.View), charDone),
+	return tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData(fmt.Sprintf("✅ Готово: %d⃣%s", itemCount, item.Item.View), charDone),
 		),
-		tgbotapi.NewInlineKeyboardRow(
+		tg.NewInlineKeyboardRow(
 			subtractButton,
 			appendButton,
+		),
+	)
+}
+
+func AllQuestsMessageKeyboard() tg.InlineKeyboardMarkup {
+	quests := r.Quest{}.GetQuests()
+	if len(quests) == 0 {
+		return tg.NewInlineKeyboardMarkup(
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Пусто...(", "cancel"),
+			),
+		)
+	}
+
+	var result [][]tg.InlineKeyboardButton
+
+	for _, quest := range quests {
+		result = append(result,
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData(
+					fmt.Sprintf("Задание: «%s»", quest.Name),
+					fmt.Sprintf("quest id: %d", quest.ID),
+				),
+			),
+		)
+	}
+
+	return tg.NewInlineKeyboardMarkup(result...)
+}
+
+func OpenQuestKeyboard(q r.Quest, uq *r.UserQuest) tg.InlineKeyboardMarkup {
+	if uq == nil {
+		return tg.NewInlineKeyboardMarkup(
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Взять в работу", fmt.Sprintf("user_get_quest %d", q.ID)),
+			),
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Назад", "quests"),
+			),
+		)
+	}
+
+	switch uq.Status {
+	case "processed":
+		return tg.NewInlineKeyboardMarkup(
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Готово! Я все сделаль!", fmt.Sprintf("user_done_quest %d", uq.QuestId)),
+			),
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Назад", "quests"),
+			),
+		)
+	}
+
+	return tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("Назад", "quests"),
 		),
 	)
 }
