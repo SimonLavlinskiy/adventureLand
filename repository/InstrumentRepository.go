@@ -1,13 +1,17 @@
 package repository
 
+import (
+	"fmt"
+	"project0/config"
+)
+
 type Instrument struct {
 	ID                 uint `gorm:"primaryKey"`
 	GoodId             *int `gorm:"embedded"`
 	Good               *Item
 	Type               string `gorm:"embedded"`
-	ItemsResultId      *int   `gorm:"embedded"`
-	ItemsResult        *Item
-	CountResultItem    *int `gorm:"embedded"`
+	ResultId           *int   `gorm:"embedded"`
+	Result             *Result
 	NextStageItemId    *int `gorm:"embedded"`
 	NextStageItem      *Item
 	CountNextStageItem *int   `gorm:"embedded"`
@@ -17,6 +21,23 @@ type Instrument struct {
 type Y struct {
 	i int
 	s string
+}
+
+func (i Instrument) GetInstrument() Instrument {
+	var result Instrument
+	err := config.Db.
+		Preload("Good").
+		Preload("Result").
+		Preload("Result.Item").
+		Preload("NextStageItem").
+		Where(Instrument{ID: i.ID}).
+		First(&result).Error
+
+	if err != nil {
+		fmt.Println("Инструмент не найден")
+	}
+
+	return result
 }
 
 func GetInstrumentsUserCanUse(user User, cell Cell) map[string]string {

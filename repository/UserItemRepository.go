@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"encoding/json"
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
@@ -16,7 +17,7 @@ type UserItem struct {
 	Item         Item
 }
 
-func (ui UserItem) GetUserItem() UserItem {
+func (ui UserItem) UserGetUserItem() UserItem {
 	zero := 0
 	result := UserItem{
 		UserId:       int(ui.User.ID),
@@ -59,6 +60,20 @@ func GetOrCreateUserItem(update tg.Update, item Item) UserItem {
 	}
 
 	return result
+}
+
+func (u User) UserGetResultItem(r Result) {
+	j, _ := json.Marshal(r)
+	fmt.Println(string(j))
+	ui := UserItem{UserId: int(u.ID), ItemId: int(*r.ItemId)}.UserGetUserItem()
+	resItemCount := *ui.Count + int(*r.CountItem)
+	u.UpdateUserItem(UserItem{ID: ui.ID, Count: &resItemCount})
+}
+
+func (u User) UserGetResultSpecialItem(r Result) {
+	ui := UserItem{UserId: int(u.ID), ItemId: int(*r.SpecialItemId)}.UserGetUserItem()
+	resItemCount := *ui.Count + int(*r.SpecialItemCount)
+	u.UpdateUserItem(UserItem{Count: &resItemCount})
 }
 
 func GetUserItems(userId uint) []UserItem {
@@ -142,7 +157,7 @@ func (ui UserItem) EatItem(update tg.Update, user User) string {
 }
 
 func (ui UserItem) GetFullDescriptionOfUserItem() string {
-	userItem := ui.GetUserItem()
+	userItem := ui.UserGetUserItem()
 	var fullDescriptionUserItem string
 	if userItem.Item.IsInventory == true {
 		fullDescriptionUserItem = fmt.Sprintf("%s *%s* - %d шт.\n*Сила*: + %d💥\n", userItem.Item.View, userItem.Item.Name, *userItem.Count, *userItem.Item.Damage)
@@ -159,7 +174,11 @@ func (ui UserItem) GetFullDescriptionOfUserItem() string {
 }
 
 func UpdateUserInstrument(update tg.Update, user User, instrument Item) (string, string) {
-	userItem := UserItem{ItemId: int(instrument.ID), UserId: int(user.ID)}.GetUserItem()
+	fmt.Println("Зашло")
+	userItem := UserItem{ItemId: int(instrument.ID), UserId: int(user.ID)}.UserGetUserItem()
+
+	j, _ := json.Marshal(userItem)
+	fmt.Println(string(j))
 
 	c := *userItem.CountUseLeft - 1
 	if c > 0 {
@@ -171,6 +190,7 @@ func UpdateUserInstrument(update tg.Update, user User, instrument Item) (string,
 
 	if *userItem.Count > 1 {
 		userItemCount := *userItem.Count - 1
+		fmt.Println(userItemCount)
 		countUseLeft := userItem.Item.CountUse
 		user.UpdateUserItem(UserItem{
 			ID:           userItem.ID,

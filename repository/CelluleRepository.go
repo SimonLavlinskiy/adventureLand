@@ -38,7 +38,7 @@ func (c Cell) GetCell() Cell {
 		Preload("Teleport").
 		Preload("Item.Instruments").
 		Preload("Item.Instruments.Good").
-		Preload("Item.Instruments.ItemsResult").
+		Preload("Item.Instruments.Result").
 		Preload("Item.Instruments.NextStageItem").
 		Where(c).
 		First(&result).
@@ -68,7 +68,7 @@ func UpdateCellWithNextStateTime() {
 		Preload("PrevItem").
 		Preload("Item.Instruments").
 		Preload("Item.Instruments.Good").
-		Preload("Item.Instruments.ItemsResult").
+		Preload("Item.Instruments.Result").
 		Preload("Item.Instruments.NextStageItem").
 		Where("next_state_time <= ?", time.Now()).
 		Find(&results).

@@ -64,7 +64,7 @@ func callBackResolver(update tg.Update) (tg.MessageConfig, bool) {
 	case v.GetString("callback_char.take_off_good"):
 		userTakeOffGood(update, charData)
 	case v.GetString("callback_char.change_left_hand"), v.GetString("callback_char.change_right_hand"):
-		userItem := r.UserItem{ID: r.ToInt(charData[1])}.GetUserItem()
+		userItem := r.UserItem{ID: r.ToInt(charData[1])}.UserGetUserItem()
 		updateUserHand(update, charData, userItem)
 		charDataForOpenGoods := strings.Fields(fmt.Sprintf("%s %s", v.GetString("callback_char.goods_moving"), charData[2]))
 		msg = GoodsMoving(charDataForOpenGoods, update)
@@ -92,7 +92,7 @@ func callBackResolver(update tg.Update) (tg.MessageConfig, bool) {
 		msg = PutCountComponent(charData)
 		msg.Text = fmt.Sprintf("%s%s⚠️ Сколько выкладываешь?", msg.Text, v.GetString("msg_separator"))
 	case v.GetString("callback_char.make_new_item"):
-		resp := GetRecieptFromData(charData)
+		resp := GetReceiptFromData(charData)
 		receipt := r.FindReceiptForUser(resp)
 		msg, deletePrevMessage = UserCraftItem(user, receipt)
 	case v.GetString("message.emoji.hand"), ItemLeftHand.View, ItemRightHand.View:
@@ -123,7 +123,6 @@ func callBackResolver(update tg.Update) (tg.MessageConfig, bool) {
 		}.GetOrCreateUserQuest()
 		msg = OpenQuest(uint(r.ToInt(charData[1])), user)
 	case "user_done_quest":
-		fmt.Println(charData)
 		msg = UserDoneQuest(uint(r.ToInt(charData[1])), user)
 	}
 
@@ -275,7 +274,7 @@ func useDefaultCell(update tg.Update, user r.User) tg.MessageConfig {
 		msg.Text = fmt.Sprintf("%s\nЧасики тикают...", currentTime.Format("15:04:05"))
 	case user.Avatar:
 		msg.Text, buttons = r.GetMyMap(update)
-		msg.Text = fmt.Sprintf("%s \n\n %s", r.GetUserInfo(update), msg.Text)
+		msg.Text = fmt.Sprintf("%s\n\n%s", r.GetUserInfo(update), msg.Text)
 		msg.ReplyMarkup = buttons
 	case "/menu", v.GetString("user_location.menu"):
 		msg.Text = "Меню"
@@ -415,7 +414,7 @@ func UserEatItem(update tg.Update, charData []string) tg.MessageConfig {
 	userItemId := r.ToInt(charData[1])
 
 	user := r.GetUser(r.User{TgId: userTgId})
-	userItem := r.UserItem{ID: userItemId}.GetUserItem()
+	userItem := r.UserItem{ID: userItemId}.UserGetUserItem()
 
 	res := userItem.EatItem(update, user)
 	charDataForOpenBackPack := strings.Fields(fmt.Sprintf("%s %s", v.GetString("callback_char.backpack_moving"), charData[2]))
@@ -429,7 +428,7 @@ func UserDeleteItem(update tg.Update, charData []string) tg.MessageConfig {
 	userItemId := r.ToInt(charData[1])
 	userTgId := r.GetUserTgId(update)
 	user := r.GetUser(r.User{TgId: userTgId})
-	userItem := r.UserItem{ID: userItemId}.GetUserItem()
+	userItem := r.UserItem{ID: userItemId}.UserGetUserItem()
 
 	countAfterUserThrowOutItem := 0
 	var updateUserItemStruct = r.UserItem{
@@ -528,7 +527,7 @@ func userTakeOffGood(update tg.Update, charData []string) {
 	userItemId := r.ToInt(charData[1])
 	userTgId := r.GetUserTgId(update)
 	user := r.GetUser(r.User{TgId: userTgId})
-	userItem := r.UserItem{ID: userItemId}.GetUserItem()
+	userItem := r.UserItem{ID: userItemId}.UserGetUserItem()
 
 	if user.HeadId != nil && userItem.ItemId == *user.HeadId {
 		r.SetNullUserField(update, "head_id")
@@ -553,7 +552,7 @@ func dressUserItem(update tg.Update, charData []string) tg.MessageConfig {
 	userItemId := r.ToInt(charData[1])
 	userTgId := r.GetUserTgId(update)
 	user := r.GetUser(r.User{TgId: userTgId})
-	userItem := r.UserItem{ID: userItemId}.GetUserItem()
+	userItem := r.UserItem{ID: userItemId}.UserGetUserItem()
 	changeHandItem := false
 
 	var result = fmt.Sprintf("Вы надели %s", userItem.Item.View)
@@ -607,7 +606,7 @@ func dressUserItem(update tg.Update, charData []string) tg.MessageConfig {
 }
 
 func userThrowOutItem(update tg.Update, user r.User, charData []string) tg.MessageConfig {
-	userItem := r.UserItem{ID: r.ToInt(charData[1])}.GetUserItem()
+	userItem := r.UserItem{ID: r.ToInt(charData[1])}.UserGetUserItem()
 
 	*userItem.Count = *userItem.Count - r.ToInt(charData[3])
 
@@ -639,7 +638,7 @@ func userThrowOutItem(update tg.Update, user r.User, charData []string) tg.Messa
 }
 
 func userWantsToThrowOutItem(update tg.Update, charData []string) tg.MessageConfig {
-	userItem := r.UserItem{ID: r.ToInt(charData[1])}.GetUserItem()
+	userItem := r.UserItem{ID: r.ToInt(charData[1])}.UserGetUserItem()
 
 	if userItem.CountUseLeft != nil && *userItem.CountUseLeft != *userItem.Item.CountUse {
 		*userItem.Count = *userItem.Count - 1
@@ -730,7 +729,7 @@ func OpenWorkbenchMessage(char []string) tg.MessageConfig {
 
 func viewComponent(id string) string {
 	if id != "nil" {
-		component := r.UserItem{ID: r.ToInt(id)}.GetUserItem()
+		component := r.UserItem{ID: r.ToInt(id)}.UserGetUserItem()
 		return component.Item.View
 	}
 	return "⚪"
@@ -758,11 +757,11 @@ func AllReceiptsMsg() string {
 	return msgText
 }
 
-func GetRecieptFromData(char []string) r.Receipt {
+func GetReceiptFromData(char []string) r.Receipt {
 	var result r.Receipt
 
 	if char[4] != "nil" && char[5] != "0" {
-		fstItem := r.UserItem{ID: r.ToInt(char[4])}.GetUserItem()
+		fstItem := r.UserItem{ID: r.ToInt(char[4])}.UserGetUserItem()
 		id := int(fstItem.Item.ID)
 		c := r.ToInt(char[5])
 
@@ -771,7 +770,7 @@ func GetRecieptFromData(char []string) r.Receipt {
 	}
 
 	if char[7] != "nil" && char[8] != "0" {
-		fstItem := r.UserItem{ID: r.ToInt(char[7])}.GetUserItem()
+		fstItem := r.UserItem{ID: r.ToInt(char[7])}.UserGetUserItem()
 		id := int(fstItem.Item.ID)
 		c := r.ToInt(char[8])
 
@@ -780,7 +779,7 @@ func GetRecieptFromData(char []string) r.Receipt {
 	}
 
 	if char[10] != "nil" && char[11] != "0" {
-		fstItem := r.UserItem{ID: r.ToInt(char[10])}.GetUserItem()
+		fstItem := r.UserItem{ID: r.ToInt(char[10])}.UserGetUserItem()
 		id := int(fstItem.Item.ID)
 		c := r.ToInt(char[11])
 
@@ -793,7 +792,7 @@ func GetRecieptFromData(char []string) r.Receipt {
 
 func PutCountComponent(char []string) tg.MessageConfig {
 	userItemId := char[r.ToInt(char[2])+(4+r.ToInt(char[2])*2)] // char[x + (4+x*2 )] = char[4]
-	userItem := r.UserItem{ID: r.ToInt(userItemId)}.GetUserItem()
+	userItem := r.UserItem{ID: r.ToInt(userItemId)}.UserGetUserItem()
 
 	msg.ReplyMarkup = helpers.ChangeCountUserItem(char, userItem)
 
@@ -810,7 +809,7 @@ func UserCraftItem(user r.User, receipt *r.Receipt) (tg.MessageConfig, bool) {
 	}
 
 	msg.ReplyMarkup = nil
-	resultItem := r.UserItem{UserId: int(user.ID), ItemId: receipt.ItemResultID}.GetUserItem()
+	resultItem := r.UserItem{UserId: int(user.ID), ItemId: receipt.ItemResultID}.UserGetUserItem()
 
 	if *receipt.ItemResultCount+*resultItem.Count > *resultItem.Item.MaxCountUserHas {
 		msg.Text = fmt.Sprintf("Вы не можете иметь больше, чем %d %s!\nСори... такие правила(", *resultItem.Item.MaxCountUserHas, resultItem.Item.View)
@@ -820,19 +819,19 @@ func UserCraftItem(user r.User, receipt *r.Receipt) (tg.MessageConfig, bool) {
 	}
 
 	if receipt.Component1ID != nil && receipt.Component1Count != nil {
-		userItem := r.UserItem{UserId: int(user.ID), ItemId: *receipt.Component1ID}.GetUserItem()
+		userItem := r.UserItem{UserId: int(user.ID), ItemId: *receipt.Component1ID}.UserGetUserItem()
 		countItem1 := *userItem.Count - *receipt.Component1Count
-		user.UpdateUserItem(r.UserItem{ID: userItem.ID, ItemId: *receipt.Component1ID, Count: &countItem1, CountUseLeft: resultItem.CountUseLeft})
+		user.UpdateUserItem(r.UserItem{ID: userItem.ID, ItemId: *receipt.Component1ID, Count: &countItem1}) // CountUseLeft: resultItem.CountUseLeft
 	}
 	if receipt.Component2ID != nil && receipt.Component2Count != nil {
-		userItem := r.UserItem{UserId: int(user.ID), ItemId: *receipt.Component2ID}.GetUserItem()
+		userItem := r.UserItem{UserId: int(user.ID), ItemId: *receipt.Component2ID}.UserGetUserItem()
 		countItem2 := *userItem.Count - *receipt.Component2Count
-		user.UpdateUserItem(r.UserItem{ID: userItem.ID, ItemId: *receipt.Component2ID, Count: &countItem2, CountUseLeft: resultItem.CountUseLeft})
+		user.UpdateUserItem(r.UserItem{ID: userItem.ID, ItemId: *receipt.Component2ID, Count: &countItem2}) // CountUseLeft: resultItem.CountUseLeft
 	}
 	if receipt.Component3ID != nil && receipt.Component3Count != nil {
-		userItem := r.UserItem{UserId: int(user.ID), ItemId: *receipt.Component3ID}.GetUserItem()
+		userItem := r.UserItem{UserId: int(user.ID), ItemId: *receipt.Component3ID}.UserGetUserItem()
 		countItem3 := *userItem.Count - *receipt.Component3Count
-		user.UpdateUserItem(r.UserItem{ID: userItem.ID, ItemId: *receipt.Component3ID, Count: &countItem3, CountUseLeft: resultItem.CountUseLeft})
+		user.UpdateUserItem(r.UserItem{ID: userItem.ID, ItemId: *receipt.Component3ID, Count: &countItem3}) // CountUseLeft: resultItem.CountUseLeft
 	}
 
 	if *resultItem.Count == 0 {
@@ -909,6 +908,7 @@ func UserDoneQuest(questId uint, user r.User) tg.MessageConfig {
 	}
 
 	userQuest.UserDoneQuest(user)
+	user.UserGetResult(userQuest.Quest.Result)
 
 	msg = OpenQuest(questId, user)
 	msg.Text = fmt.Sprintf("*Задание выполнено!*\n%s", msg.Text)

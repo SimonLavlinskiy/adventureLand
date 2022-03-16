@@ -100,7 +100,7 @@ func GetMyMap(update tg.Update) (textMessage string, buttons tg.ReplyKeyboardMar
 		Preload("Teleport").
 		Preload("Item.Instruments").
 		Preload("Item.Instruments.Good").
-		Preload("Item.Instruments.ItemsResult").
+		Preload("Item.Instruments.Result").
 		Preload("Item.Instruments.NextStageItem").
 		Where(Cell{MapsId: *loc.MapsId}).
 		Where("axis_x >= " + ToString(mapSize.leftIndent)).

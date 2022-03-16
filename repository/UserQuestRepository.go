@@ -7,6 +7,7 @@ import (
 )
 
 type UserQuest struct {
+	ID        uint `gorm:"primaryKey"`
 	UserId    uint `gorm:"embedded"`
 	User      User
 	QuestId   uint `gorm:"embedded"`
@@ -75,7 +76,7 @@ func (uq UserQuest) UserDoneQuest(user User) bool {
 
 	switch task.Type {
 	case "haveItem":
-		ui := UserItem{ItemId: *task.ItemId, UserId: int(user.ID)}.GetUserItem()
+		ui := UserItem{ItemId: *task.ItemId, UserId: int(user.ID)}.UserGetUserItem()
 		countItemResult := *ui.Count - *task.CountItem
 		user.UpdateUserItem(UserItem{ID: ui.ID, Count: &countItemResult})
 	case "userLocation":

@@ -100,12 +100,24 @@ func GetUser(user User) User {
 func (u User) UpdateUser(update tg.Update) User {
 	var err error
 	userTgId := GetUserTgId(update)
+
 	err = config.Db.Where(&User{TgId: userTgId}).Updates(u).Error
 	if err != nil {
 		panic(err)
 	}
 
 	res := GetUser(User{TgId: userTgId})
+	return res
+}
+
+func (u User) UpdateUser1() User {
+	var err error
+	err = config.Db.Where(&User{TgId: u.TgId}).Updates(u).Error
+	if err != nil {
+		panic(err)
+	}
+
+	res := GetUser(User{TgId: u.TgId})
 	return res
 }
 
@@ -199,4 +211,9 @@ func (u User) GetUserQuests() []UserQuest {
 	}
 
 	return result
+}
+
+func (u User) UserGetExperience(r Result) {
+	resultExp := u.Experience + *r.Experience
+	User{ID: u.ID, Experience: resultExp}.UpdateUser1()
 }
