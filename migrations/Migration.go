@@ -20,7 +20,7 @@ func Migrate() bool {
 		repository.Quest{},
 		repository.UserQuest{},
 		repository.QuestTask{},
-		repository.QuestResult{},
+		repository.Result{},
 	)
 	if err != nil {
 		fmt.Println("Migration failed")

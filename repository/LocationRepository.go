@@ -43,6 +43,20 @@ func GetOrCreateMyLocation(update tg.Update) Location {
 	return result
 }
 
+func (u User) GetUserLocation() Location {
+	result := Location{}
+
+	err := config.Db.
+		Preload("Maps").
+		Where(&Location{UserID: u.ID}).
+		First(result).Error
+	if err != nil {
+		panic(err)
+	}
+
+	return result
+}
+
 func UpdateLocation(update tg.Update, locStruct Location) (Location, string) {
 	var char []string
 	if update.Message != nil {

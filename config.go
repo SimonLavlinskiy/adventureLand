@@ -57,10 +57,14 @@ type Messages struct {
 		noQuestItem          string
 		userNotHasItemInHand string
 		userHasOtherItem     string
+		userDidNotTask       string
 	}
 	QuestStatuses struct {
-		completed string
-		processed string
-		new       string
+		completed      string
+		processed      string
+		new            string
+		completedEmoji string
+		processedEmoji string
+		newEmoji       string
 	}
 }

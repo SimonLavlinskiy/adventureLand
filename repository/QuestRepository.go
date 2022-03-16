@@ -12,7 +12,7 @@ type Quest struct {
 	Description string `gorm:"embedded"`
 	Type        string `gorm:"embedded"`
 	ResultId    int    `gorm:"embedded"`
-	Result      QuestResult
+	Result      Result
 	TaskId      int `gorm:"embedded"`
 	Task        QuestTask
 }
@@ -34,6 +34,8 @@ func (q Quest) GetQuest() Quest {
 	var results Quest
 
 	err := config.Db.
+		Preload("Task").
+		Preload("Result").
 		Where(q).
 		First(&results).Error
 
@@ -44,32 +46,13 @@ func (q Quest) GetQuest() Quest {
 	return results
 }
 
-func (q Quest) GetUserQuest() *UserQuest {
-	var result UserQuest
-
-	err := config.Db.
-		Preload("Quest").
-		Preload("Quest.Task").
-		Preload("Quest.Result").
-		Where(UserQuest{QuestId: q.ID}).
-		Find(&result).
-		Error
-
-	if err != nil {
-		return nil
-	}
-
-	return &result
-}
-
-func (q Quest) QuestInfo(uq *UserQuest) string {
-	result := fmt.Sprintf("*Название*: _%s_\n"+
-		"*Описание*: _%s_",
+func (q Quest) QuestInfo(uq UserQuest) string {
+	result := fmt.Sprintf("📜 *Задание* 📜\n`%s`\n\n"+
+		"*Описание*: `%s`",
 		q.Name, q.Description)
 
-	if uq != nil {
-		result = fmt.Sprintf("_%s_\n"+
-			"*Статус:*: _%s_",
+	if uq.Status != "" {
+		result = fmt.Sprintf("%s\n\n*Статус*: _%s_",
 			result, v.Get(fmt.Sprintf("quest_statuses.%s", uq.Status)))
 	}
 

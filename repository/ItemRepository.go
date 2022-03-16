@@ -105,14 +105,12 @@ func UserGetItemWithHand(update tg.Update, cell Cell, user User, userGetItem Use
 		*countUseLeft = *userGetItem.Item.CountUse
 	}
 
-	UserItem{ID: userGetItem.ID, Count: &sumCountItem, CountUseLeft: countUseLeft}.UpdateUserItem(User{ID: user.ID})
+	User{ID: user.ID}.UpdateUserItem(UserItem{ID: userGetItem.ID, Count: &sumCountItem, CountUseLeft: countUseLeft})
 	User{Money: &updateUserMoney}.UpdateUser(update)
 
-	var countAfterUserGetItem int
-	countAfterUserGetItem = *cell.ItemCount - 1
-
 	textCountLeft := ""
-	if *cell.Type != "swap" && (countAfterUserGetItem != 0 || cell.PrevItemID == nil) {
+	if *cell.Type != "swap" && (*cell.ItemCount > 1 || cell.PrevItemID == nil) {
+		countAfterUserGetItem := *cell.ItemCount - 1
 		Cell{ItemCount: &countAfterUserGetItem}.UpdateCell(cell.ID)
 		textCountLeft = fmt.Sprintf("(Осталось лежать еще %d)", countAfterUserGetItem)
 	} else if cell.PrevItemID != nil {
@@ -169,11 +167,11 @@ func GrowingItem(update tg.Update, cell Cell, user User, userGetItem UserItem, i
 		}
 
 		User{Money: &updateUserMoney}.UpdateUser(update)
-		UserItem{
+		User{ID: user.ID}.UpdateUserItem(UserItem{
 			ID:           userGetItem.ID,
 			Count:        userGetItem.Count,
 			CountUseLeft: userGetItem.Item.CountUse,
-		}.UpdateUserItem(User{ID: user.ID})
+		})
 
 		cell.UpdateCellAfterGrowing(instrument)
 
@@ -212,11 +210,11 @@ func DestructItem(update tg.Update, cell Cell, user User, userGetItem UserItem, 
 		updateUserMoney := *user.Money - *cell.Item.Cost
 
 		User{Money: &updateUserMoney}.UpdateUser(update)
-		UserItem{
+		User{ID: user.ID}.UpdateUserItem(UserItem{
 			ID:           userGetItem.ID,
 			Count:        userGetItem.Count,
 			CountUseLeft: userGetItem.Item.CountUse,
-		}.UpdateUserItem(User{ID: user.ID})
+		})
 
 		cell.UpdateCellAfterDestruction(instrument)
 
@@ -378,11 +376,11 @@ func swapItem(update tg.Update, user User, cell Cell, userGetItem UserItem, inst
 	updateUserMoney := *user.Money - *cell.Item.Cost
 
 	User{Money: &updateUserMoney}.UpdateUser(update)
-	UserItem{
+	User{ID: user.ID}.UpdateUserItem(UserItem{
 		ID:           userGetItem.ID,
 		Count:        userGetItem.Count,
 		CountUseLeft: userGetItem.Item.CountUse,
-	}.UpdateUserItem(User{ID: user.ID})
+	})
 
 	_, instrumentMsg := UpdateUserInstrument(update, user, userInstrument)
 	if instrumentMsg != "Ok" {

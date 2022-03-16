@@ -31,7 +31,7 @@ func messageResolver(update tg.Update) tg.MessageConfig {
 	return msg
 }
 
-func CallbackResolver(update tg.Update) (tg.MessageConfig, bool) {
+func callBackResolver(update tg.Update) (tg.MessageConfig, bool) {
 	msg.ChatID = update.CallbackQuery.Message.Chat.ID
 	buttons := tg.ReplyKeyboardMarkup{}
 	charData := strings.Fields(update.CallbackQuery.Data)
@@ -113,9 +113,18 @@ func CallbackResolver(update tg.Update) (tg.MessageConfig, bool) {
 		msg = userThrowOutItem(update, user, charData)
 	case "quests":
 		msg.Text = v.GetString("user_location.tasks_menu_message")
-		msg.ReplyMarkup = helpers.AllQuestsMessageKeyboard()
+		msg.ReplyMarkup = helpers.AllQuestsMessageKeyboard(user)
 	case "quest":
-		msg = OpenQuest(charData, user)
+		msg = OpenQuest(uint(r.ToInt(charData[1])), user)
+	case "user_get_quest":
+		r.UserQuest{
+			UserId:  user.ID,
+			QuestId: uint(r.ToInt(charData[1])),
+		}.GetOrCreateUserQuest()
+		msg = OpenQuest(uint(r.ToInt(charData[1])), user)
+	case "user_done_quest":
+		fmt.Println(charData)
+		msg = UserDoneQuest(uint(r.ToInt(charData[1])), user)
 	}
 
 	msg.ParseMode = "markdown"
@@ -178,7 +187,7 @@ func useSpecialCell(update tg.Update, char []string, user r.User) tg.MessageConf
 	case v.GetString("message.emoji.quest"):
 		loc := directionCell(update, char[1])
 		cell := r.Cell{MapsId: *loc.MapsId, AxisX: *loc.AxisX, AxisY: *loc.AxisY}.GetCell()
-		msg = Quest(&cell)
+		msg = Quest(&cell, user)
 	default:
 		msg.Text, buttons = r.GetMyMap(update)
 		msg = tg.NewMessage(update.Message.Chat.ID, fmt.Sprintf("%s\n\nНет инструмента в руке!", msg.Text))
@@ -428,7 +437,7 @@ func UserDeleteItem(update tg.Update, charData []string) tg.MessageConfig {
 		Count: &countAfterUserThrowOutItem,
 	}
 
-	updateUserItemStruct.UpdateUserItem(user)
+	user.UpdateUserItem(updateUserItemStruct)
 
 	var charDataForOpenList []string
 	switch charData[3] {
@@ -608,7 +617,7 @@ func userThrowOutItem(update tg.Update, user r.User, charData []string) tg.Messa
 		msgtext = fmt.Sprintf("%s%s", v.GetString("msg_separator"), res)
 	} else {
 		msgtext = fmt.Sprintf("%sВы сбросили %s %sшт. на карту!", v.GetString("msg_separator"), userItem.Item.View, charData[3])
-		r.UserItem{ID: userItem.ID, Count: userItem.Count}.UpdateUserItem(user)
+		user.UpdateUserItem(r.UserItem{ID: userItem.ID, Count: userItem.Count})
 	}
 
 	var charDataForOpenList []string
@@ -658,14 +667,14 @@ func userWantsToThrowOutItem(update tg.Update, charData []string) tg.MessageConf
 	return msg
 }
 
-func Quest(cell *r.Cell) tg.MessageConfig {
+func Quest(cell *r.Cell, user r.User) tg.MessageConfig {
 	if !cell.IsQuest() {
 		msg.Text = v.GetString("error.no_quest_item")
 		return msg
 	}
 
 	msg.Text = v.GetString("user_location.tasks_menu_message")
-	msg.ReplyMarkup = helpers.AllQuestsMessageKeyboard()
+	msg.ReplyMarkup = helpers.AllQuestsMessageKeyboard(user)
 
 	return msg
 }
@@ -813,24 +822,24 @@ func UserCraftItem(user r.User, receipt *r.Receipt) (tg.MessageConfig, bool) {
 	if receipt.Component1ID != nil && receipt.Component1Count != nil {
 		userItem := r.UserItem{UserId: int(user.ID), ItemId: *receipt.Component1ID}.GetUserItem()
 		countItem1 := *userItem.Count - *receipt.Component1Count
-		r.UserItem{ID: userItem.ID, ItemId: *receipt.Component1ID, Count: &countItem1, CountUseLeft: resultItem.CountUseLeft}.UpdateUserItem(user)
+		user.UpdateUserItem(r.UserItem{ID: userItem.ID, ItemId: *receipt.Component1ID, Count: &countItem1, CountUseLeft: resultItem.CountUseLeft})
 	}
 	if receipt.Component2ID != nil && receipt.Component2Count != nil {
 		userItem := r.UserItem{UserId: int(user.ID), ItemId: *receipt.Component2ID}.GetUserItem()
 		countItem2 := *userItem.Count - *receipt.Component2Count
-		r.UserItem{ID: userItem.ID, ItemId: *receipt.Component2ID, Count: &countItem2, CountUseLeft: resultItem.CountUseLeft}.UpdateUserItem(user)
+		user.UpdateUserItem(r.UserItem{ID: userItem.ID, ItemId: *receipt.Component2ID, Count: &countItem2, CountUseLeft: resultItem.CountUseLeft})
 	}
 	if receipt.Component3ID != nil && receipt.Component3Count != nil {
 		userItem := r.UserItem{UserId: int(user.ID), ItemId: *receipt.Component3ID}.GetUserItem()
 		countItem3 := *userItem.Count - *receipt.Component3Count
-		r.UserItem{ID: userItem.ID, ItemId: *receipt.Component3ID, Count: &countItem3, CountUseLeft: resultItem.CountUseLeft}.UpdateUserItem(user)
+		user.UpdateUserItem(r.UserItem{ID: userItem.ID, ItemId: *receipt.Component3ID, Count: &countItem3, CountUseLeft: resultItem.CountUseLeft})
 	}
 
 	if *resultItem.Count == 0 {
 		resultItem.CountUseLeft = resultItem.Item.CountUse
 	}
 	*resultItem.Count = *resultItem.Count + *receipt.ItemResultCount
-	r.UserItem{ID: resultItem.ID, Count: resultItem.Count, CountUseLeft: resultItem.CountUseLeft}.UpdateUserItem(user)
+	user.UpdateUserItem(r.UserItem{ID: resultItem.ID, Count: resultItem.Count, CountUseLeft: resultItem.CountUseLeft})
 
 	charData := strings.Fields("workbench usPoint 0 1stComp nil 0 2ndComp nil 0 3rdComp nil 0")
 	msg = Workbench(nil, charData)
@@ -882,16 +891,27 @@ func UserUseHandOrInstrument(update tg.Update, char []string) tg.MessageConfig {
 	return msg
 }
 
-func OpenQuest(char []string, user r.User) tg.MessageConfig {
-	questId := uint(r.ToInt(char[2]))
-
+func OpenQuest(questId uint, user r.User) tg.MessageConfig {
 	quest := r.Quest{ID: questId}.GetQuest()
 	userQuest := r.UserQuest{UserId: user.ID, QuestId: questId}.GetUserQuest()
 
-	fmt.Println(userQuest)
-
 	msg.Text = quest.QuestInfo(userQuest)
 	msg.ReplyMarkup = helpers.OpenQuestKeyboard(quest, userQuest)
+
+	return msg
+}
+
+func UserDoneQuest(questId uint, user r.User) tg.MessageConfig {
+	userQuest := r.UserQuest{UserId: user.ID, QuestId: questId}.GetUserQuest()
+	if !userQuest.Quest.Task.HasUserDoneTask(user) {
+		msg.Text = v.GetString("errors.user_did_not_task")
+		return msg
+	}
+
+	userQuest.UserDoneQuest(user)
+
+	msg = OpenQuest(questId, user)
+	msg.Text = fmt.Sprintf("*Задание выполнено!*\n%s", msg.Text)
 
 	return msg
 }

@@ -183,8 +183,6 @@ func MainKeyboard(user r.User) tg.ReplyKeyboardMarkup {
 func ChooseInstrument(char []string, cell r.Cell, user r.User) tg.InlineKeyboardMarkup {
 	instruments := r.GetInstrumentsUserCanUse(user, cell)
 
-	fmt.Println(instruments)
-
 	if len(instruments) != 0 {
 		var row []tg.InlineKeyboardButton
 
@@ -331,8 +329,24 @@ func ChangeCountUserItem(charData []string, item r.UserItem) tg.InlineKeyboardMa
 	)
 }
 
-func AllQuestsMessageKeyboard() tg.InlineKeyboardMarkup {
+func AllQuestsMessageKeyboard(u r.User) tg.InlineKeyboardMarkup {
 	quests := r.Quest{}.GetQuests()
+	userQuests := r.User{ID: u.ID}.GetUserQuests()
+
+	type statusQuest struct {
+		status string
+		quest  r.Quest
+	}
+
+	m := map[uint]statusQuest{}
+	for _, quest := range quests {
+		m[quest.ID] = statusQuest{status: "new", quest: quest}
+	}
+
+	for _, uq := range userQuests {
+		m[uq.QuestId] = statusQuest{status: uq.Status, quest: uq.Quest}
+	}
+
 	if len(quests) == 0 {
 		return tg.NewInlineKeyboardMarkup(
 			tg.NewInlineKeyboardRow(
@@ -343,12 +357,13 @@ func AllQuestsMessageKeyboard() tg.InlineKeyboardMarkup {
 
 	var result [][]tg.InlineKeyboardButton
 
-	for _, quest := range quests {
+	for _, i := range m {
+		status := v.GetString(fmt.Sprintf("quest_statuses.%s_emoji", i.status))
 		result = append(result,
 			tg.NewInlineKeyboardRow(
 				tg.NewInlineKeyboardButtonData(
-					fmt.Sprintf("Задание: «%s»", quest.Name),
-					fmt.Sprintf("quest id: %d", quest.ID),
+					fmt.Sprintf("%s - Задание: «%s»", status, i.quest.Name),
+					fmt.Sprintf("quest %d", i.quest.ID),
 				),
 			),
 		)
@@ -357,8 +372,8 @@ func AllQuestsMessageKeyboard() tg.InlineKeyboardMarkup {
 	return tg.NewInlineKeyboardMarkup(result...)
 }
 
-func OpenQuestKeyboard(q r.Quest, uq *r.UserQuest) tg.InlineKeyboardMarkup {
-	if uq == nil {
+func OpenQuestKeyboard(q r.Quest, uq r.UserQuest) tg.InlineKeyboardMarkup {
+	if uq.Status == "" {
 		return tg.NewInlineKeyboardMarkup(
 			tg.NewInlineKeyboardRow(
 				tg.NewInlineKeyboardButtonData("Взять в работу", fmt.Sprintf("user_get_quest %d", q.ID)),
@@ -371,9 +386,16 @@ func OpenQuestKeyboard(q r.Quest, uq *r.UserQuest) tg.InlineKeyboardMarkup {
 
 	switch uq.Status {
 	case "processed":
+		var buttonStatus tg.InlineKeyboardButton
+		if q.Task.HasUserDoneTask(uq.User) {
+			buttonStatus = tg.NewInlineKeyboardButtonData("Готово! Я всё сделаль!", fmt.Sprintf("user_done_quest %d", uq.QuestId))
+		} else {
+			buttonStatus = tg.NewInlineKeyboardButtonData("Еще в работе... Прийду потом", "quests")
+		}
+
 		return tg.NewInlineKeyboardMarkup(
 			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("Готово! Я все сделаль!", fmt.Sprintf("user_done_quest %d", uq.QuestId)),
+				buttonStatus,
 			),
 			tg.NewInlineKeyboardRow(
 				tg.NewInlineKeyboardButtonData("Назад", "quests"),

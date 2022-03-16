@@ -106,8 +106,8 @@ func GetInventoryItems(userId uint) []UserItem {
 	return inventoryUserItem
 }
 
-func (ui UserItem) UpdateUserItem(user User) {
-	err := config.Db.Where(UserItem{UserId: int(user.ID), ID: ui.ID}).Updates(ui).Error
+func (u User) UpdateUserItem(ui UserItem) {
+	err := config.Db.Where(UserItem{UserId: int(u.ID), ID: ui.ID}).Updates(ui).Error
 	if err != nil {
 		panic(err)
 	}
@@ -130,10 +130,10 @@ func (ui UserItem) EatItem(update tg.Update, user User) string {
 			Satiety: user.Satiety,
 		}.UpdateUser(update)
 
-		UserItem{
+		user.UpdateUserItem(UserItem{
 			ID:    ui.ID,
 			Count: ui.Count,
-		}.UpdateUserItem(user)
+		})
 	}
 
 	message := fmt.Sprintf("🍽 Ты съел 1 %s", ui.Item.View)
@@ -163,7 +163,7 @@ func UpdateUserInstrument(update tg.Update, user User, instrument Item) (string,
 
 	c := *userItem.CountUseLeft - 1
 	if c > 0 {
-		UserItem{ID: userItem.ID, CountUseLeft: &c}.UpdateUserItem(user)
+		user.UpdateUserItem(UserItem{ID: userItem.ID, CountUseLeft: &c})
 		return "Ok", "Ok"
 	}
 
@@ -172,17 +172,17 @@ func UpdateUserInstrument(update tg.Update, user User, instrument Item) (string,
 	if *userItem.Count > 1 {
 		userItemCount := *userItem.Count - 1
 		countUseLeft := userItem.Item.CountUse
-		UserItem{
+		user.UpdateUserItem(UserItem{
 			ID:           userItem.ID,
 			CountUseLeft: countUseLeft,
 			Count:        &userItemCount,
-		}.UpdateUserItem(user)
+		})
 	} else {
-		UserItem{
+		user.UpdateUserItem(UserItem{
 			ID:           userItem.ID,
 			CountUseLeft: &zeroValue,
 			Count:        &zeroValue,
-		}.UpdateUserItem(user)
+		})
 
 		if user.LeftHandId != nil && *user.LeftHandId == int(userItem.Item.ID) {
 			SetNullUserField(update, "left_hand_id")
