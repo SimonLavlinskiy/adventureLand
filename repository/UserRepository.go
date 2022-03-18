@@ -21,6 +21,8 @@ type User struct {
 	Satiety      uint   `gorm:"embedded"`
 	Experience   int    `gorm:"embedded"`
 	Money        *int   `gorm:"embedded"`
+	HomeId       *uint  `gorm:"embedded"`
+	Home         *Map
 	Head         *Item
 	HeadId       *int
 	LeftHand     *Item
@@ -68,6 +70,7 @@ func GetOrCreateUser(update tg.Update) User {
 		Preload("Body").
 		Preload("Foot").
 		Preload("Shoes").
+		Preload("Home").
 		Where(&User{TgId: userTgId}).
 		FirstOrCreate(&result).
 		Error
@@ -88,6 +91,7 @@ func GetUser(user User) User {
 		Preload("Body").
 		Preload("Foot").
 		Preload("Shoes").
+		Preload("Home").
 		Where(user).
 		First(&result).Error
 	if err != nil {
@@ -185,11 +189,11 @@ func (u User) CheckUserHasInstrument(instrument Instrument) (string, Item) {
 
 func (u User) CheckUserHasLighter(update tg.Update) string {
 	if u.LeftHandId != nil && u.LeftHand.Type == "light" {
-		_, res := UpdateUserInstrument(update, u, *u.LeftHand)
+		res, _ := UpdateUserInstrument(update, u, *u.LeftHand)
 		return res
 	}
 	if u.RightHandId != nil && u.RightHand.Type == "light" {
-		_, res := UpdateUserInstrument(update, u, *u.RightHand)
+		res, _ := UpdateUserInstrument(update, u, *u.RightHand)
 		return res
 	}
 	return "Ok"

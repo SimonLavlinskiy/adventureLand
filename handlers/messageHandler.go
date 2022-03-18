@@ -101,8 +101,8 @@ func callBackResolver(update tg.Update) (tg.MessageConfig, bool) {
 		msg = UserMoving(update, user, charData[1])
 	case ItemHead.View:
 		res := directionCell(update, charData[1])
-		status, text := r.UpdateUserInstrument(update, user, ItemHead)
-		if status != "Ok" {
+		text, err := r.UpdateUserInstrument(update, user, ItemHead)
+		if err != nil {
 			msg.Text = fmt.Sprintf("%s%s%s", r.ViewItemInfo(res), v.GetString("msg_separator"), text)
 		} else {
 			msg.Text = r.ViewItemInfo(res)
@@ -172,8 +172,8 @@ func useSpecialCell(update tg.Update, char []string, user r.User) tg.MessageConf
 		msg.ReplyMarkup = buttons
 	case ItemHead.View:
 		res := directionCell(update, char[1])
-		status, text := r.UpdateUserInstrument(update, user, ItemHead)
-		if status != "Ok" {
+		text, err := r.UpdateUserInstrument(update, user, ItemHead)
+		if err != nil {
 			msg.Text = fmt.Sprintf("%s%s%s", r.ViewItemInfo(res), v.GetString("msg_separator"), text)
 		} else {
 			msg.Text = r.ViewItemInfo(res)
@@ -867,15 +867,20 @@ func updateUserHand(update tg.Update, char []string, userItem r.UserItem) {
 
 func UserMoving(update tg.Update, user r.User, char string) tg.MessageConfig {
 	var text string
+	var msgMap string
 	res := directionCell(update, char)
 
-	r.UpdateLocation(update, res)
+	locMsg, err := r.UpdateLocation(update, res, user)
+	if err != nil {
+		text = fmt.Sprintf("%s%s", v.GetString("msg_separator"), locMsg)
+	}
+
 	lighterMsg := user.CheckUserHasLighter(update)
 	if lighterMsg != "Ok" {
 		text = fmt.Sprintf("%s%s", v.GetString("msg_separator"), lighterMsg)
 	}
-	msg.Text, msg.ReplyMarkup = r.GetMyMap(update)
-	msg.Text = msg.Text + text
+	msgMap, msg.ReplyMarkup = r.GetMyMap(update)
+	msg.Text = fmt.Sprintf("%s%s", msgMap, text)
 
 	return msg
 }

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
 	"strings"
@@ -57,28 +58,25 @@ func (u User) GetUserLocation() Location {
 	return result
 }
 
-func UpdateLocation(update tg.Update, locStruct Location) (Location, string) {
+func UpdateLocation(update tg.Update, locStruct Location, user User) (string, error) {
 	var char []string
+	var err error
+
 	if update.Message != nil {
 		char = strings.Fields(update.Message.Text)
 	} else {
 		char = strings.Fields(update.CallbackQuery.Data)
 	}
-	userTgId := GetUserTgId(update)
-	usLoc := GetOrCreateMyLocation(update)
+
 	cell := Cell{MapsId: *locStruct.MapsId, AxisX: *locStruct.AxisX, AxisY: *locStruct.AxisY}
 	cell = cell.GetCell()
 
-	if len(char) != 1 && *cell.Type == "teleport" && cell.TeleportID != nil {
-		locStruct = Location{
-			AxisX:  &cell.Teleport.StartX,
-			AxisY:  &cell.Teleport.StartY,
-			MapsId: &cell.Teleport.MapId,
-		}
+	locStruct = isCellTeleport(char, cell, locStruct)
+	if locStruct, err = isCellHome(char, cell, locStruct, user); err != nil {
+		return "\nУ тебя еще нет дома, очень жаль...", errors.New("ok")
 	}
 
 	var result Cell
-	var err error
 
 	err = config.Db.
 		Preload("Item").
@@ -86,25 +84,48 @@ func UpdateLocation(update tg.Update, locStruct Location) (Location, string) {
 		Error
 	if err != nil {
 		if err.Error() == "record not found" {
-			return usLoc, "\nСюда никак не пройти("
+			return "\nСюда никак не пройти(", errors.New("ok")
 		}
-		panic(err)
 	}
 
 	if !result.CanStep || result.Item != nil && *result.ItemCount > 0 && !result.Item.CanStep {
-		return usLoc, "\nСюда никак не пройти("
+		return "\nСюда никак не пройти(", errors.New("ok")
 	}
 
 	err = config.Db.
-		Where(&Location{UserTgId: userTgId}).
+		Where(&Location{UserTgId: user.TgId}).
 		Updates(locStruct).
 		Error
 	if err != nil {
 		panic(err)
 	}
 
-	usLoc = GetOrCreateMyLocation(update)
-	return usLoc, "Ok"
+	return "Ok", nil
+}
+
+func isCellTeleport(char []string, cell Cell, location Location) Location {
+	if len(char) != 1 && *cell.Type == "teleport" && cell.TeleportID != nil {
+		return Location{
+			AxisX:  &cell.Teleport.StartX,
+			AxisY:  &cell.Teleport.StartY,
+			MapsId: &cell.Teleport.MapId,
+		}
+	}
+	return location
+}
+
+func isCellHome(char []string, cell Cell, location Location, user User) (Location, error) {
+	if len(char) != 1 && *cell.Type == "home" && user.HomeId != nil {
+		masId := int(user.Home.ID)
+		return Location{
+			AxisX:  &user.Home.StartX,
+			AxisY:  &user.Home.StartY,
+			MapsId: &masId,
+		}, nil
+	} else if len(char) != 1 && *cell.Type == "home" && user.HomeId == nil {
+		return location, errors.New("user has not home")
+	}
+	return location, nil
 }
 
 func GetLocationOnlineUser(userlocation Location, mapSize UserMap) []Location {

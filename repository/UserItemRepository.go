@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
@@ -63,8 +63,6 @@ func GetOrCreateUserItem(update tg.Update, item Item) UserItem {
 }
 
 func (u User) UserGetResultItem(r Result) {
-	j, _ := json.Marshal(r)
-	fmt.Println(string(j))
 	ui := UserItem{UserId: int(u.ID), ItemId: int(*r.ItemId)}.UserGetUserItem()
 	resItemCount := *ui.Count + int(*r.CountItem)
 	u.UpdateUserItem(UserItem{ID: ui.ID, Count: &resItemCount})
@@ -173,24 +171,19 @@ func (ui UserItem) GetFullDescriptionOfUserItem() string {
 	return fullDescriptionUserItem + itemDescription
 }
 
-func UpdateUserInstrument(update tg.Update, user User, instrument Item) (string, string) {
-	fmt.Println("Зашло")
+func UpdateUserInstrument(update tg.Update, user User, instrument Item) (string, error) {
 	userItem := UserItem{ItemId: int(instrument.ID), UserId: int(user.ID)}.UserGetUserItem()
-
-	j, _ := json.Marshal(userItem)
-	fmt.Println(string(j))
 
 	c := *userItem.CountUseLeft - 1
 	if c > 0 {
 		user.UpdateUserItem(UserItem{ID: userItem.ID, CountUseLeft: &c})
-		return "Ok", "Ok"
+		return "Ok", nil
 	}
 
 	zeroValue := 0
 
 	if *userItem.Count > 1 {
 		userItemCount := *userItem.Count - 1
-		fmt.Println(userItemCount)
 		countUseLeft := userItem.Item.CountUse
 		user.UpdateUserItem(UserItem{
 			ID:           userItem.ID,
@@ -212,5 +205,5 @@ func UpdateUserInstrument(update tg.Update, user User, instrument Item) (string,
 		}
 	}
 
-	return "Not ok", fmt.Sprintf("\n💥 Инструмент «%s %s» был сломан! 💥", userItem.Item.View, userItem.Item.Name)
+	return fmt.Sprintf("\n💥 Инструмент «%s %s» был сломан! 💥", userItem.Item.View, userItem.Item.Name), errors.New("item is broken")
 }

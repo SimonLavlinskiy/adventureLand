@@ -315,7 +315,7 @@ func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons 
 			case 3:
 				btn.Left = cell.View
 			}
-		case cell.IsTeleport():
+		case cell.IsTeleport() || cell.IsHome():
 			button := fmt.Sprintf(" %s %s", resUser.Avatar, cell.View)
 			switch i {
 			case 0:
@@ -393,6 +393,13 @@ func (c Cell) IsWorkbench() bool {
 
 func (c Cell) IsTeleport() bool {
 	if c.Type != nil && *c.Type == "teleport" && c.TeleportID != nil {
+		return true
+	}
+	return false
+}
+
+func (c Cell) IsHome() bool {
+	if c.Type != nil && *c.Type == "home" {
 		return true
 	}
 	return false

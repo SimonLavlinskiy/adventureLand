@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
@@ -64,6 +65,7 @@ func checkItemsOnNeededInstrument(cell Cell, msgInstrumentView string) (string, 
 func UserGetItemWithInstrument(update tg.Update, cell Cell, user User, instrument Instrument) string {
 	var result string
 	var instrumentMsg string
+	var err error
 
 	status, userInstrument := user.CheckUserHasInstrument(instrument)
 	if status != "Ok" {
@@ -73,18 +75,17 @@ func UserGetItemWithInstrument(update tg.Update, cell Cell, user User, instrumen
 	switch instrument.Type {
 	case "destruction":
 		itemMsg := DestructItem(update, cell, user, instrument)
-		_, instrumentMsg = UpdateUserInstrument(update, user, userInstrument)
-		if instrumentMsg != "Ok" {
+		instrumentMsg, err = UpdateUserInstrument(update, user, userInstrument)
+		if err != nil {
 			result = itemMsg + instrumentMsg
 		}
 		result = itemMsg
 	case "growing":
-		status, itemMsg := GrowingItem(update, cell, user, instrument)
-		if status == "Ok" {
-			_, instrumentMsg = UpdateUserInstrument(update, user, userInstrument)
-		}
-		if instrumentMsg != "Ok" {
-			result = itemMsg + instrumentMsg
+		itemMsg, err := GrowingItem(update, cell, user, instrument)
+		if err == nil {
+			if instrumentMsg, err = UpdateUserInstrument(update, user, userInstrument); err != nil {
+				result = itemMsg + instrumentMsg
+			}
 		}
 		result = itemMsg
 	case "swap":
@@ -142,13 +143,13 @@ func itemHpLeft(cell Cell, instrument Instrument) string {
 	return result
 }
 
-func GrowingItem(update tg.Update, cell Cell, user User, instrument Instrument) (string, string) {
+func GrowingItem(update tg.Update, cell Cell, user User, instrument Instrument) (string, error) {
 	var updateItemTime = time.Now()
 
 	if cell.LastGrowing != nil && time.Now().Before(cell.LastGrowing.Add(time.Duration(*cell.Item.IntervalGrowing)*time.Minute)) {
 		nextTimeGrowing := cell.LastGrowing.Add(time.Duration(*cell.Item.IntervalGrowing) * time.Minute).Format("15:04:05 02.01.06")
 
-		return "Not ok", fmt.Sprintf("Ты уже использовал %s\nМожно будет повторить %s!", instrument.Good.View, nextTimeGrowing)
+		return fmt.Sprintf("Ты уже использовал %s\nМожно будет повторить %s!", instrument.Good.View, nextTimeGrowing), errors.New("user can not growing")
 	}
 
 	if cell.NextStateTime == nil && cell.Item.Growing != nil {
@@ -171,7 +172,7 @@ func GrowingItem(update tg.Update, cell Cell, user User, instrument Instrument) 
 
 		cell.UpdateCellAfterGrowing(instrument)
 
-		return "Ok", fmt.Sprintf("Оно выросло!%s", result)
+		return fmt.Sprintf("Оно выросло!%s", result), nil
 
 	} else {
 		t := time.Now()
@@ -180,7 +181,7 @@ func GrowingItem(update tg.Update, cell Cell, user User, instrument Instrument) 
 			NextStateTime: &updateItemTime,
 			LastGrowing:   &t,
 		}.UpdateCell(cell.ID)
-		return "Ok", "Вырастет " + updateItemTime.Format("15:04:05 02.01.06") + "!"
+		return "Вырастет " + updateItemTime.Format("15:04:05 02.01.06") + "!", nil
 
 	}
 }
@@ -368,10 +369,8 @@ func swapItem(update tg.Update, user User, cell Cell, instrument Instrument, use
 
 	User{Money: &updateUserMoney}.UpdateUser(update)
 
-	fmt.Println("tyt?")
-
-	_, instrumentMsg := UpdateUserInstrument(update, user, userInstrument)
-	if instrumentMsg != "Ok" {
+	instrumentMsg, err := UpdateUserInstrument(update, user, userInstrument)
+	if err != nil {
 		result += instrumentMsg
 	}
 	cell.UpdateCellAfterDestruction(instrument)
