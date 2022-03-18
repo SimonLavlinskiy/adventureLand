@@ -610,10 +610,10 @@ func userThrowOutItem(update tg.Update, user r.User, charData []string) tg.Messa
 
 	*userItem.Count = *userItem.Count - r.ToInt(charData[3])
 
-	res := r.UpdateCellUnderUser(update, userItem, r.ToInt(charData[3]))
+	err := r.UpdateCellUnderUser(update, userItem, r.ToInt(charData[3]))
 	var msgtext string
-	if res != "Ok" {
-		msgtext = fmt.Sprintf("%s%s", v.GetString("msg_separator"), res)
+	if err != nil {
+		msgtext = fmt.Sprintf("%s%s", v.GetString("msg_separator"), err)
 	} else {
 		msgtext = fmt.Sprintf("%sВы сбросили %s %sшт. на карту!", v.GetString("msg_separator"), userItem.Item.View, charData[3])
 		user.UpdateUserItem(r.UserItem{ID: userItem.ID, Count: userItem.Count})
@@ -875,8 +875,8 @@ func UserMoving(update tg.Update, user r.User, char string) tg.MessageConfig {
 		text = fmt.Sprintf("%s%s", v.GetString("msg_separator"), locMsg)
 	}
 
-	lighterMsg := user.CheckUserHasLighter(update)
-	if lighterMsg != "Ok" {
+	lighterMsg, err := user.CheckUserHasLighter(update)
+	if err != nil {
 		text = fmt.Sprintf("%s%s", v.GetString("msg_separator"), lighterMsg)
 	}
 	msgMap, msg.ReplyMarkup = r.GetMyMap(update)

@@ -205,5 +205,5 @@ func UpdateUserInstrument(update tg.Update, user User, instrument Item) (string,
 		}
 	}
 
-	return fmt.Sprintf("\n💥 Инструмент «%s %s» был сломан! 💥", userItem.Item.View, userItem.Item.Name), errors.New("item is broken")
+	return fmt.Sprintf("\n💥 Инструмент «%s %s» был сломан! 💥\n_Осталось: %d шт_.", userItem.Item.View, userItem.Item.Name, *userItem.Count), errors.New("item is broken")
 }

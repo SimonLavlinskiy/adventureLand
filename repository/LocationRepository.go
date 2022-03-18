@@ -73,7 +73,7 @@ func UpdateLocation(update tg.Update, locStruct Location, user User) (string, er
 
 	locStruct = isCellTeleport(char, cell, locStruct)
 	if locStruct, err = isCellHome(char, cell, locStruct, user); err != nil {
-		return "\nУ тебя еще нет дома, очень жаль...", errors.New("ok")
+		return "\nУ тебя еще нет дома, очень жаль...", errors.New("user has not home")
 	}
 
 	var result Cell
@@ -84,12 +84,12 @@ func UpdateLocation(update tg.Update, locStruct Location, user User) (string, er
 		Error
 	if err != nil {
 		if err.Error() == "record not found" {
-			return "\nСюда никак не пройти(", errors.New("ok")
+			return "\nСюда никак не пройти(", errors.New("can't get through")
 		}
 	}
 
 	if !result.CanStep || result.Item != nil && *result.ItemCount > 0 && !result.Item.CanStep {
-		return "\nСюда никак не пройти(", errors.New("ok")
+		return "\nСюда никак не пройти(", errors.New("can't get through")
 	}
 
 	err = config.Db.

@@ -49,17 +49,17 @@ func UserGetItem(update tg.Update, LocationStruct Location, char []string) strin
 	return UserGetItemUpdateModels(update, resultCell, char[0])
 }
 
-func checkItemsOnNeededInstrument(cell Cell, msgInstrumentView string) (string, *Instrument) {
+func checkItemsOnNeededInstrument(cell Cell, msgInstrumentView string) (error, *Instrument) {
 	for _, instrument := range cell.Item.Instruments {
 		if instrument.Good.View == msgInstrumentView {
 			res := Instrument{ID: instrument.ID}.GetInstrument()
-			return "Ok", &res
+			return nil, &res
 		}
 	}
 	if msgInstrumentView == "👋" && cell.Item.CanTake {
-		return "Ok", nil
+		return nil, nil
 	}
-	return "Not ok", nil
+	return errors.New("user has not instrument"), nil
 }
 
 func UserGetItemWithInstrument(update tg.Update, cell Cell, user User, instrument Instrument) string {
@@ -67,8 +67,8 @@ func UserGetItemWithInstrument(update tg.Update, cell Cell, user User, instrumen
 	var instrumentMsg string
 	var err error
 
-	status, userInstrument := user.CheckUserHasInstrument(instrument)
-	if status != "Ok" {
+	err, userInstrument := user.CheckUserHasInstrument(instrument)
+	if err != nil {
 		return "Нет инструмента в руках"
 	}
 
@@ -248,8 +248,8 @@ func UserGetItemUpdateModels(update tg.Update, cell Cell, instrumentView string)
 
 	var userGetItem UserItem
 
-	status, instrument := checkItemsOnNeededInstrument(cell, instrumentView)
-	if status != "Ok" {
+	err, instrument := checkItemsOnNeededInstrument(cell, instrumentView)
+	if err != nil {
 		return "Предмет не поддается под таким инструментом"
 	}
 

@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
@@ -212,13 +213,13 @@ func (c Cell) UpdateCellOnPrevItem() {
 	}
 }
 
-func UpdateCellUnderUser(update tg.Update, userItem UserItem, count int) string {
+func UpdateCellUnderUser(update tg.Update, userItem UserItem, count int) error {
 	location := GetOrCreateMyLocation(update)
 
 	cell := Cell{AxisX: *location.AxisX, AxisY: *location.AxisY, MapsId: *location.MapsId}
 	cell = cell.GetCell()
 	if cell.ItemCount != nil && *cell.ItemCount > 0 {
-		return "В этой ячейке уже есть предмет, перейди на другую ячейку..."
+		return errors.New("В этой ячейке уже есть предмет, перейди на другую ячейку...")
 	}
 
 	err := config.Db.Model(Cell{}).
@@ -233,10 +234,10 @@ func UpdateCellUnderUser(update tg.Update, userItem UserItem, count int) string 
 		Update("prev_item_count", nil).
 		Error
 	if err != nil {
-		panic(err)
+		return nil
 	}
 
-	return "Ok"
+	return nil
 
 }
 

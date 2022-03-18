@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
@@ -174,29 +175,38 @@ func (u User) IsDressedItem(userItem UserItem) (string, string) {
 	return dressItem, dressItemData
 }
 
-func (u User) CheckUserHasInstrument(instrument Instrument) (string, Item) {
+func (u User) CheckUserHasInstrument(instrument Instrument) (error, Item) {
 	if instrument.Type == "hand" {
-		return "Ok", *instrument.Good
+		return nil, *instrument.Good
 	}
 	if u.LeftHandId != nil && *u.LeftHandId == *instrument.GoodId {
-		return "Ok", *u.LeftHand
+		return nil, *u.LeftHand
 	}
 	if u.RightHandId != nil && *u.RightHandId == *instrument.GoodId {
-		return "Ok", *u.RightHand
+		return nil, *u.RightHand
 	}
-	return "User dont have instrument", Item{}
+	return errors.New("User dont have instrument"), Item{}
 }
 
-func (u User) CheckUserHasLighter(update tg.Update) string {
+func (u User) CheckUserHasLighter(update tg.Update) (string, error) {
 	if u.LeftHandId != nil && u.LeftHand.Type == "light" {
-		res, _ := UpdateUserInstrument(update, u, *u.LeftHand)
-		return res
+
+		res, err := UpdateUserInstrument(update, u, *u.LeftHand)
+		if err != nil {
+			return res, errors.New("lighter is updated")
+		}
+
 	}
+
 	if u.RightHandId != nil && u.RightHand.Type == "light" {
-		res, _ := UpdateUserInstrument(update, u, *u.RightHand)
-		return res
+
+		res, err := UpdateUserInstrument(update, u, *u.RightHand)
+		if err != nil {
+			return res, errors.New("lighter is updated")
+		}
+
 	}
-	return "Ok"
+	return "Ok", nil
 }
 
 func (u User) GetUserQuests() []UserQuest {
