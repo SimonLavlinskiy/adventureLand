@@ -31,6 +31,9 @@ callback_char:
   quest: "quest"
   quests: "quests"
 
+main_info:
+  cost_of_house: 1000
+
 quest_statuses:
   completed: "✅ Выполнен"
   processed: "✴️ В работе"

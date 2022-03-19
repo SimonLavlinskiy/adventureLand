@@ -1,13 +1,11 @@
 package repository
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	v "github.com/spf13/viper"
 	"math/rand"
 	"strings"
-	"time"
 )
 
 type House struct {
@@ -27,7 +25,7 @@ func MapHouse() Map {
 		Name:             "Дом, милый дом!",
 		SizeX:            10,
 		SizeY:            10,
-		StartX:           5,
+		StartX:           3,
 		StartY:           3,
 		DayType:          "alwaysDay",
 		EmptySpaceSymbol: "〰️",
@@ -47,8 +45,9 @@ func (m Map) GetCellsOfEmptyHouse() []Cell {
 			if isW, numType := isWall(x, y); isW {
 				if numType == "even" {
 					Cells = append(Cells, WallCell(x, y, m, "white"))
+				} else {
+					Cells = append(Cells, WallCell(x, y, m, "red"))
 				}
-				Cells = append(Cells, WallCell(x, y, m, "red"))
 			}
 
 			if isFloor(x, y) {
@@ -65,14 +64,11 @@ func (m Map) GetCellsOfEmptyHouse() []Cell {
 		}
 	}
 
-	j, _ := json.Marshal(Cells)
-	fmt.Println(string(j))
-
 	return Cells
 }
 
 func isCorner(x int, y int, m Map) bool {
-	if x < 3 && y < 3 || x > m.SizeX-3 && y > m.SizeY-3 {
+	if x < 3 && (y < 3 || y > m.SizeY-3) || x > m.SizeX-3 && (y < 3 || y > m.SizeY-3) {
 		return true
 	}
 	return false
@@ -82,18 +78,22 @@ func isWall(x int, y int) (bool, string) {
 	var numberType string
 	var wall bool
 
-	if (x <= 2 && (y == 3 || y == 5 || y == 7)) || ((x == 0 || x == 2) && (y == 4 || y == 6)) {
+	if y == 0 && x > 2 && x <= 7 {
 		wall = true
-	} else if (x >= 7 && (y == 3 || y == 5 || y == 7)) || ((x == 8 || x == 10) && (y == 4 || y == 6)) {
+	} else if y == 1 && (x == 3 || x == 5 || x == 7) {
 		wall = true
-	} else if (y <= 1 && (x == 3 || x == 5 || x == 7)) || ((y == 0 || y == 2) && (x == 4 || x == 6)) || (y == 2 && x > 5) {
+	} else if y == 2 && x > 3 && x <= 7 {
 		wall = true
-	} else if (y >= 7 && (x == 3 || x == 5 || x == 7)) || ((y == 8 || y == 10) && (x == 4 || x == 6)) {
+	} else if (y == 3 || y == 5 || y == 7) && (x < 3 || x > 7) {
 		wall = true
-	}
-
-	if y == 2 && x == 5 {
-		wall = false
+	} else if (y == 4 || y == 6) && (x == 0 || x == 2 || x == 8 || x == 10) {
+		wall = true
+	} else if y == 8 && x > 2 && x <= 7 {
+		wall = true
+	} else if y == 9 && (x == 3 || x == 5 || x == 7) {
+		wall = true
+	} else if y == 10 && x > 2 && x <= 7 {
+		wall = true
 	}
 
 	if (y+x)%2 == 1 {
@@ -102,7 +102,6 @@ func isWall(x int, y int) (bool, string) {
 		numberType = "even"
 	}
 
-	fmt.Println((y+x)%2, numberType, x, y)
 	return wall, numberType
 }
 
@@ -114,16 +113,16 @@ func isFloor(x int, y int) bool {
 }
 
 func isDoor(x int, y int) bool {
-	if x == 5 && y == 2 {
+	if x == 3 && y == 2 {
 		return true
 	}
 	return false
 }
 
 func isWindow(x int, y int) bool {
-	if (x == 1 && y == 6) || (x == 9 && (y == 6 || y == 8)) {
+	if (x == 1 && (y == 4 || y == 6)) || (x == 9 && (y == 4 || y == 6)) {
 		return true
-	} else if (y == 1 && (x == 6 || x == 8)) || (y == 9 && (x == 6 || x == 8)) {
+	} else if (y == 1 || y == 9) && (x == 4 || x == 6) {
 		return true
 	}
 	return false
@@ -167,7 +166,7 @@ func FloorCell(x int, y int, m Map, color string) Cell {
 
 func DoorCell(x int, y int, m Map) Cell {
 	cellType := "teleport"
-	tpId := 1
+	tpId := 5
 	return Cell{
 		MapsId:     int(m.ID),
 		AxisX:      x,
@@ -181,19 +180,11 @@ func DoorCell(x int, y int, m Map) Cell {
 
 func WindowCell(x int, y int, m Map) Cell {
 	cellType := "cell"
-	t := time.Now()
-	var str []string
 
-	if day := "06" <= t.Format("15") && t.Format("15") < "19"; day {
-		str = strings.Fields(v.GetString("elem.day_window"))
-	} else if evening := "19" <= t.Format("15") && t.Format("15") < "23"; evening {
-		str = strings.Fields(v.GetString("elem.evening_window"))
-	} else if night := "23" <= t.Format("15") || t.Format("15") < "06"; night {
-		str = strings.Fields(v.GetString("elem.night_window"))
-	}
+	windows := strings.Fields(fmt.Sprintf("%s %s %s", v.GetString("elem.day_window"), v.GetString("elem.evening_window"), v.GetString("elem.night_window")))
 
-	randomNum := rand.Intn(len(str))
-	view := str[randomNum]
+	randomNum := rand.Intn(len(windows))
+	view := windows[randomNum]
 
 	return Cell{
 		MapsId:  int(m.ID),
@@ -205,7 +196,10 @@ func WindowCell(x int, y int, m Map) Cell {
 	}
 }
 
-func CreateUserHouse() error {
+func (u User) CreateUserHouse() error {
+	if *u.Money <= v.GetInt("main_info.cost_of_house") {
+		return errors.New("user doesn't have money enough")
+	}
 	m := MapHouse().CreateMap()
 	cells := m.GetCellsOfEmptyHouse()
 

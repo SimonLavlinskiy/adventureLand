@@ -125,11 +125,16 @@ func callBackResolver(update tg.Update) (tg.MessageConfig, bool) {
 	case v.GetString("callback_char.user_done_quest"):
 		msg = UserDoneQuest(uint(r.ToInt(charData[1])), user)
 	case v.GetString("callback_char.buy_home"):
-		err := r.CreateUserHouse()
+		err := user.CreateUserHouse()
 		text := "Поздравляю с покупкой дома!"
-		if err != nil {
+
+		switch err.Error() {
+		case "user doesn't have money enough":
+			text = "Не хватает деняк! Прийдется еще поднакопить :( "
+		default:
 			text = "Не получилось :("
 		}
+
 		msg.Text, buttons = r.GetMyMap(update)
 		msg.Text = fmt.Sprintf("%s%s%s", msg.Text, v.GetString("msg_separator"), text)
 		msg.ReplyMarkup = buttons

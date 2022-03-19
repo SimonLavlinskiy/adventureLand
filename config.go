@@ -88,4 +88,7 @@ type Messages struct {
 		processedEmoji string
 		newEmoji       string
 	}
+	MainInfo struct {
+		costOfHouse int
+	}
 }
