@@ -29,6 +29,27 @@ type Messages struct {
 		foot            string
 		throwOutItem    string
 		countOfDelete   string
+		buyHome         string
+		userDoneQuest   string
+		userGetQuest    string
+		quest           string
+		quests          string
+	}
+	Elem struct {
+		colors        string
+		black         string
+		brown         string
+		red           string
+		purple        string
+		orange        string
+		yellow        string
+		green         string
+		blue          string
+		white         string
+		door          string
+		dayWindow     string
+		eveningWindow string
+		nightWindow   string
 	}
 	Message struct {
 		ListOfAvatar string

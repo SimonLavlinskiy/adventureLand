@@ -254,9 +254,17 @@ func GetFullMap(id int) []Cell {
 		fmt.Println("Map not found!")
 	}
 
-	//j, _ := json.Marshal(results)
-	//resultsJson := string(j)
-
 	return results
+}
 
+func CreateCells(cells []Cell) bool {
+	err := config.Db.
+		Create(cells).
+		Error
+
+	if err != nil {
+		return true
+	}
+
+	return false
 }

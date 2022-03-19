@@ -25,6 +25,11 @@ callback_char:
   make_new_item: "makeNewItem"
   throw_out_item: "throwOutItem"
   count_of_delete: "countOfDelete"
+  buy_home: "buyHome"
+  user_done_quest: "user_done_quest"
+  user_get_quest: "user_get_quest"
+  quest: "quest"
+  quests: "quests"
 
 quest_statuses:
   completed: "✅ Выполнен"
@@ -33,6 +38,21 @@ quest_statuses:
   completed_emoji: "✅"
   processed_emoji: "✴️"
   new_emoji: "🆕"
+
+elem:
+  black: "⬛"
+  brown: "🟫"
+  red: "🟥"
+  purple: "🟪"
+  orange: "🟧"
+  yellow: "🟨"
+  green: "🟩"
+  blue: "🟦"
+  white: "⬜"
+  door: "🚪"
+  day_window: "🌁 🏙️ 🏞️"
+  evening_window: "🌆 🌇 🌄 🌅"
+  night_window: "🌃 🌌 🌉 🎑"
 
 message:
   list_of_avatar: "🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 ‍️🐨 🐯 🦁 🐮 🐷 🐸 🐵 🐦 🐧 🐔 🐤 🐥 🦆 🐴 🦄 🐺 🐗 🐝 🦋 🐛 🐌 🐞 🪲 🪰 🐜 🕷 🪳 🦖 🦕 🐙 🦀 🐟 🐠 🐡 🦭"

@@ -111,19 +111,28 @@ func callBackResolver(update tg.Update) (tg.MessageConfig, bool) {
 		userWantsToThrowOutItem(update, charData)
 	case v.GetString("callback_char.count_of_delete"):
 		msg = userThrowOutItem(update, user, charData)
-	case "quests":
+	case v.GetString("callback_char.quests"):
 		msg.Text = v.GetString("user_location.tasks_menu_message")
 		msg.ReplyMarkup = helpers.AllQuestsMessageKeyboard(user)
-	case "quest":
+	case v.GetString("callback_char.quest"):
 		msg = OpenQuest(uint(r.ToInt(charData[1])), user)
-	case "user_get_quest":
+	case v.GetString("callback_char.user_get_quest"):
 		r.UserQuest{
 			UserId:  user.ID,
 			QuestId: uint(r.ToInt(charData[1])),
 		}.GetOrCreateUserQuest()
 		msg = OpenQuest(uint(r.ToInt(charData[1])), user)
-	case "user_done_quest":
+	case v.GetString("callback_char.user_done_quest"):
 		msg = UserDoneQuest(uint(r.ToInt(charData[1])), user)
+	case v.GetString("callback_char.buy_home"):
+		err := r.CreateUserHouse()
+		text := "Поздравляю с покупкой дома!"
+		if err != nil {
+			text = "Не получилось :("
+		}
+		msg.Text, buttons = r.GetMyMap(update)
+		msg.Text = fmt.Sprintf("%s%s%s", msg.Text, v.GetString("msg_separator"), text)
+		msg.ReplyMarkup = buttons
 	}
 
 	msg.ParseMode = "markdown"
@@ -867,21 +876,32 @@ func updateUserHand(update tg.Update, char []string, userItem r.UserItem) {
 
 func UserMoving(update tg.Update, user r.User, char string) tg.MessageConfig {
 	var text string
-	var msgMap string
 	res := directionCell(update, char)
 
+	var inlineButtons tg.InlineKeyboardMarkup
+
 	locMsg, err := r.UpdateLocation(update, res, user)
+	msgMap, buttons := r.GetMyMap(update)
+
 	if err != nil {
-		text = fmt.Sprintf("%s%s", v.GetString("msg_separator"), locMsg)
+		if err.Error() == "user has not home" {
+			inlineButtons = helpers.BuyHomeKeyboard()
+			msg.ReplyMarkup = inlineButtons
+			text = locMsg
+		} else {
+			text = fmt.Sprintf("%s%s%s", msgMap, v.GetString("msg_separator"), locMsg)
+		}
+	} else {
+		msg.ReplyMarkup = buttons
+
+		lighterMsg, err := user.CheckUserHasLighter(update)
+		if err != nil {
+			text = fmt.Sprintf("%s%s", v.GetString("msg_separator"), lighterMsg)
+		}
+		text = fmt.Sprintf("%s%s", msgMap, text)
 	}
 
-	lighterMsg, err := user.CheckUserHasLighter(update)
-	if err != nil {
-		text = fmt.Sprintf("%s%s", v.GetString("msg_separator"), lighterMsg)
-	}
-	msgMap, msg.ReplyMarkup = r.GetMyMap(update)
-	msg.Text = fmt.Sprintf("%s%s", msgMap, text)
-
+	msg.Text = text
 	return msg
 }
 

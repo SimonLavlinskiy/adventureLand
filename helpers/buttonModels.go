@@ -409,3 +409,14 @@ func OpenQuestKeyboard(q r.Quest, uq r.UserQuest) tg.InlineKeyboardMarkup {
 		),
 	)
 }
+
+func BuyHomeKeyboard() tg.InlineKeyboardMarkup {
+	return tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("🏘 Купить дом! 🏘", "buyHome"),
+		),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("Отмена", "cancel"),
+		),
+	)
+}

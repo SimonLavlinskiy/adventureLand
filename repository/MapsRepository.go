@@ -20,6 +20,18 @@ type Map struct {
 	EmptySpaceSymbol string `gorm:"embedded"`
 }
 
+func (m Map) CreateMap() Map {
+	err := config.Db.
+		Create(&m).
+		Error
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return m
+}
+
 type MapButtons struct {
 	Up     string
 	Left   string
@@ -218,8 +230,8 @@ func CreateMapKeyboard(buttons MapButtons) tg.ReplyKeyboardMarkup {
 }
 
 func configurationMap(mapSize UserMap, resMap Map, resLocation Location, user User, m map[[2]int]Cell) [][]string {
-	currentTime := time.Now()
-	day := "06" <= currentTime.Format("15") && currentTime.Format("15") <= "23"
+	t := time.Now()
+	day := "06" <= t.Format("15") && t.Format("15") <= "23"
 	type Point [2]int
 	Maps := make([][]string, resMap.SizeY+1)
 
