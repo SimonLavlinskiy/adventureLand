@@ -7,9 +7,18 @@ type Messages struct {
 		maps             string
 		profile          string
 		tasksMenuMessage string
+		ItemCategories   struct {
+			categoryTitle string
+			categories    string
+			food          string
+			material      string
+			sprout        string
+			furniture     string
+		}
 	}
 	CallbackChar struct {
 		cancel          string
+		category        string
 		backpackMoving  string
 		goodsMoving     string
 		eatFood         string

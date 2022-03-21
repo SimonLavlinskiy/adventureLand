@@ -140,6 +140,9 @@ func GetMyMap(update tg.Update) (textMessage string, buttons tg.ReplyKeyboardMar
 	buttons = CalculateButtonMap(loc, us, m)
 
 	m[Point{*loc.AxisX, *loc.AxisY}] = Cell{View: us.Avatar, ID: m[Point{*loc.AxisX, *loc.AxisY}].ID}
+	if us.MenuLocation == "Меню" {
+		m[Point{*loc.AxisX, *loc.AxisY + 1}] = Cell{View: "⬇️", ID: m[Point{*loc.AxisX, *loc.AxisY}].ID}
+	}
 
 	Maps := configurationMap(mapSize, resMap, loc, us, m)
 

@@ -5,9 +5,17 @@ user_location:
   maps: "Карта"
   profile: "Профиль"
   tasks_menu_message: "📜 *Квесты* 📟 *Задания* 📆 *Ежедневки* 📜"
+  item_categories:
+    category_title: "🍕 \U0001F9F1 Категории 🌱 🛋"
+    categories: "food resource sprout furniture"
+    food: "Еда 🍕"
+    resource: "Ресурсы \U0001F9F1"
+    sprout: "Семена 🌱"
+    furniture: "Мебель 🛋"
 
 callback_char:
   cancel: "cancel"
+  category: "category"
   backpack_moving: "backpackMoving"
   goods_moving: "goodsMoving"
   eat_food: "eatFood"

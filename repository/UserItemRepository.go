@@ -91,8 +91,34 @@ func GetUserItems(userId uint) []UserItem {
 	return result
 }
 
-func GetBackpackItems(userId uint) []UserItem {
-	userItems := GetUserItems(userId)
+func GetUserItemsByType(userId uint, itemType []string) []UserItem {
+	var userItems []UserItem
+
+	err := config.Db.
+		Preload("Item").
+		Preload("User").
+		Where(UserItem{UserId: int(userId)}).
+		Where("count > 0").
+		Find(&userItems).
+		Error
+	if err != nil {
+		panic(err)
+	}
+
+	var result []UserItem
+	for _, i := range userItems {
+		for y := range itemType {
+			if i.Item.Type == itemType[y] {
+				result = append(result, i)
+			}
+		}
+	}
+
+	return result
+}
+
+func GetBackpackItems(userId uint, itemType ...string) []UserItem {
+	userItems := GetUserItemsByType(userId, itemType)
 
 	var backpackUserItem []UserItem
 
@@ -157,11 +183,18 @@ func (ui UserItem) EatItem(update tg.Update, user User) string {
 func (ui UserItem) GetFullDescriptionOfUserItem() string {
 	userItem := ui.UserGetUserItem()
 	var fullDescriptionUserItem string
+
+	switch userItem.Item.Type {
+	case "food":
+		fullDescriptionUserItem = fmt.Sprintf("%s *%s* - %dшт.\n*Здоровье*: +%d ♥️️\n*Сытость*: +%d  \U0001F9C3\n", userItem.Item.View, userItem.Item.Name, *userItem.Count, *userItem.Item.Healing, *userItem.Item.Satiety)
+	case "resource":
+		fullDescriptionUserItem = fmt.Sprintf("%s *%s* - %dшт.\n", userItem.Item.View, userItem.Item.Name, *userItem.Count)
+	}
+
 	if userItem.Item.IsInventory == true {
 		fullDescriptionUserItem = fmt.Sprintf("%s *%s* - %d шт.\n*Сила*: + %d💥\n", userItem.Item.View, userItem.Item.Name, *userItem.Count, *userItem.Item.Damage)
-	} else if userItem.Item.IsBackpack == true {
-		fullDescriptionUserItem = fmt.Sprintf("%s *%s* - %dшт.\n*Здоровье*: +%d ♥️️\n*Сытость*: +%d  \U0001F9C3\n", userItem.Item.View, userItem.Item.Name, *userItem.Count, *userItem.Item.Healing, *userItem.Item.Satiety)
 	}
+
 	itemDescription := "Описания нет("
 
 	if userItem.Item.Description != nil {

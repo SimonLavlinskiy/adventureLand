@@ -114,7 +114,9 @@ func UserGetItemWithHand(update tg.Update, cell Cell, user User, userGetItem Use
 	if *cell.Type != "swap" && (*cell.ItemCount > 1 || cell.PrevItemID == nil) {
 		countAfterUserGetItem := *cell.ItemCount - 1
 		Cell{ItemCount: &countAfterUserGetItem}.UpdateCell(cell.ID)
-		textCountLeft = fmt.Sprintf("(Осталось лежать еще %d)", countAfterUserGetItem)
+		if countAfterUserGetItem != 0 {
+			textCountLeft = fmt.Sprintf("(Осталось лежать еще %d)", countAfterUserGetItem)
+		}
 	} else if cell.PrevItemID != nil {
 		cell.UpdateCellOnPrevItem()
 	}
