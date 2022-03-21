@@ -2,9 +2,7 @@ package repository
 
 import (
 	"errors"
-	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
-	"strings"
 )
 
 type Location struct {
@@ -18,10 +16,7 @@ type Location struct {
 	Maps     Map
 }
 
-func GetOrCreateMyLocation(update tg.Update) Location {
-	userTgId := GetUserTgId(update)
-	user := GetUser(User{TgId: userTgId})
-
+func GetOrCreateMyLocation(user User) Location {
 	AsX := 7
 	AsY := 2
 	startMap := 1
@@ -58,15 +53,8 @@ func (u User) GetUserLocation() Location {
 	return result
 }
 
-func UpdateLocation(update tg.Update, locStruct Location, user User) (string, error) {
-	var char []string
+func UpdateLocation(char []string, locStruct Location, user User) (string, error) {
 	var err error
-
-	if update.Message != nil {
-		char = strings.Fields(update.Message.Text)
-	} else {
-		char = strings.Fields(update.CallbackQuery.Data)
-	}
 
 	cell := Cell{MapsId: *locStruct.MapsId, AxisX: *locStruct.AxisX, AxisY: *locStruct.AxisY}
 	cell = cell.GetCell()

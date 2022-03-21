@@ -3,7 +3,6 @@ package repository
 import (
 	"errors"
 	"fmt"
-	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
 	"time"
 )
@@ -213,8 +212,8 @@ func (c Cell) UpdateCellOnPrevItem() {
 	}
 }
 
-func UpdateCellUnderUser(update tg.Update, userItem UserItem, count int) error {
-	location := GetOrCreateMyLocation(update)
+func UpdateCellUnderUser(user User, userItem UserItem, count int) error {
+	location := GetOrCreateMyLocation(user)
 
 	cell := Cell{AxisX: *location.AxisX, AxisY: *location.AxisY, MapsId: *location.MapsId}
 	cell = cell.GetCell()

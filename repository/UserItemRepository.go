@@ -3,7 +3,6 @@ package repository
 import (
 	"errors"
 	"fmt"
-	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"project0/config"
 )
 
@@ -39,10 +38,8 @@ func (ui UserItem) UserGetUserItem() UserItem {
 	return result
 }
 
-func GetOrCreateUserItem(update tg.Update, item Item) UserItem {
-	userTgId := GetUserTgId(update)
-	resUser := GetUser(User{TgId: userTgId})
-	userId := int(resUser.ID)
+func GetOrCreateUserItem(user User, item Item) UserItem {
+	userId := int(user.ID)
 	countItem := 0
 	result := UserItem{
 		Count:        &countItem,
@@ -152,7 +149,7 @@ func (u User) UpdateUserItem(ui UserItem) {
 	}
 }
 
-func (ui UserItem) EatItem(update tg.Update, user User) string {
+func (ui UserItem) EatItem(user User) string {
 	userItemCount := ui.Count
 
 	if *userItemCount > 0 {
@@ -165,9 +162,10 @@ func (ui UserItem) EatItem(update tg.Update, user User) string {
 		user.Satiety = user.Satiety + itemSatiety
 
 		User{
+			TgId:    user.TgId,
 			Health:  user.Health,
 			Satiety: user.Satiety,
-		}.UpdateUser(update)
+		}.UpdateUser()
 
 		user.UpdateUserItem(UserItem{
 			ID:    ui.ID,
@@ -187,7 +185,7 @@ func (ui UserItem) GetFullDescriptionOfUserItem() string {
 	switch userItem.Item.Type {
 	case "food":
 		fullDescriptionUserItem = fmt.Sprintf("%s *%s* - %dшт.\n*Здоровье*: +%d ♥️️\n*Сытость*: +%d  \U0001F9C3\n", userItem.Item.View, userItem.Item.Name, *userItem.Count, *userItem.Item.Healing, *userItem.Item.Satiety)
-	case "resource":
+	case "resource", "sprout", "furniture":
 		fullDescriptionUserItem = fmt.Sprintf("%s *%s* - %dшт.\n", userItem.Item.View, userItem.Item.Name, *userItem.Count)
 	}
 
@@ -204,7 +202,7 @@ func (ui UserItem) GetFullDescriptionOfUserItem() string {
 	return fullDescriptionUserItem + itemDescription
 }
 
-func UpdateUserInstrument(update tg.Update, user User, instrument Item) (string, error) {
+func UpdateUserInstrument(user User, instrument Item) (string, error) {
 	userItem := UserItem{ItemId: int(instrument.ID), UserId: int(user.ID)}.UserGetUserItem()
 
 	c := *userItem.CountUseLeft - 1
@@ -231,10 +229,10 @@ func UpdateUserInstrument(update tg.Update, user User, instrument Item) (string,
 		})
 
 		if user.LeftHandId != nil && *user.LeftHandId == int(userItem.Item.ID) {
-			SetNullUserField(update, "left_hand_id")
+			SetNullUserField(user, "left_hand_id")
 		}
 		if user.RightHandId != nil && *user.RightHandId == int(userItem.Item.ID) {
-			SetNullUserField(update, "right_hand_id")
+			SetNullUserField(user, "right_hand_id")
 		}
 	}
 

@@ -68,19 +68,6 @@ func DefaultUserMap(location Location, displaySize int) UserMap {
 	}
 }
 
-func GetUserMap(update tg.Update) Map {
-	resLocation := GetOrCreateMyLocation(update)
-	result := Map{}
-
-	err := config.Db.Where(&Map{ID: uint(*resLocation.MapsId)}).First(&result).Error
-
-	if err != nil {
-		panic(err)
-	}
-
-	return result
-}
-
 func GetMaps() []Map {
 	var result []Map
 
@@ -93,12 +80,9 @@ func GetMaps() []Map {
 	return result
 }
 
-func GetMyMap(update tg.Update) (textMessage string, buttons tg.ReplyKeyboardMarkup) {
-	userTgId := GetUserTgId(update)
-	us := GetUser(User{TgId: userTgId})
-	loc := GetOrCreateMyLocation(update)
-	resMap := GetUserMap(update)
-	mapSize := CalculateUserMapBorder(loc, resMap)
+func GetMyMap(us User) (textMessage string, buttons tg.ReplyKeyboardMarkup) {
+	loc := GetOrCreateMyLocation(us)
+	mapSize := CalculateUserMapBorder(loc, loc.Maps)
 	messageMap := fmt.Sprintf("*Карта*: _%s_ *X*: _%d_  *Y*: _%d_", loc.Maps.Name, *loc.AxisX, *loc.AxisY)
 
 	type Point = [2]int
@@ -144,7 +128,7 @@ func GetMyMap(update tg.Update) (textMessage string, buttons tg.ReplyKeyboardMar
 		m[Point{*loc.AxisX, *loc.AxisY + 1}] = Cell{View: "⬇️", ID: m[Point{*loc.AxisX, *loc.AxisY}].ID}
 	}
 
-	Maps := configurationMap(mapSize, resMap, loc, us, m)
+	Maps := configurationMap(mapSize, loc.Maps, loc, us, m)
 
 	for i, row := range Maps {
 		if i >= mapSize.downIndent && i <= mapSize.upperIndent {

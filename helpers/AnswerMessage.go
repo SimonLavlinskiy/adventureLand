@@ -10,8 +10,8 @@ import (
 
 var msg tg.MessageConfig
 
-func DirectionCell(update tg.Update, direction string) r.Location {
-	res := r.GetOrCreateMyLocation(update)
+func DirectionCell(user r.User, direction string) r.Location {
+	res := r.GetOrCreateMyLocation(user)
 
 	switch direction {
 	case v.GetString("message.doing.up"):
@@ -112,11 +112,9 @@ func BackPackMoving(charData []string, user r.User) tg.MessageConfig {
 	return msg
 }
 
-func GoodsMoving(charData []string, update tg.Update) tg.MessageConfig {
+func GoodsMoving(charData []string, user r.User) tg.MessageConfig {
 	i := r.ToInt(charData[1])
 
-	userTgId := r.GetUserTgId(update)
-	user := r.GetUser(r.User{TgId: userTgId})
 	userItems := r.GetInventoryItems(user.ID)
 
 	switch i {
@@ -130,14 +128,12 @@ func GoodsMoving(charData []string, update tg.Update) tg.MessageConfig {
 	return msg
 }
 
-func UserEatItem(update tg.Update, charData []string) tg.MessageConfig {
-	userTgId := r.GetUserTgId(update)
+func UserEatItem(user r.User, charData []string) tg.MessageConfig {
 	userItemId := r.ToInt(charData[1])
 
-	user := r.GetUser(r.User{TgId: userTgId})
 	userItem := r.UserItem{ID: userItemId}.UserGetUserItem()
 
-	res := userItem.EatItem(update, user)
+	res := userItem.EatItem(user)
 	charDataForOpenBackPack := strings.Fields(fmt.Sprintf("%s %s food", v.GetString("callback_char.backpack_moving"), charData[2]))
 	msg = BackPackMoving(charDataForOpenBackPack, user)
 	msg.Text = fmt.Sprintf("%s%s%s", msg.Text, v.GetString("msg_separator"), res)
@@ -145,10 +141,8 @@ func UserEatItem(update tg.Update, charData []string) tg.MessageConfig {
 	return msg
 }
 
-func UserDeleteItem(update tg.Update, charData []string) tg.MessageConfig {
+func UserDeleteItem(user r.User, charData []string) tg.MessageConfig {
 	userItemId := r.ToInt(charData[1])
-	userTgId := r.GetUserTgId(update)
-	user := r.GetUser(r.User{TgId: userTgId})
 	userItem := r.UserItem{ID: userItemId}.UserGetUserItem()
 
 	countAfterUserThrowOutItem := 0
@@ -162,8 +156,8 @@ func UserDeleteItem(update tg.Update, charData []string) tg.MessageConfig {
 	var charDataForOpenList []string
 	if charData[3] == "good" {
 		charDataForOpenList = strings.Fields(fmt.Sprintf("%s %s", v.GetString("callback_char.goods_moving"), charData[2]))
-		UserTakeOffGood(update, charData)
-		msg = GoodsMoving(charDataForOpenList, update)
+		UserTakeOffGood(user, charData)
+		msg = GoodsMoving(charDataForOpenList, user)
 	} else {
 		charDataForOpenList = strings.Fields(fmt.Sprintf("%s %s %s", v.GetString("callback_char.backpack_moving"), charData[2], charData[3]))
 		msg = BackPackMoving(charDataForOpenList, user)
@@ -204,37 +198,35 @@ func Quest(cell *r.Cell, user r.User) tg.MessageConfig {
 	return msg
 }
 
-func UserTakeOffGood(update tg.Update, charData []string) tg.MessageConfig {
+func UserTakeOffGood(user r.User, charData []string) tg.MessageConfig {
 	userItemId := r.ToInt(charData[1])
-	userTgId := r.GetUserTgId(update)
-	user := r.GetUser(r.User{TgId: userTgId})
 	userItem := r.UserItem{ID: userItemId}.UserGetUserItem()
 
 	if user.HeadId != nil && userItem.ItemId == *user.HeadId {
-		r.SetNullUserField(update, "head_id")
+		r.SetNullUserField(user, "head_id")
 	} else if user.LeftHandId != nil && userItem.ItemId == *user.LeftHandId {
-		r.SetNullUserField(update, "left_hand_id")
+		r.SetNullUserField(user, "left_hand_id")
 	} else if user.RightHandId != nil && userItem.ItemId == *user.RightHandId {
-		r.SetNullUserField(update, "right_hand_id")
+		r.SetNullUserField(user, "right_hand_id")
 	} else if user.BodyId != nil && userItem.ItemId == *user.BodyId {
-		r.SetNullUserField(update, "body_id")
+		r.SetNullUserField(user, "body_id")
 	} else if user.FootId != nil && userItem.ItemId == *user.FootId {
-		r.SetNullUserField(update, "foot_id")
+		r.SetNullUserField(user, "foot_id")
 	} else if user.ShoesId != nil && userItem.ItemId == *user.ShoesId {
-		r.SetNullUserField(update, "shoes_id")
+		r.SetNullUserField(user, "shoes_id")
 	}
 
+	user = r.GetUser(r.User{TgId: user.TgId})
+
 	charDataForOpenGoods := strings.Fields(fmt.Sprintf("%s %s", v.GetString("callback_char.goods_moving"), charData[2]))
-	msg = GoodsMoving(charDataForOpenGoods, update)
+	msg = GoodsMoving(charDataForOpenGoods, user)
 	msg.Text = fmt.Sprintf("%s%sВещь снята!", msg.Text, v.GetString("msg_separator"))
 
 	return msg
 }
 
-func DressUserItem(update tg.Update, charData []string) tg.MessageConfig {
+func DressUserItem(user r.User, charData []string) tg.MessageConfig {
 	userItemId := r.ToInt(charData[1])
-	userTgId := r.GetUserTgId(update)
-	user := r.GetUser(r.User{TgId: userTgId})
 	userItem := r.UserItem{ID: userItemId}.UserGetUserItem()
 	changeHandItem := false
 
@@ -243,34 +235,34 @@ func DressUserItem(update tg.Update, charData []string) tg.MessageConfig {
 	switch *userItem.Item.DressType {
 	case "hand":
 		if user.LeftHandId == nil {
-			r.User{LeftHandId: &userItem.ItemId}.UpdateUser(update)
+			user = r.User{TgId: user.TgId, LeftHandId: &userItem.ItemId}.UpdateUser()
 		} else if user.RightHandId == nil {
-			r.User{RightHandId: &userItem.ItemId}.UpdateUser(update)
+			user = r.User{TgId: user.TgId, RightHandId: &userItem.ItemId}.UpdateUser()
 		} else {
 			result = "У вас заняты все руки! Что хочешь снять?"
 			changeHandItem = true
 		}
 	case "head":
 		if user.HeadId == nil {
-			r.User{HeadId: &userItem.ItemId}.UpdateUser(update)
+			user = r.User{TgId: user.TgId, HeadId: &userItem.ItemId}.UpdateUser()
 		} else {
 			result = v.GetString("errors.user_has_other_item")
 		}
 	case "body":
 		if user.BodyId == nil {
-			r.User{BodyId: &userItem.ItemId}.UpdateUser(update)
+			user = r.User{TgId: user.TgId, BodyId: &userItem.ItemId}.UpdateUser()
 		} else {
 			result = v.GetString("errors.user_has_other_item")
 		}
 	case "foot":
 		if user.FootId == nil {
-			r.User{FootId: &userItem.ItemId}.UpdateUser(update)
+			user = r.User{TgId: user.TgId, FootId: &userItem.ItemId}.UpdateUser()
 		} else {
 			result = v.GetString("errors.user_has_other_item")
 		}
 	case "shoes":
 		if user.ShoesId == nil {
-			r.User{ShoesId: &userItem.ItemId}.UpdateUser(update)
+			user = r.User{TgId: user.TgId, ShoesId: &userItem.ItemId}.UpdateUser()
 		} else {
 			result = v.GetString("errors.user_has_other_item")
 		}
@@ -280,7 +272,7 @@ func DressUserItem(update tg.Update, charData []string) tg.MessageConfig {
 		msg.ReplyMarkup = ChangeItemInHandKeyboard(user, userItemId, charData[2])
 	} else {
 		charDataForOpenGoods := strings.Fields(fmt.Sprintf("%s %s", v.GetString("callback_char.goods_moving"), charData[2]))
-		msg = GoodsMoving(charDataForOpenGoods, update)
+		msg = GoodsMoving(charDataForOpenGoods, user)
 	}
 
 	msg.Text = fmt.Sprintf("%s%s%s", msg.Text, v.GetString("msg_separator"), result)
@@ -288,14 +280,14 @@ func DressUserItem(update tg.Update, charData []string) tg.MessageConfig {
 	return msg
 }
 
-func UserThrowOutItem(update tg.Update, user r.User, charData []string) tg.MessageConfig {
+func UserThrowOutItem(user r.User, charData []string) tg.MessageConfig {
 	userItem := r.UserItem{ID: r.ToInt(charData[1])}.UserGetUserItem()
 
 	*userItem.Count = *userItem.Count - r.ToInt(charData[3])
 
 	var msgText string
 
-	err := r.UpdateCellUnderUser(update, userItem, r.ToInt(charData[3]))
+	err := r.UpdateCellUnderUser(user, userItem, r.ToInt(charData[3]))
 	if err != nil {
 		msgText = fmt.Sprintf("%s%s", v.GetString("msg_separator"), err)
 	} else {
@@ -307,9 +299,9 @@ func UserThrowOutItem(update tg.Update, user r.User, charData []string) tg.Messa
 	if charData[4] == "good" {
 		charDataForOpenList = strings.Fields(fmt.Sprintf("%s %s", v.GetString("callback_char.goods_moving"), charData[2]))
 		if *userItem.Count == 0 {
-			UserTakeOffGood(update, charData)
+			UserTakeOffGood(user, charData)
 		}
-		msg = GoodsMoving(charDataForOpenList, update)
+		msg = GoodsMoving(charDataForOpenList, user)
 	} else {
 		charDataForOpenList = strings.Fields(fmt.Sprintf("%s %s %s", v.GetString("callback_char.backpack_moving"), charData[2], charData[4]))
 		msg = BackPackMoving(charDataForOpenList, user)
@@ -334,7 +326,7 @@ func Workbench(cell *r.Cell, char []string) tg.MessageConfig {
 	}
 
 	msg.Text = OpenWorkbenchMessage(charData)
-	msg.ReplyMarkup = WorkbenchButton(charData)
+	msg.ReplyMarkup = WorkbenchKeyboard(charData)
 
 	return msg
 }
@@ -387,7 +379,7 @@ func viewComponent(id string) string {
 	return "⚪"
 }
 
-func UserWantsToThrowOutItem(update tg.Update, user r.User, charData []string) tg.MessageConfig {
+func UserWantsToThrowOutItem(user r.User, charData []string) tg.MessageConfig {
 	userItem := r.UserItem{ID: r.ToInt(charData[1])}.UserGetUserItem()
 
 	if userItem.CountUseLeft != nil && *userItem.CountUseLeft != *userItem.Item.CountUse {
@@ -399,16 +391,16 @@ func UserWantsToThrowOutItem(update tg.Update, user r.User, charData []string) t
 		if charData[3] == "good" {
 			charDataForOpenList = strings.Fields(fmt.Sprintf("%s %s", v.GetString("callback_char.goods_moving"), charData[2]))
 			if *userItem.CountUseLeft == *userItem.Item.CountUse {
-				UserTakeOffGood(update, charData)
+				UserTakeOffGood(user, charData)
 			}
-			msg = GoodsMoving(charDataForOpenList, update)
+			msg = GoodsMoving(charDataForOpenList, user)
 		} else {
 			charDataForOpenList = strings.Fields(fmt.Sprintf("%s %s %s", v.GetString("callback_char.backpack_moving"), charData[2], charData[3]))
 			msg = BackPackMoving(charDataForOpenList, user)
 		}
 		msg.Text = fmt.Sprintf("%s%sНельзя выкинуть на карту предмет, который уже был использован!", msg.Text, v.GetString("msg_separator"))
 	} else {
-		msg.ReplyMarkup = CountItemUserWantsToThrow(charData, userItem)
+		msg.ReplyMarkup = CountItemUserWantsToThrowKeyboard(charData, userItem)
 		msg.Text = fmt.Sprintf("%sСколько %s ты хочешь скинуть?", v.GetString("msg_separator"), userItem.Item.View)
 	}
 
@@ -492,7 +484,7 @@ func PutCountComponent(char []string) tg.MessageConfig {
 	userItemId := char[r.ToInt(char[2])+(4+r.ToInt(char[2])*2)] // char[x + (4+x*2 )] = char[4]
 	userItem := r.UserItem{ID: r.ToInt(userItemId)}.UserGetUserItem()
 
-	msg.ReplyMarkup = ChangeCountUserItem(char, userItem)
+	msg.ReplyMarkup = ChangeCountUserItemKeyboard(char, userItem)
 
 	return msg
 }
@@ -544,14 +536,14 @@ func UserCraftItem(user r.User, receipt *r.Receipt) (tg.MessageConfig, bool) {
 	return msg, deletePrevMessage
 }
 
-func UserMoving(update tg.Update, user r.User, char string) tg.MessageConfig {
+func UserMoving(user r.User, char []string, charDirection string) tg.MessageConfig {
 	var text string
-	res := DirectionCell(update, char)
+	res := DirectionCell(user, charDirection)
 
 	var inlineButtons tg.InlineKeyboardMarkup
 
-	locMsg, err := r.UpdateLocation(update, res, user)
-	msgMap, buttons := r.GetMyMap(update)
+	locMsg, err := r.UpdateLocation(char, res, user)
+	msgMap, buttons := r.GetMyMap(user)
 
 	if err != nil {
 		if err.Error() == "user has not home" {
@@ -564,7 +556,7 @@ func UserMoving(update tg.Update, user r.User, char string) tg.MessageConfig {
 	} else {
 		msg.ReplyMarkup = buttons
 
-		lighterMsg, err := user.CheckUserHasLighter(update)
+		lighterMsg, err := user.CheckUserHasLighter()
 		if err != nil {
 			text = fmt.Sprintf("%s%s", v.GetString("msg_separator"), lighterMsg)
 		}
@@ -575,10 +567,10 @@ func UserMoving(update tg.Update, user r.User, char string) tg.MessageConfig {
 	return msg
 }
 
-func UserUseHandOrInstrument(update tg.Update, char []string) tg.MessageConfig {
-	res := DirectionCell(update, char[1])
-	resultOfGetItem := r.UserGetItem(update, res, char)
-	resText, buttons := r.GetMyMap(update)
+func UserUseHandOrInstrument(user r.User, char []string) tg.MessageConfig {
+	res := DirectionCell(user, char[1])
+	resultOfGetItem := r.UserGetItem(user, res, char)
+	resText, buttons := r.GetMyMap(user)
 	msg.Text = fmt.Sprintf("%s%s%s", resText, v.GetString("msg_separator"), resultOfGetItem)
 	msg.ReplyMarkup = buttons
 

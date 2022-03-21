@@ -102,16 +102,15 @@ func GetUser(user User) User {
 	return result
 }
 
-func (u User) UpdateUser(update tg.Update) User {
+func (u User) UpdateUser() User {
 	var err error
-	userTgId := GetUserTgId(update)
 
-	err = config.Db.Where(&User{TgId: userTgId}).Updates(u).Error
+	err = config.Db.Where(&User{TgId: u.TgId}).Updates(u).Error
 	if err != nil {
 		panic(err)
 	}
 
-	res := GetUser(User{TgId: userTgId})
+	res := GetUser(User{TgId: u.TgId})
 	return res
 }
 
@@ -126,19 +125,16 @@ func (u User) UpdateUser1() User {
 	return res
 }
 
-func SetNullUserField(update tg.Update, queryFeild string) {
+func SetNullUserField(user User, queryFeild string) {
 	var err error
-	userTgId := GetUserTgId(update)
-	err = config.Db.Model(&User{}).Where(&User{TgId: userTgId}).Update(queryFeild, nil).Error
+	err = config.Db.Model(&User{}).Where(&User{TgId: user.TgId}).Update(queryFeild, nil).Error
 
 	if err != nil {
 		panic(err)
 	}
 }
 
-func GetUserInfo(update tg.Update) string {
-	userTgId := GetUserTgId(update)
-	u := GetUser(User{TgId: userTgId})
+func (u User) GetUserInfo() string {
 	userIsOnline := "📳 Вкл"
 
 	if !*u.OnlineMap {
@@ -188,10 +184,10 @@ func (u User) CheckUserHasInstrument(instrument Instrument) (error, Item) {
 	return errors.New("User dont have instrument"), Item{}
 }
 
-func (u User) CheckUserHasLighter(update tg.Update) (string, error) {
+func (u User) CheckUserHasLighter() (string, error) {
 	if u.LeftHandId != nil && u.LeftHand.Type == "light" {
 
-		res, err := UpdateUserInstrument(update, u, *u.LeftHand)
+		res, err := UpdateUserInstrument(u, *u.LeftHand)
 		if err != nil {
 			return res, errors.New("lighter is updated")
 		}
@@ -200,7 +196,7 @@ func (u User) CheckUserHasLighter(update tg.Update) (string, error) {
 
 	if u.RightHandId != nil && u.RightHand.Type == "light" {
 
-		res, err := UpdateUserInstrument(update, u, *u.RightHand)
+		res, err := UpdateUserInstrument(u, *u.RightHand)
 		if err != nil {
 			return res, errors.New("lighter is updated")
 		}
@@ -230,4 +226,19 @@ func (u User) GetUserQuests() []UserQuest {
 func (u User) UserGetExperience(r Result) {
 	resultExp := u.Experience + *r.Experience
 	User{ID: u.ID, Experience: resultExp}.UpdateUser1()
+}
+
+func UpdateUserHand(user User, char []string) (User, UserItem) {
+	userItem := UserItem{ID: ToInt(char[1])}.UserGetUserItem()
+
+	switch char[0] {
+	case v.GetString("callback_char.change_left_hand"):
+		User{TgId: user.TgId, LeftHandId: &userItem.ItemId}.UpdateUser()
+	case v.GetString("callback_char.change_right_hand"):
+		User{TgId: user.TgId, RightHandId: &userItem.ItemId}.UpdateUser()
+	}
+
+	user = GetUser(User{TgId: user.TgId})
+
+	return user, userItem
 }
