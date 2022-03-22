@@ -21,6 +21,7 @@ func main() {
 	ViperConfiguration()
 
 	telegramApiToken, _ := os.LookupEnv("TELEGRAM_APITOKEN")
+	telegramChatApiToken, _ := os.LookupEnv("TELEGRAM_CHAT_APITOKEN")
 
 	mysqlStatus := config.InitMySQL()
 	migrations.Migrate()
@@ -30,6 +31,7 @@ func main() {
 	}
 
 	go handlers.RequestHandler()
+	go handlers.GetMessageFromChat(telegramChatApiToken)
 
 	handlers.GetMessage(telegramApiToken)
 }

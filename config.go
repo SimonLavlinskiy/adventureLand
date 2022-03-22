@@ -8,12 +8,14 @@ type Messages struct {
 		profile          string
 		tasksMenuMessage string
 		ItemCategories   struct {
-			categoryTitle string
-			categories    string
-			food          string
-			material      string
-			sprout        string
-			furniture     string
+			categoryTitle   string
+			categories      string
+			otherCategories string
+			food            string
+			material        string
+			sprout          string
+			furniture       string
+			other           string
 		}
 	}
 	CallbackChar struct {

@@ -292,7 +292,7 @@ func calculateNightMap(user User, l Location, x int, y int) bool {
 func appendVisibleUserZone(m map[[2]int]Cell, x int, y int, Maps [][]string) {
 	type Point [2]int
 
-	if m[Point{x, y}].IsItem() || m[Point{x, y}].IsWorkbench() || m[Point{x, y}].IsSwap() || m[Point{x, y}].IsQuest() {
+	if m[Point{x, y}].IsItem() || m[Point{x, y}].IsWorkbench() || m[Point{x, y}].IsSwap() || m[Point{x, y}].IsQuest() || m[Point{x, y}].IsChat() {
 		Maps[y] = append(Maps[y], m[Point{x, y}].Item.View)
 	} else {
 		Maps[y] = append(Maps[y], m[Point{x, y}].View)
@@ -425,6 +425,13 @@ func (c Cell) IsQuest() bool {
 	return false
 }
 
+func (c Cell) IsChat() bool {
+	if c.Type != nil && *c.Type == "chat" && c.ItemID != nil {
+		return true
+	}
+	return false
+}
+
 func (c Cell) IsSpecialItem(user User) string {
 	instrumentsUserCanUse := GetInstrumentsUserCanUse(user, c)
 
@@ -444,7 +451,7 @@ func (c Cell) isItemCost(button string, resUser User) string {
 
 	button = firstElem + " " + button + " " + c.Item.View
 
-	if c.Item.Cost != nil && *c.Item.Cost > 0 && firstElem != "❗ 🛠 ❓" {
+	if c.Item.Cost != nil && *c.Item.Cost > 0 && firstElem != "❗ 🛠 ❓" && c.NeedPay {
 		button = button + " ( " + ToString(*c.Item.Cost) + "💰 )"
 	}
 

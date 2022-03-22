@@ -63,3 +63,20 @@ func SendMessage(message tg.MessageConfig, bot *tg.BotAPI) {
 //		panic("Error update msg: " + err.Error())
 //	}
 //}
+
+func GetMessageFromChat(tgApiToken string) {
+	bot, err := tg.NewBotAPI(tgApiToken)
+	if err != nil {
+		panic(err)
+	}
+	bot.Debug = false
+	updateConfig := tg.NewUpdate(0)
+
+	updateConfig.Timeout = 30
+
+	updates := bot.GetUpdatesChan(updateConfig)
+
+	for update := range updates {
+		fmt.Println(update.Message.Text, update.Message.From.ID)
+	}
+}

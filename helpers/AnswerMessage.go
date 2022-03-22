@@ -54,8 +54,9 @@ func MessageBackpackUserItems(userItems []r.UserItem, rowUser int, itemType stri
 			userItemMsg += fmt.Sprintf("%s   %d%s     *HP*:  _%d_ ♥️️     *ST*:  _%d_ \U0001F9C3 ️\n", firstCell, *item.Count, item.Item.View, *item.Item.Healing, *item.Item.Satiety)
 		case "resource", "sprout", "furniture":
 			userItemMsg += fmt.Sprintf("%s   %s %d шт.\n", firstCell, item.Item.View, *item.Count)
+		default:
+			userItemMsg += fmt.Sprintf("%s   %s %d шт.\n", firstCell, item.Item.View, *item.Count)
 		}
-
 	}
 
 	return userItemMsg
@@ -281,13 +282,18 @@ func DressUserItem(user r.User, charData []string) tg.MessageConfig {
 }
 
 func UserThrowOutItem(user r.User, charData []string) tg.MessageConfig {
+	cellType := "item"
 	userItem := r.UserItem{ID: r.ToInt(charData[1])}.UserGetUserItem()
 
 	*userItem.Count = *userItem.Count - r.ToInt(charData[3])
 
 	var msgText string
 
-	err := r.UpdateCellUnderUser(user, userItem, r.ToInt(charData[3]))
+	if charData[4] == "chat" {
+		cellType = charData[4]
+	}
+
+	err := r.UpdateCellUnderUser(user, userItem, r.ToInt(charData[3]), cellType)
 	if err != nil {
 		msgText = fmt.Sprintf("%s%s", v.GetString("msg_separator"), err)
 	} else {

@@ -233,7 +233,7 @@ func callBackResolver(update tg.Update) (tg.MessageConfig, bool) {
 		msg = helpers.UserDeleteItem(user, charData)
 	case v.GetString("callback_char.throw_out_item"):
 		msg = helpers.UserWantsToThrowOutItem(user, charData)
-	case v.GetString("callback_char.count_of_delete"):
+	case v.GetString("callback_char.count_of_throw_out"):
 		msg = helpers.UserThrowOutItem(user, charData)
 	case v.GetString("callback_char.description"):
 		msg.Text = r.UserItem{ID: r.ToInt(charData[1])}.GetFullDescriptionOfUserItem()
@@ -272,10 +272,9 @@ func callBackResolver(update tg.Update) (tg.MessageConfig, bool) {
 	case ItemHead.View:
 		res := helpers.DirectionCell(user, charData[1])
 		text, err := r.UpdateUserInstrument(user, ItemHead)
+		msg.Text = r.ViewItemInfo(res)
 		if err != nil {
-			msg.Text = fmt.Sprintf("%s%s%s", r.ViewItemInfo(res), v.GetString("msg_separator"), text)
-		} else {
-			msg.Text = r.ViewItemInfo(res)
+			msg.Text = fmt.Sprintf("%s%s%s", msg.Text, v.GetString("msg_separator"), text)
 		}
 
 	// Квесты

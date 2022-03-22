@@ -12,17 +12,11 @@ func BackpackInlineKeyboard(items []r.UserItem, i int, backpackType string) tg.I
 	switch backpackType {
 	case "food":
 		return FoodListBackpackInlineKeyboard(items, i)
-	case "resource", "furniture":
-		return DefaultListBackpackInlineKeyboard(items, i, backpackType)
 	case "sprout":
 		return SproutListBackpackInlineKeyboard(items, i, backpackType)
+	default:
+		return DefaultListBackpackInlineKeyboard(items, i, backpackType)
 	}
-
-	return tg.NewInlineKeyboardMarkup(
-		tg.NewInlineKeyboardRow(
-			tg.NewInlineKeyboardButtonData("Пусто...(", "emptyBackPack"),
-		),
-	)
 }
 
 func FoodListBackpackInlineKeyboard(items []r.UserItem, i int) tg.InlineKeyboardMarkup {
@@ -128,7 +122,7 @@ func DefaultListBackpackInlineKeyboard(items []r.UserItem, i int, itemType strin
 				fmt.Sprintf("%s %d %d %s", v.GetString("callback_char.description"), items[i].ID, i, itemType)),
 		),
 		tg.NewInlineKeyboardRow(
-			tg.NewInlineKeyboardButtonData("👋🗑🗺", fmt.Sprintf("%s %d %d %s", v.GetString("callback_char.throw_out_item"), items[i].ID, i, itemType)),
+			tg.NewInlineKeyboardButtonData("👋🗑🗺", fmt.Sprintf("%s %d %d %s", v.GetString("callback_char.throw_out_item"), items[i].ID, i, items[i].Item.Type)),
 			tg.NewInlineKeyboardButtonData("🔺", fmt.Sprintf("%s %d %s", v.GetString("callback_char.backpack_moving"), i-1, itemType)),
 		),
 		tg.NewInlineKeyboardRow(
@@ -232,7 +226,7 @@ func CountItemUserWantsToThrowKeyboard(buttonData []string, userItem r.UserItem)
 			}
 			row = append(row, tg.NewInlineKeyboardButtonData(
 				fmt.Sprintf("%d шт.", x+y),
-				fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.count_of_delete"), buttonData[1], buttonData[2], x+y, buttonData[3])),
+				fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.count_of_throw_out"), buttonData[1], buttonData[2], x+y, buttonData[3])),
 			)
 		}
 		buttons = append(buttons, row)
@@ -243,14 +237,14 @@ func CountItemUserWantsToThrowKeyboard(buttonData []string, userItem r.UserItem)
 		if y < maxCountItem {
 			row = append(row, tg.NewInlineKeyboardButtonData(
 				fmt.Sprintf("%d шт.", y),
-				fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.count_of_delete"), buttonData[1], buttonData[2], y, buttonData[3])),
+				fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.count_of_throw_out"), buttonData[1], buttonData[2], y, buttonData[3])),
 			)
 		}
 		x := y + 10
 		if y < maxCountItem {
 			row = append(row, tg.NewInlineKeyboardButtonData(
 				fmt.Sprintf("%d шт.", x),
-				fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.count_of_delete"), buttonData[1], buttonData[2], x, buttonData[3])),
+				fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.count_of_throw_out"), buttonData[1], buttonData[2], x, buttonData[3])),
 			)
 		}
 		buttons = append(buttons, row)
@@ -258,7 +252,7 @@ func CountItemUserWantsToThrowKeyboard(buttonData []string, userItem r.UserItem)
 
 	var row []tg.InlineKeyboardButton
 	row = append(row, tg.NewInlineKeyboardButtonData("Все!",
-		fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.count_of_delete"), buttonData[1], buttonData[2], maxCountItem, buttonData[3])),
+		fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.count_of_throw_out"), buttonData[1], buttonData[2], maxCountItem, buttonData[3])),
 	)
 	buttons = append(buttons, row)
 
@@ -314,7 +308,7 @@ func ChooseInstrumentKeyboard(char []string, cell r.Cell, user r.User) tg.Inline
 		var row []tg.InlineKeyboardButton
 
 		for instrument, i := range instruments {
-			if cell.Item.Cost != nil && *cell.Item.Cost > 0 && (i == "hand" || i == "swap") {
+			if cell.Item.Cost != nil && *cell.Item.Cost > 0 && (i == "hand" || i == "swap") && cell.NeedPay {
 				row = append(row, tg.NewInlineKeyboardButtonData(
 					fmt.Sprintf("%s ( %d💰 )", instrument, *cell.Item.Cost),
 					fmt.Sprintf("%s %s %s", instrument, char[3], char[4])),

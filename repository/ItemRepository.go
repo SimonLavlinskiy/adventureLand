@@ -37,6 +37,10 @@ type InstrumentItem struct {
 	InstrumentID int `gorm:"primaryKey"`
 }
 
+func (i Item) GetItemEndTime() time.Time {
+	return time.Now().Add(time.Duration(*i.Growing) * time.Minute)
+}
+
 func UserGetItem(user User, LocationStruct Location, char []string) string {
 	resultCell := Cell{MapsId: *LocationStruct.MapsId, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY}
 	resultCell = resultCell.GetCell()
@@ -96,7 +100,12 @@ func UserGetItemWithInstrument(cell Cell, user User, instrument Instrument) stri
 
 func UserGetItemWithHand(cell Cell, user User, userGetItem UserItem) string {
 	sumCountItem := *userGetItem.Count + 1
-	updateUserMoney := *user.Money - *cell.Item.Cost
+	updateUserMoney := *user.Money
+
+	if cell.NeedPay {
+		updateUserMoney -= *cell.Item.Cost
+	}
+
 	var countUseLeft = userGetItem.Item.CountUse
 
 	if userGetItem.CountUseLeft != nil {
@@ -261,7 +270,7 @@ func UserGetItemUpdateModels(user User, cell Cell, instrumentView string) string
 		return "У тебя уже есть такой!"
 	}
 
-	if !canUserPayItem(user, cell) {
+	if !canUserPayItem(user, cell) && cell.NeedPay {
 		return "Не хватает деняк!"
 	}
 

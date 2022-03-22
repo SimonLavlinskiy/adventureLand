@@ -7,11 +7,13 @@ user_location:
   tasks_menu_message: "📜 *Квесты* 📟 *Задания* 📆 *Ежедневки* 📜"
   item_categories:
     category_title: "🍕 \U0001F9F1 Категории 🌱 🛋"
-    categories: "food resource sprout furniture"
+    categories: "food resource sprout furniture other"
+    other_categories: "chat"
     food: "Еда 🍕"
     resource: "Ресурсы \U0001F9F1"
     sprout: "Семена 🌱"
     furniture: "Мебель 🛋"
+    other: "Всякое 🧩"
 
 callback_char:
   cancel: "cancel"
@@ -32,7 +34,7 @@ callback_char:
   put_count_item: "putCountItem"
   make_new_item: "makeNewItem"
   throw_out_item: "throwOutItem"
-  count_of_delete: "countOfDelete"
+  count_of_throw_out: "countOfDelete"
   buy_home: "buyHome"
   user_done_quest: "user_done_quest"
   user_get_quest: "user_get_quest"

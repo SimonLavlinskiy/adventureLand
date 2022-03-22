@@ -3,7 +3,9 @@ package repository
 import (
 	"errors"
 	"fmt"
+	v "github.com/spf13/viper"
 	"project0/config"
+	"strings"
 )
 
 type UserItem struct {
@@ -103,6 +105,11 @@ func GetUserItemsByType(userId uint, itemType []string) []UserItem {
 	}
 
 	var result []UserItem
+
+	if len(itemType) == 1 && itemType[0] == "other" {
+		itemType = strings.Fields(v.GetString("user_location.item_categories.other_categories"))
+	}
+
 	for _, i := range userItems {
 		for y := range itemType {
 			if i.Item.Type == itemType[y] {

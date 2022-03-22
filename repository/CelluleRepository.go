@@ -27,6 +27,9 @@ type Cell struct {
 	PrevItemID    *int `gorm:"embedded"`
 	PrevItem      *Item
 	PrevItemCount *int `gorm:"embedded"`
+	NeedPay       bool `gorm:"embedded"`
+	ChatId        *int `gorm:"embedded"`
+	Chat          *Chat
 }
 
 func (c Cell) GetCell() Cell {
@@ -78,10 +81,14 @@ func UpdateCellWithNextStateTime() {
 	}
 
 	for _, result := range results {
-		for _, instrument := range result.Item.Instruments {
-			if instrument.Type == "growing" {
-				result.UpdateCellAfterGrowing(instrument)
+		if len(result.Item.Instruments) != 0 {
+			for _, instrument := range result.Item.Instruments {
+				if instrument.Type == "growing" {
+					result.UpdateCellAfterGrowing(instrument)
+				}
 			}
+		} else {
+			result.UpdateCellIfChatIsTimeout()
 		}
 	}
 }
@@ -112,6 +119,26 @@ func (c Cell) UpdateCellAfterGrowing(instrument Instrument) {
 		Update("last_growing", c.LastGrowing).
 		Update("prev_item_id", c.PrevItemID).
 		Update("prev_item_count", c.PrevItemCount).
+		Update("chat_id", c.ChatId).
+		Error
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (c Cell) UpdateCellIfChatIsTimeout() {
+	*c.ItemCount -= 1
+	c.NextStateTime = nil
+	c.ChatId = nil
+	c.ItemID = nil
+
+	err := config.Db.Model(Cell{}).
+		Where(&Cell{ID: c.ID}).
+		Update("item_id", c.ItemID).
+		Update("type", "cell").
+		Update("item_count", c.ItemCount).
+		Update("next_state_time", c.NextStateTime).
+		Update("chat_id", c.ChatId).
 		Error
 	if err != nil {
 		panic(err)
@@ -212,20 +239,20 @@ func (c Cell) UpdateCellOnPrevItem() {
 	}
 }
 
-func UpdateCellUnderUser(user User, userItem UserItem, count int) error {
+func UpdateCellUnderUser(user User, userItem UserItem, count int, cellType string) error {
 	location := GetOrCreateMyLocation(user)
 
 	cell := Cell{AxisX: *location.AxisX, AxisY: *location.AxisY, MapsId: *location.MapsId}
 	cell = cell.GetCell()
 	if cell.ItemCount != nil && *cell.ItemCount > 0 {
-		return errors.New("В этой ячейке уже есть предмет, перейди на другую ячейку...")
+		return errors.New("В этой ячейке уже есть предмет, перейди на другую ячейку")
 	}
 
 	err := config.Db.Model(Cell{}).
 		Where(&Cell{AxisX: *location.AxisX, AxisY: *location.AxisY, MapsId: *location.MapsId}).
 		Update("item_id", userItem.ItemId).
 		Update("item_count", count).
-		Update("type", "item").
+		Update("type", cellType).
 		Update("destruction_hp", nil).
 		Update("next_state_time", nil).
 		Update("last_growing", nil).
@@ -234,6 +261,15 @@ func UpdateCellUnderUser(user User, userItem UserItem, count int) error {
 		Error
 	if err != nil {
 		return nil
+	}
+
+	if cellType == "chat" {
+		timeOut := userItem.Item.GetItemEndTime()
+		chat := CreateChat(timeOut)
+		config.Db.Model(Cell{}).
+			Where(&Cell{AxisX: *location.AxisX, AxisY: *location.AxisY, MapsId: *location.MapsId}).
+			Update("next_state_time", timeOut).
+			Update("chatId", chat.ID)
 	}
 
 	return nil
