@@ -147,6 +147,13 @@ func useSpecialCell(update tg.Update, char []string, user r.User) tg.MessageConf
 		loc := helpers.DirectionCell(user, char[1])
 		cell := r.Cell{MapsId: *loc.MapsId, AxisX: *loc.AxisX, AxisY: *loc.AxisY}.GetCell()
 		msg = helpers.Quest(&cell, user)
+
+		// Чатик
+	case v.GetString("message.emoji.chat"):
+		loc := helpers.DirectionCell(user, char[1])
+		cell := r.Cell{MapsId: *loc.MapsId, AxisX: *loc.AxisX, AxisY: *loc.AxisY}.GetCell()
+		msg.ReplyMarkup, msg.Text = helpers.OpenChatKeyboard(cell, user)
+
 	default:
 		msg.Text, msg.ReplyMarkup = r.GetMyMap(user)
 		msg.Text = fmt.Sprintf("%s\n\nНет инструмента в руке!", msg.Text)
@@ -307,6 +314,12 @@ func callBackResolver(update tg.Update) (tg.MessageConfig, bool) {
 		msg.Text, buttons = r.GetMyMap(user)
 		msg.Text = fmt.Sprintf("%s%s%s", msg.Text, v.GetString("msg_separator"), text)
 		msg.ReplyMarkup = buttons
+
+	// Чатик
+	case v.GetString("callback_char.join_to_chat"):
+		r.Chat{ID: uint(r.ToInt(charData[1]))}.GetOrCreateChatUser(user)
+		cell := r.Cell{ID: uint(r.ToInt(charData[3]))}.GetCell()
+		msg.ReplyMarkup, msg.Text = helpers.OpenChatKeyboard(cell, user)
 	}
 
 	msg.ParseMode = "markdown"

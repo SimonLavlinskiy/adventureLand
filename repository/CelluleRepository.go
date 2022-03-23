@@ -43,6 +43,7 @@ func (c Cell) GetCell() Cell {
 		Preload("Item.Instruments.Good").
 		Preload("Item.Instruments.Result").
 		Preload("Item.Instruments.NextStageItem").
+		Preload("Chat").
 		Where(c).
 		First(&result).
 		Error
@@ -81,14 +82,10 @@ func UpdateCellWithNextStateTime() {
 	}
 
 	for _, result := range results {
-		if len(result.Item.Instruments) != 0 {
-			for _, instrument := range result.Item.Instruments {
-				if instrument.Type == "growing" {
-					result.UpdateCellAfterGrowing(instrument)
-				}
+		for _, instrument := range result.Item.Instruments {
+			if instrument.Type == "growing" {
+				result.UpdateCellAfterGrowing(instrument)
 			}
-		} else {
-			result.UpdateCellIfChatIsTimeout()
 		}
 	}
 }
@@ -127,18 +124,14 @@ func (c Cell) UpdateCellAfterGrowing(instrument Instrument) {
 }
 
 func (c Cell) UpdateCellIfChatIsTimeout() {
-	*c.ItemCount -= 1
-	c.NextStateTime = nil
-	c.ChatId = nil
-	c.ItemID = nil
+	*c.ItemCount = 0
 
 	err := config.Db.Model(Cell{}).
 		Where(&Cell{ID: c.ID}).
-		Update("item_id", c.ItemID).
+		Update("item_id", nil).
 		Update("type", "cell").
 		Update("item_count", c.ItemCount).
-		Update("next_state_time", c.NextStateTime).
-		Update("chat_id", c.ChatId).
+		Update("chat_id", nil).
 		Error
 	if err != nil {
 		panic(err)
@@ -268,8 +261,7 @@ func UpdateCellUnderUser(user User, userItem UserItem, count int, cellType strin
 		chat := CreateChat(timeOut)
 		config.Db.Model(Cell{}).
 			Where(&Cell{AxisX: *location.AxisX, AxisY: *location.AxisY, MapsId: *location.MapsId}).
-			Update("next_state_time", timeOut).
-			Update("chatId", chat.ID)
+			Update("chat_id", chat.ID)
 	}
 
 	return nil
@@ -302,4 +294,15 @@ func CreateCells(cells []Cell) bool {
 	}
 
 	return false
+}
+
+func UpdateCellWithFiredChat(chat Chat) {
+	chatId := int(chat.ID)
+	var results []Cell
+
+	config.Db.Where(Cell{ChatId: &chatId}).Find(&results)
+
+	for _, cell := range results {
+		cell.UpdateCellIfChatIsTimeout()
+	}
 }

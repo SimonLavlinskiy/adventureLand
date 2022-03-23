@@ -90,6 +90,7 @@ func GetMyMap(us User) (textMessage string, buttons tg.ReplyKeyboardMarkup) {
 
 	var resultCell []Cell
 	UpdateCellWithNextStateTime()
+	UpdateFiredChats()
 
 	err := config.Db.
 		Preload("Item").
@@ -326,16 +327,24 @@ func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons 
 			case 3:
 				btn.Left += button
 			}
-		case cell.IsWorkbench():
+		case cell.IsWorkbench() || cell.IsQuest() || cell.IsChat():
+			var el string
+			if cell.IsWorkbench() {
+				el = "wrench"
+			} else if cell.IsQuest() {
+				el = "quest"
+			} else if cell.IsChat() {
+				el = "chat"
+			}
 			switch i {
 			case 0:
-				btn.Up = fmt.Sprintf("🔧 %s %s", btn.Up, cell.Item.View)
+				btn.Up = fmt.Sprintf("%s %s %s", v.GetString(fmt.Sprintf("message.emoji.%s", el)), btn.Up, cell.Item.View)
 			case 1:
-				btn.Down = fmt.Sprintf("🔧 %s %s", btn.Down, cell.Item.View)
+				btn.Down = fmt.Sprintf("%s %s %s", v.GetString(fmt.Sprintf("message.emoji.%s", el)), btn.Down, cell.Item.View)
 			case 2:
-				btn.Right = fmt.Sprintf("🔧 %s %s", btn.Right, cell.Item.View)
+				btn.Right = fmt.Sprintf("%s %s %s", v.GetString(fmt.Sprintf("message.emoji.%s", el)), btn.Right, cell.Item.View)
 			case 3:
-				btn.Left = fmt.Sprintf("🔧 %s %s", btn.Left, cell.Item.View)
+				btn.Left = fmt.Sprintf("%s %s %s", v.GetString(fmt.Sprintf("message.emoji.%s", el)), btn.Left, cell.Item.View)
 			}
 		case cell.IsItem() || cell.IsSwap():
 			switch i {
@@ -347,17 +356,6 @@ func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons 
 				btn.Right = cell.isItemCost(btn.Right, resUser)
 			case 3:
 				btn.Left = cell.isItemCost(btn.Left, resUser)
-			}
-		case cell.IsQuest():
-			switch i {
-			case 0:
-				btn.Up = fmt.Sprintf("📟 %s %s", btn.Up, cell.Item.View)
-			case 1:
-				btn.Down = fmt.Sprintf("📟 %s %s", btn.Down, cell.Item.View)
-			case 2:
-				btn.Right = fmt.Sprintf("📟 %s %s", btn.Right, cell.Item.View)
-			case 3:
-				btn.Left = fmt.Sprintf("📟 %s %s", btn.Left, cell.Item.View)
 			}
 		case cell.ID == 0:
 			switch i {
@@ -426,7 +424,7 @@ func (c Cell) IsQuest() bool {
 }
 
 func (c Cell) IsChat() bool {
-	if c.Type != nil && *c.Type == "chat" && c.ItemID != nil {
+	if c.Type != nil && *c.Type == "chat" && c.ItemID != nil && c.ChatId != nil {
 		return true
 	}
 	return false

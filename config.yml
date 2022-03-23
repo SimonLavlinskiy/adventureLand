@@ -40,6 +40,7 @@ callback_char:
   user_get_quest: "user_get_quest"
   quest: "quest"
   quests: "quests"
+  join_to_chat: "joinToChat"
 
 main_info:
   cost_of_house: 1000
@@ -87,6 +88,7 @@ message:
     hand: "👋"
     foot: "\U0001F9B6"
     quest: "📟"
+    chat: "📨"
   user:
     online: "📴 ♻️ 📳"
     offline: "📳 ♻️ 📴"

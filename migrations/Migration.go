@@ -22,6 +22,7 @@ func Migrate() bool {
 		repository.QuestTask{},
 		repository.Result{},
 		repository.Chat{},
+		repository.ChatUser{},
 	)
 	if err != nil {
 		fmt.Println("Migration failed")

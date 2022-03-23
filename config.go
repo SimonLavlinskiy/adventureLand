@@ -45,6 +45,7 @@ type Messages struct {
 		userGetQuest    string
 		quest           string
 		quests          string
+		joinToChat      string
 	}
 	Elem struct {
 		colors        string
@@ -83,6 +84,7 @@ type Messages struct {
 			hand            string
 			foot            string
 			quest           string
+			chat            string
 		}
 	}
 	Errors struct {

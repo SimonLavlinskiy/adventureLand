@@ -558,3 +558,28 @@ func BackpackCategoryKeyboard() (tg.InlineKeyboardMarkup, string) {
 		rows...,
 	), fmt.Sprintf("🎒 *Рюкзачок*\n%s", v.GetString("user_location.item_categories.category_title"))
 }
+
+func OpenChatKeyboard(cell r.Cell, user r.User) (tg.InlineKeyboardMarkup, string) {
+	var button tg.InlineKeyboardButton
+	msgText := "Присоединяйся и общайтесь!"
+
+	if !cell.IsChat() {
+		msgText = "Здесь нет чата! Поищи в другом месте..."
+		button = tg.NewInlineKeyboardButtonData("Жаль...", "cancel")
+	} else {
+		userChat := cell.Chat.GetChatUser(user)
+
+		if userChat == nil {
+			button = tg.NewInlineKeyboardButtonData("Присоединиться к беседе", fmt.Sprintf("joinToChat %d cell %d", *cell.ChatId, cell.ID))
+		} else {
+			button = tg.NewInlineKeyboardButtonURL("Перейти в беседу", "https://t.me/AdventureChatBot")
+		}
+	}
+
+	keyboard := tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			button,
+		),
+	)
+	return keyboard, msgText
+}
