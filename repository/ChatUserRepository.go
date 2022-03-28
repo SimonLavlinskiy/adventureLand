@@ -46,12 +46,18 @@ func (chat Chat) GetChatUser(user User) *ChatUser {
 	return &result
 }
 
-func (chat Chat) GetChatUsers() ChatUser {
-	var result ChatUser
-	config.Db.Where(ChatUser{ChatID: chat.ID}).Find(&result)
+func (chat Chat) GetChatUsers() []ChatUser {
+	var result []ChatUser
+	config.Db.Preload("User").Where(ChatUser{ChatID: chat.ID}).Find(&result)
 	return result
 }
 
 func (chat Chat) DeleteChatUser() {
 	config.Db.Where("chat_id", chat.ID).Delete(ChatUser{})
+}
+
+func GetChatOfUser(user User) ChatUser {
+	var result ChatUser
+	config.Db.Preload("User").Where(ChatUser{UserID: user.ID}).First(&result)
+	return result
 }

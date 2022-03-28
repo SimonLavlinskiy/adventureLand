@@ -39,7 +39,7 @@ type Messages struct {
 		hand            string
 		foot            string
 		throwOutItem    string
-		countOfDelete   string
+		countOfThrowOut string
 		buyHome         string
 		userDoneQuest   string
 		userGetQuest    string
@@ -92,6 +92,7 @@ type Messages struct {
 		userNotHasItemInHand string
 		userHasOtherItem     string
 		userDidNotTask       string
+		choseInstrumentToUse string
 	}
 	QuestStatuses struct {
 		completed      string
@@ -102,6 +103,8 @@ type Messages struct {
 		newEmoji       string
 	}
 	MainInfo struct {
-		costOfHouse int
+		costOfHouse           int
+		messageChatIsClosed   string
+		messageUserSignInChat string
 	}
 }

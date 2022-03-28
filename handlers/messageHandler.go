@@ -10,126 +10,146 @@ import (
 	"time"
 )
 
-var msg tg.MessageConfig
+var msgs []tg.MessageConfig
 
-func messageResolver(update tg.Update) tg.MessageConfig {
+func messageResolver(update tg.Update) []tg.MessageConfig {
+	msgs = []tg.MessageConfig{}
 	user := r.GetOrCreateUser(update)
 
 	switch user.MenuLocation {
 	case v.GetString("user_location.menu"):
-		msg = userMenuLocation(update, user)
+		msgs = userMenuLocation(update, user)
 	case v.GetString("user_location.maps"):
-		msg = userMapLocation(update, user)
+		msgs = userMapLocation(update, user)
 	case v.GetString("user_location.profile"):
-		msg = userProfileLocation(update, user)
+		msgs = userProfileLocation(update, user)
 	default:
-		msg = userMenuLocation(update, user)
+		msgs = userMenuLocation(update, user)
 	}
 
-	msg.ParseMode = "markdown"
+	for i := range msgs {
+		msgs[i].ParseMode = "markdown"
+		msgs[i].ChatID = update.Message.Chat.ID
+	}
 
-	return msg
+	return msgs
 }
 
-func userMenuLocation(update tg.Update, user r.User) tg.MessageConfig {
+func userMenuLocation(update tg.Update, user r.User) []tg.MessageConfig {
+	var msg tg.MessageConfig
 	newMessage := update.Message.Text
 
 	switch newMessage {
 	case "🗺 Карта 🗺":
 		msg.Text, msg.ReplyMarkup = r.GetMyMap(user)
+		msgs = append(msgs, msg)
 		r.User{TgId: user.TgId, MenuLocation: "Карта"}.UpdateUser()
 	case fmt.Sprintf("%s Профиль 👔", user.Avatar):
 		msg.Text = user.GetUserInfo()
 		msg.ReplyMarkup = helpers.ProfileKeyboard(user)
+		msgs = append(msgs, msg)
 		r.User{TgId: user.TgId, MenuLocation: "Профиль"}.UpdateUser()
 	default:
 		msg.Text = "Меню"
 		msg.ReplyMarkup = helpers.MainKeyboard(user)
+		msgs = append(msgs, msg)
 		r.User{TgId: user.TgId, MenuLocation: "Меню"}.UpdateUser()
 	}
 
-	msg.ChatID = update.Message.Chat.ID
-	return msg
+	for i := range msgs {
+		msgs[i].ChatID = update.Message.Chat.ID
+	}
+	return msgs
 }
 
-func userProfileLocation(update tg.Update, user r.User) tg.MessageConfig {
+func userProfileLocation(update tg.Update, user r.User) []tg.MessageConfig {
+	var msg tg.MessageConfig
 	newMessage := update.Message.Text
 
 	if user.Username == "waiting" {
 		r.User{TgId: user.TgId, Username: newMessage}.UpdateUser()
 		msg.Text = user.GetUserInfo()
 		msg.ReplyMarkup = helpers.ProfileKeyboard(user)
+		msgs = append(msgs, msg)
 	} else {
 		switch newMessage {
 		case "📝 Изменить имя? 📝":
 			r.User{TgId: user.TgId, Username: "waiting"}.UpdateUser()
 			msg.Text = "‼️ *ВНИМАНИЕ*: ‼️‼\nТы должен вписать новое имя?\n‼️‼️‼️‼️‼️‼️‼️"
 			msg.ReplyMarkup = tg.NewRemoveKeyboard(true)
+			msgs = append(msgs, msg)
 		case fmt.Sprintf("%s Изменить аватар? %s", user.Avatar, user.Avatar):
 			msg.Text = "‼️ *ВНИМАНИЕ*: ‼️‼\nВыбери себе аватар..."
 			msg.ReplyMarkup = helpers.EmojiInlineKeyboard()
+			msgs = append(msgs, msg)
 		case "/menu", v.GetString("user_location.menu"):
 			msg.Text = "Меню"
 			msg.ReplyMarkup = helpers.MainKeyboard(user)
+			msgs = append(msgs, msg)
 			r.User{TgId: user.TgId, MenuLocation: "Меню"}.UpdateUser()
 		default:
 			msg.Text = user.GetUserInfo()
 			msg.ReplyMarkup = helpers.ProfileKeyboard(user)
+			msgs = append(msgs, msg)
 		}
 	}
 
-	msg.ChatID = update.Message.Chat.ID
-	return msg
+	for i := range msgs {
+		msgs[i].ChatID = update.Message.Chat.ID
+	}
+
+	return msgs
 }
 
-func userMapLocation(update tg.Update, user r.User) tg.MessageConfig {
+func userMapLocation(update tg.Update, user r.User) []tg.MessageConfig {
 	newMessage := update.Message.Text
 	char := strings.Fields(newMessage)
 
 	if len(char) != 1 {
-		msg = useSpecialCell(update, char, user)
+		msgs = useSpecialCell(char, user)
 	} else {
-		msg = useDefaultCell(update, user)
+		msgs = useDefaultCell(update, user)
 	}
 
-	return msg
+	return msgs
 }
 
-func useSpecialCell(update tg.Update, char []string, user r.User) tg.MessageConfig {
+func useSpecialCell(char []string, user r.User) []tg.MessageConfig {
 	ItemLeftHand, ItemRightHand, ItemHead := helpers.UsersHandItemsView(user)
+	var msg tg.MessageConfig
 
 	// При нажатии кнопок
 	switch char[0] {
 	case v.GetString("message.doing.up"), v.GetString("message.doing.down"), v.GetString("message.doing.left"), v.GetString("message.doing.right"):
-		msg = helpers.UserMoving(user, char, char[0])
+		msgs = append(msgs, helpers.UserMoving(user, char, char[0]))
 	case v.GetString("message.emoji.foot"):
-		msg = helpers.UserMoving(user, char, char[1])
+		msgs = append(msgs, helpers.UserMoving(user, char, char[1]))
 	case v.GetString("message.emoji.hand"), ItemLeftHand.View, ItemRightHand.View:
-		msg = helpers.UserUseHandOrInstrument(user, char)
+		msgs = append(msgs, helpers.UserUseHandOrInstrumentMessage(user, char))
 	case v.GetString("message.emoji.exclamation_mark"):
-		cellLocation := helpers.DirectionCell(user, char[3])
-		cell := r.Cell{MapsId: *cellLocation.MapsId, AxisX: *cellLocation.AxisX, AxisY: *cellLocation.AxisY}
-		cell = cell.GetCell()
-		msg.Text = "В зависимости от предмета в твоих руках ты можешь получить разный результат. Выбирай..."
-		msg.ReplyMarkup = helpers.ChooseInstrumentKeyboard(char, cell, user)
+		cell := helpers.DirectionCell(user, char[3])
+		msgs = append(msgs, helpers.ChoseInstrumentMessage(user, char, cell))
 	case v.GetString("message.emoji.stop_use"):
-		msg.Text = v.GetString("errors.user_not_has_item_in_hand")
+		msgs = append(msgs, tg.MessageConfig{Text: v.GetString("errors.user_not_has_item_in_hand")})
 	case "Рюкзак":
-		msg.ReplyMarkup, msg.Text = helpers.BackpackCategoryKeyboard()
+		msgs = append(msgs, helpers.BackpackCategoryKeyboard())
 	case "Вещи":
 		userItems := r.GetInventoryItems(user.ID)
 		msg.Text = helpers.MessageGoodsUserItems(user, userItems, 0)
 		msg.ReplyMarkup = helpers.GoodsInlineKeyboard(user, userItems, 0)
+		msgs = append(msgs, msg)
 	case v.GetString("message.emoji.online"):
 		userOnline := true
 		user = r.User{TgId: user.TgId, OnlineMap: &userOnline}.UpdateUser()
 		msg.Text, msg.ReplyMarkup = r.GetMyMap(user)
 		msg.Text = fmt.Sprintf("%s%sОнлайн включен!", msg.Text, v.GetString("msg_separator"))
+		msgs = append(msgs, msg)
 	case v.GetString("message.emoji.offline"):
 		userOnline := false
 		user = r.User{TgId: user.TgId, OnlineMap: &userOnline}.UpdateUser()
 		msg.Text, msg.ReplyMarkup = r.GetMyMap(user)
 		msg.Text = fmt.Sprintf("%s%sОнлайн выключен!", msg.Text, v.GetString("msg_separator"))
+		msgs = append(msgs, msg)
 	case ItemHead.View:
 		res := helpers.DirectionCell(user, char[1])
 		text, err := r.UpdateUserInstrument(user, ItemHead)
@@ -138,64 +158,78 @@ func useSpecialCell(update tg.Update, char []string, user r.User) tg.MessageConf
 		} else {
 			msg.Text = r.ViewItemInfo(res)
 		}
+		msgs = append(msgs, msg)
 	case v.GetString("message.emoji.wrench"):
 		loc := helpers.DirectionCell(user, char[1])
 		cell := r.Cell{MapsId: *loc.MapsId, AxisX: *loc.AxisX, AxisY: *loc.AxisY}.GetCell()
 		charWorkbench := strings.Fields("workbench usPoint 0 1stComp null 0 2ndComp null 0 3rdComp null 0")
-		msg = helpers.Workbench(&cell, charWorkbench)
+		msgs = append(msgs, helpers.Workbench(&cell, charWorkbench))
 	case v.GetString("message.emoji.quest"):
 		loc := helpers.DirectionCell(user, char[1])
 		cell := r.Cell{MapsId: *loc.MapsId, AxisX: *loc.AxisX, AxisY: *loc.AxisY}.GetCell()
-		msg = helpers.Quest(&cell, user)
+		msgs = append(msgs, helpers.Quest(&cell, user))
 
 		// Чатик
 	case v.GetString("message.emoji.chat"):
 		loc := helpers.DirectionCell(user, char[1])
 		cell := r.Cell{MapsId: *loc.MapsId, AxisX: *loc.AxisX, AxisY: *loc.AxisY}.GetCell()
 		msg.ReplyMarkup, msg.Text = helpers.OpenChatKeyboard(cell, user)
-
+		msgs = append(msgs, msg)
 	default:
 		msg.Text, msg.ReplyMarkup = r.GetMyMap(user)
 		msg.Text = fmt.Sprintf("%s\n\nНет инструмента в руке!", msg.Text)
+		msgs = append(msgs, msg)
 	}
 
-	msg.ChatID = update.Message.Chat.ID
-	return msg
+	return msgs
 }
 
-func useDefaultCell(update tg.Update, user r.User) tg.MessageConfig {
+func useDefaultCell(update tg.Update, user r.User) []tg.MessageConfig {
+	var msg tg.MessageConfig
 	newMessage := strings.Fields(update.Message.Text)
 	currentTime := time.Now()
 
 	// Взаимодействие с предметами на карте, у которых нет действий
 	switch newMessage[0] {
 	case v.GetString("message.doing.up"), v.GetString("message.doing.down"), v.GetString("message.doing.left"), v.GetString("message.doing.right"):
-		msg = helpers.UserMoving(user, newMessage, newMessage[0])
+		msgs = append(msgs, helpers.UserMoving(user, newMessage, newMessage[0]))
 	case v.GetString("message.emoji.water"):
 		msg.Text = "Ты не похож на Jesus! 👮‍♂️"
+		msgs = append(msgs, msg)
 	case v.GetString("message.emoji.clock"):
 		msg.Text = fmt.Sprintf("%s\nЧасики тикают...", currentTime.Format("15:04:05"))
+		msgs = append(msgs, msg)
 	case user.Avatar:
 		msg.Text, msg.ReplyMarkup = r.GetMyMap(user)
 		msg.Text = fmt.Sprintf("%s\n\n%s", user.GetUserInfo(), msg.Text)
+		msgs = append(msgs, msg)
 	case "/menu", v.GetString("user_location.menu"):
 		msg.Text = "Меню"
 		msg.ReplyMarkup = helpers.MainKeyboard(user)
 		r.User{TgId: user.TgId, MenuLocation: "Меню"}.UpdateUser()
+		msgs = append(msgs, msg)
 	case v.GetString("message.emoji.casino"):
 		msg.Text = "💰💵🤑 Ставки на JOY CASINO дот COM! 🤑💵💰"
+		msgs = append(msgs, msg)
 	case v.GetString("message.emoji.forbidden"):
 		msg.Text = "🚫 Сюда нельзя! 🚫"
+		msgs = append(msgs, msg)
 	default:
 		msg.Text, msg.ReplyMarkup = r.GetMyMap(user)
 		msg.Text = fmt.Sprintf("%s%sХммм....🤔", msg.Text, v.GetString("msg_separator"))
+		msgs = append(msgs, msg)
 	}
 
-	msg.ChatID = update.Message.Chat.ID
-	return msg
+	for i := range msgs {
+		msgs[i].ChatID = update.Message.Chat.ID
+	}
+
+	return msgs
 }
 
-func callBackResolver(update tg.Update) (tg.MessageConfig, bool) {
+func callBackResolver(update tg.Update) ([]tg.MessageConfig, bool) {
+	msgs = []tg.MessageConfig{}
+	var msg tg.MessageConfig
 	buttons := tg.ReplyKeyboardMarkup{}
 	charData := strings.Fields(update.CallbackQuery.Data)
 	deletePrevMessage := true
@@ -206,6 +240,7 @@ func callBackResolver(update tg.Update) (tg.MessageConfig, bool) {
 
 	if len(charData) == 1 && charData[0] == v.GetString("callback_char.cancel") {
 		msg.Text, msg.ReplyMarkup = r.GetMyMap(user)
+		msgs = append(msgs, msg)
 	}
 
 	fmt.Println(charData)
@@ -217,65 +252,75 @@ func callBackResolver(update tg.Update) (tg.MessageConfig, bool) {
 		resUserItems := r.GetBackpackItems(user.ID, charData[1])
 		msg.Text = helpers.MessageBackpackUserItems(resUserItems, 0, charData[1])
 		msg.ReplyMarkup = helpers.BackpackInlineKeyboard(resUserItems, 0, charData[1])
+		msgs = append(msgs, msg)
 	case v.GetString("callback_char.backpack_moving"):
-		msg = helpers.BackPackMoving(charData, user)
+		msgs = append(msgs, helpers.BackPackMoving(charData, user))
 	case v.GetString("callback_char.eat_food"):
-		msg = helpers.UserEatItem(user, charData)
+		msgs = append(msgs, helpers.UserEatItem(user, charData))
 
 	// Действия в инвентаре
 	case v.GetString("callback_char.goods_moving"):
-		msg = helpers.GoodsMoving(charData, user)
+		msgs = append(msgs, helpers.GoodsMoving(charData, user))
 	case v.GetString("callback_char.dress_good"):
-		msg = helpers.DressUserItem(user, charData)
+		msgs = append(msgs, helpers.DressUserItem(user, charData))
 	case v.GetString("callback_char.change_left_hand"), v.GetString("callback_char.change_right_hand"):
 		user, userItem := r.UpdateUserHand(user, charData)
 		charDataForOpenGoods := strings.Fields(fmt.Sprintf("%s %s", v.GetString("callback_char.goods_moving"), charData[2]))
 		msg = helpers.GoodsMoving(charDataForOpenGoods, user)
 		msg.Text = fmt.Sprintf("%s%sВы надели %s", msg.Text, v.GetString("msg_separator"), userItem.Item.View)
+		msgs = append(msgs, msg)
 	case v.GetString("callback_char.take_off_good"):
-		msg = helpers.UserTakeOffGood(user, charData)
+		msgs = append(msgs, helpers.UserTakeOffGood(user, charData))
 
 	// Удаление, выкидывание, описание итема
 	case v.GetString("callback_char.delete_item"):
-		msg = helpers.UserDeleteItem(user, charData)
-	case v.GetString("callback_char.throw_out_item"):
-		msg = helpers.UserWantsToThrowOutItem(user, charData)
+		msgs = append(msgs, helpers.UserDeleteItem(user, charData))
 	case v.GetString("callback_char.count_of_throw_out"):
-		msg = helpers.UserThrowOutItem(user, charData)
+		msgs = append(msgs, helpers.UserWantsToThrowOutItem(user, charData))
+	case v.GetString("callback_char.throw_out_item"):
+		msgs = append(msgs, helpers.UserThrowOutItem(user, charData))
 	case v.GetString("callback_char.description"):
 		msg.Text = r.UserItem{ID: r.ToInt(charData[1])}.GetFullDescriptionOfUserItem()
 		msg.ReplyMarkup = helpers.DescriptionInlineButton(charData)
+		msgs = append(msgs, msg)
 
 	// Профиль
 	case v.GetString("callback_char.change_avatar"):
 		res := r.User{TgId: user.TgId, Avatar: charData[1]}.UpdateUser()
 		msg.Text = user.GetUserInfo()
 		msg.ReplyMarkup = helpers.ProfileKeyboard(res)
+		msgs = append(msgs, msg)
 
 	// Крафтинг
 	case v.GetString("callback_char.workbench"):
-		msg = helpers.Workbench(nil, charData)
+		msgs = append(msgs, helpers.Workbench(nil, charData))
 	case v.GetString("callback_char.receipt"):
 		msg.Text = fmt.Sprintf("📖 *Рецепты*: 📖%s%s", v.GetString("msg_separator"), helpers.AllReceiptsMsg())
 		msg.ReplyMarkup = nil
 		deletePrevMessage = false
+		msgs = append(msgs, msg)
 	case v.GetString("callback_char.put_item"):
 		userItem := r.GetUserItemsByType(user.ID, strings.Fields("food resource"))
 		msg.ReplyMarkup = helpers.ChooseUserItemKeyboard(userItem, charData)
 		msg.Text = fmt.Sprintf("%s%sВыбери предмет:", helpers.OpenWorkbenchMessage(charData), v.GetString("msg_separator"))
+		msgs = append(msgs, msg)
 	case v.GetString("callback_char.put_count_item"):
 		msg = helpers.PutCountComponent(charData)
 		msg.Text = fmt.Sprintf("%s%s⚠️ Сколько выкладываешь?", helpers.OpenWorkbenchMessage(charData), v.GetString("msg_separator"))
+		msgs = append(msgs, msg)
 	case v.GetString("callback_char.make_new_item"):
 		resp := helpers.GetReceiptFromData(charData)
 		receipt := r.FindReceiptForUser(resp)
 		msg, deletePrevMessage = helpers.UserCraftItem(user, receipt)
+		msgs = append(msgs, msg)
 
 	// Использование надетых итемов
 	case v.GetString("message.emoji.hand"), ItemLeftHand.View, ItemRightHand.View:
-		msg = helpers.UserUseHandOrInstrument(user, charData)
+		msgs = append(msgs, helpers.UserUseHandOrInstrumentMessage(user, charData))
+		res := helpers.DirectionCell(user, charData[1])
+		msgs = append(msgs, helpers.ChoseInstrumentMessage(user, charData, res))
 	case v.GetString("message.emoji.foot"):
-		msg = helpers.UserMoving(user, charData, charData[1])
+		msgs = append(msgs, helpers.UserMoving(user, charData, charData[1]))
 	case ItemHead.View:
 		res := helpers.DirectionCell(user, charData[1])
 		text, err := r.UpdateUserInstrument(user, ItemHead)
@@ -283,21 +328,23 @@ func callBackResolver(update tg.Update) (tg.MessageConfig, bool) {
 		if err != nil {
 			msg.Text = fmt.Sprintf("%s%s%s", msg.Text, v.GetString("msg_separator"), text)
 		}
+		msgs = append(msgs, msg)
 
 	// Квесты
 	case v.GetString("callback_char.quests"):
 		msg.Text = v.GetString("user_location.tasks_menu_message")
 		msg.ReplyMarkup = helpers.AllQuestsMessageKeyboard(user)
+		msgs = append(msgs, msg)
 	case v.GetString("callback_char.quest"):
-		msg = helpers.OpenQuest(uint(r.ToInt(charData[1])), user)
+		msgs = append(msgs, helpers.OpenQuest(uint(r.ToInt(charData[1])), user))
 	case v.GetString("callback_char.user_get_quest"):
 		r.UserQuest{
 			UserId:  user.ID,
 			QuestId: uint(r.ToInt(charData[1])),
 		}.GetOrCreateUserQuest()
-		msg = helpers.OpenQuest(uint(r.ToInt(charData[1])), user)
+		msgs = append(msgs, helpers.OpenQuest(uint(r.ToInt(charData[1])), user))
 	case v.GetString("callback_char.user_done_quest"):
-		msg = helpers.UserDoneQuest(uint(r.ToInt(charData[1])), user)
+		msgs = append(msgs, helpers.UserDoneQuest(uint(r.ToInt(charData[1])), user))
 
 	// Дом юзера
 	case v.GetString("callback_char.buy_home"):
@@ -312,17 +359,46 @@ func callBackResolver(update tg.Update) (tg.MessageConfig, bool) {
 		}
 
 		msg.Text, buttons = r.GetMyMap(user)
-		msg.Text = fmt.Sprintf("%s%s%s", msg.Text, v.GetString("msg_separator"), text)
+		msg.Text = fmt.Sprintf("%s%s%s", msgs[0].Text, v.GetString("msg_separator"), text)
 		msg.ReplyMarkup = buttons
+		msgs = append(msgs, msg)
 
 	// Чатик
 	case v.GetString("callback_char.join_to_chat"):
-		r.Chat{ID: uint(r.ToInt(charData[1]))}.GetOrCreateChatUser(user)
+		ui := make([]r.ChatUser, 1)
+		ui[0] = r.Chat{ID: uint(r.ToInt(charData[1]))}.GetOrCreateChatUser(user)
 		cell := r.Cell{ID: uint(r.ToInt(charData[3]))}.GetCell()
 		msg.ReplyMarkup, msg.Text = helpers.OpenChatKeyboard(cell, user)
+		msgs = append(msgs, msg)
+		helpers.NotifyUsers(ui, v.GetString("main_info.message_user_sign_in_chat"))
 	}
 
-	msg.ParseMode = "markdown"
-	msg.ChatID = update.CallbackQuery.Message.Chat.ID
-	return msg, deletePrevMessage
+	for i := range msgs {
+		msgs[i].ParseMode = "markdown"
+		msgs[i].ChatID = update.CallbackQuery.Message.Chat.ID
+	}
+
+	return msgs, deletePrevMessage
+}
+
+func SendUserMessageAllChatUsers(update tg.Update) ([]r.ChatUser, string) {
+	user := r.GetOrCreateUser(update)
+	chUser := r.GetChatOfUser(user)
+	chatUsers := r.Chat{ID: chUser.ChatID}.GetChatUsers()
+
+	var chUsWithoutSender []r.ChatUser
+	for _, chatUser := range chatUsers {
+		if chatUser.User.TgId != uint(update.Message.From.ID) {
+			chUsWithoutSender = append(chUsWithoutSender, chatUser)
+		}
+	}
+
+	replacer := strings.NewReplacer(
+		"/start", fmt.Sprintf("<i>%s</i> %s <code>присоединился к чатику<code>", user.Avatar, user.Username),
+	)
+	userMsg := replacer.Replace(update.Message.Text)
+
+	message := fmt.Sprintf("<code>От %s %s %s</code>%s%s", user.Avatar, user.Username, user.Avatar, v.GetString("msg_separator"), userMsg)
+
+	return chUsWithoutSender, message
 }

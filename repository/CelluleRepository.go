@@ -65,31 +65,6 @@ func (c Cell) UpdateCell(cellId uint) {
 	}
 }
 
-func UpdateCellWithNextStateTime() {
-	var results []Cell
-	err := config.Db.
-		Preload("Item").
-		Preload("PrevItem").
-		Preload("Item.Instruments").
-		Preload("Item.Instruments.Good").
-		Preload("Item.Instruments.Result").
-		Preload("Item.Instruments.NextStageItem").
-		Where("next_state_time <= ?", time.Now()).
-		Find(&results).
-		Error
-	if err != nil || len(results) == 0 {
-		fmt.Println("Ничего не найдено для обновления!")
-	}
-
-	for _, result := range results {
-		for _, instrument := range result.Item.Instruments {
-			if instrument.Type == "growing" {
-				result.UpdateCellAfterGrowing(instrument)
-			}
-		}
-	}
-}
-
 func (c Cell) UpdateCellAfterGrowing(instrument Instrument) {
 
 	if *c.ItemCount > 1 && instrument.NextStageItem != nil {

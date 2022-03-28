@@ -1,4 +1,4 @@
-msg_separator: "\n\n〰️〰️〰️〰️〰️〰️〰️〰️〰️️〰️〰️〰️️〰️〰️\n"
+msg_separator: "\n\n〰️〰️〰️〰️〰️〰️〰️〰️〰️️〰️〰️〰️️\n"
 
 user_location:
   menu: "Меню"
@@ -34,7 +34,7 @@ callback_char:
   put_count_item: "putCountItem"
   make_new_item: "makeNewItem"
   throw_out_item: "throwOutItem"
-  count_of_throw_out: "countOfDelete"
+  count_of_throw_out: "countOfThrowOut"
   buy_home: "buyHome"
   user_done_quest: "user_done_quest"
   user_get_quest: "user_get_quest"
@@ -44,6 +44,8 @@ callback_char:
 
 main_info:
   cost_of_house: 1000
+  message_chat_is_closed: "Чатик истек!"
+  message_user_sign_in_chat: "Добро пожаловать в чатик!"
 
 quest_statuses:
   completed: "✅ Выполнен"
@@ -98,3 +100,4 @@ errors:
   user_not_has_item_in_hand: "Нельзя взять без инструмента в руке"
   user_has_other_item: "Сначала снимите предмет, чтоб надеть другой"
   user_did_not_task: "Задание не выполнено!"
+  chose_instrument_to_use: "В зависимости от предмета в твоих руках ты можешь получить разный результат. Выбирай..."

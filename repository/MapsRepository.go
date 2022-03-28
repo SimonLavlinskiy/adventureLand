@@ -89,8 +89,6 @@ func GetMyMap(us User) (textMessage string, buttons tg.ReplyKeyboardMarkup) {
 	m := map[Point]Cell{}
 
 	var resultCell []Cell
-	UpdateCellWithNextStateTime()
-	UpdateFiredChats()
 
 	err := config.Db.
 		Preload("Item").

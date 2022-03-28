@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"errors"
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
@@ -14,8 +15,70 @@ func BackpackInlineKeyboard(items []r.UserItem, i int, backpackType string) tg.I
 		return FoodListBackpackInlineKeyboard(items, i)
 	case "sprout":
 		return SproutListBackpackInlineKeyboard(items, i, backpackType)
+	case "resource":
+		return ResourceListBackpackInlineKeyboard(items, i, backpackType)
 	default:
 		return DefaultListBackpackInlineKeyboard(items, i, backpackType)
+	}
+}
+
+func DescriptionInlineButton(char []string) tg.InlineKeyboardMarkup {
+	switch char[3] {
+	case "food":
+		return tg.NewInlineKeyboardMarkup(
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("🍽 1шт", fmt.Sprintf("%s %s %s", v.GetString("callback_char.eat_food"), char[1], char[2])),
+				tg.NewInlineKeyboardButtonData("👋🗑🗺", fmt.Sprintf("%s %s %s food", v.GetString("callback_char.count_of_throw_out"), char[1], char[2])),
+			),
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %s %s food false", v.GetString("callback_char.delete_item"), char[1], char[2])),
+			),
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Назад", fmt.Sprintf("%s %s food", v.GetString("callback_char.backpack_moving"), char[2])),
+			),
+		)
+	case "resource":
+		return tg.NewInlineKeyboardMarkup(
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("👋🗑🗺", fmt.Sprintf("%s %s %s %s", v.GetString("callback_char.count_of_throw_out"), char[1], char[2], char[3])),
+				tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %s %s %s false", v.GetString("callback_char.delete_item"), char[1], char[2], char[3])),
+			),
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Назад", fmt.Sprintf("%s %s %s", v.GetString("callback_char.backpack_moving"), char[2], char[3])),
+			),
+		)
+	case "sprout":
+		return tg.NewInlineKeyboardMarkup(
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("👋\U0001F9A0🗺", fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.throw_out_item"), char[1], char[2], 1, char[3])),
+				tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %s %s %s false", v.GetString("callback_char.delete_item"), char[1], char[2], char[3])),
+			),
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Назад", fmt.Sprintf("%s %s %s", v.GetString("callback_char.backpack_moving"), char[2], char[3])),
+			),
+		)
+	case "furniture":
+		return tg.NewInlineKeyboardMarkup(
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("👋\U0001F9A0🗺", fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.throw_out_item"), char[1], char[2], 1, char[3])),
+				tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %s %s %s false", v.GetString("callback_char.delete_item"), char[1], char[2], char[3])),
+			),
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Назад", fmt.Sprintf("%s %s %s", v.GetString("callback_char.backpack_moving"), char[2], char[3])),
+			),
+		)
+	case "good":
+		return tg.NewInlineKeyboardMarkup(
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Назад", fmt.Sprintf("%s %s good", v.GetString("callback_char.goods_moving"), char[2])),
+			),
+		)
+	default:
+		return tg.NewInlineKeyboardMarkup(
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Выйти", "cancel"),
+			),
+		)
 	}
 }
 
@@ -38,96 +101,11 @@ func FoodListBackpackInlineKeyboard(items []r.UserItem, i int) tg.InlineKeyboard
 			tg.NewInlineKeyboardButtonData("🔺", fmt.Sprintf("%s %d food", v.GetString("callback_char.backpack_moving"), i-1)),
 		),
 		tg.NewInlineKeyboardRow(
-			tg.NewInlineKeyboardButtonData("👋🗑🗺", fmt.Sprintf("%s %d %d food", v.GetString("callback_char.throw_out_item"), items[i].ID, i)),
+			tg.NewInlineKeyboardButtonData("👋🗑🗺", fmt.Sprintf("%s %d %d food", v.GetString("callback_char.count_of_throw_out"), items[i].ID, i)),
 			tg.NewInlineKeyboardButtonData("🔻", fmt.Sprintf("%s %d food", v.GetString("callback_char.backpack_moving"), i+1)),
 		),
 		tg.NewInlineKeyboardRow(
-			tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %d %d food", v.GetString("callback_char.delete_item"), items[i].ID, i)),
-		),
-	)
-}
-
-func DescriptionInlineButton(char []string) tg.InlineKeyboardMarkup {
-	switch char[3] {
-	case "food":
-		return tg.NewInlineKeyboardMarkup(
-			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("🍽 1шт", fmt.Sprintf("%s %s %s", v.GetString("callback_char.eat_food"), char[1], char[2])),
-				tg.NewInlineKeyboardButtonData("👋🗑🗺", fmt.Sprintf("%s %s %s food", v.GetString("callback_char.throw_out_item"), char[1], char[2])),
-			),
-			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %s %s food", v.GetString("callback_char.delete_item"), char[1], char[2])),
-			),
-			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("Назад", fmt.Sprintf("%s %s food", v.GetString("callback_char.backpack_moving"), char[2])),
-			),
-		)
-	case "resource":
-		return tg.NewInlineKeyboardMarkup(
-			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("👋🗑🗺", fmt.Sprintf("%s %s %s %s", v.GetString("callback_char.throw_out_item"), char[1], char[2], char[3])),
-				tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %s %s %s", v.GetString("callback_char.delete_item"), char[1], char[2], char[3])),
-			),
-			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("Назад", fmt.Sprintf("%s %s %s", v.GetString("callback_char.backpack_moving"), char[2], char[3])),
-			),
-		)
-	case "sprout":
-		return tg.NewInlineKeyboardMarkup(
-			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("👋\U0001F9A0🗺", fmt.Sprintf("%s %s %s %s", v.GetString("callback_char.throw_out_item"), char[1], char[2], char[3])),
-				tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %s %s %s", v.GetString("callback_char.delete_item"), char[1], char[2], char[3])),
-			),
-			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("Назад", fmt.Sprintf("%s %s %s", v.GetString("callback_char.backpack_moving"), char[2], char[3])),
-			),
-		)
-	case "furniture":
-		return tg.NewInlineKeyboardMarkup(
-			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("👋\U0001F9A0🗺", fmt.Sprintf("%s %s %s %s", v.GetString("callback_char.throw_out_item"), char[1], char[2], char[3])),
-				tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %s %s %s", v.GetString("callback_char.delete_item"), char[1], char[2], char[3])),
-			),
-			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("Назад", fmt.Sprintf("%s %s %s", v.GetString("callback_char.backpack_moving"), char[2], char[3])),
-			),
-		)
-	case "good":
-		return tg.NewInlineKeyboardMarkup(
-			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("Назад", fmt.Sprintf("%s %s good", v.GetString("callback_char.goods_moving"), char[2])),
-			),
-		)
-	default:
-		return tg.NewInlineKeyboardMarkup(
-			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("Выйти", "cancel"),
-			),
-		)
-	}
-}
-
-func DefaultListBackpackInlineKeyboard(items []r.UserItem, i int, itemType string) tg.InlineKeyboardMarkup {
-	if len(items) == 0 {
-		return tg.NewInlineKeyboardMarkup(
-			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("Пусто...(", "emptyBackPack"),
-			),
-		)
-	}
-	return tg.NewInlineKeyboardMarkup(
-		tg.NewInlineKeyboardRow(
-			tg.NewInlineKeyboardButtonData(
-				fmt.Sprintf("%s %dшт.", items[i].Item.View, *items[i].Count),
-				fmt.Sprintf("%s %d %d %s", v.GetString("callback_char.description"), items[i].ID, i, itemType)),
-		),
-		tg.NewInlineKeyboardRow(
-			tg.NewInlineKeyboardButtonData("👋🗑🗺", fmt.Sprintf("%s %d %d %s", v.GetString("callback_char.throw_out_item"), items[i].ID, i, items[i].Item.Type)),
-			tg.NewInlineKeyboardButtonData("🔺", fmt.Sprintf("%s %d %s", v.GetString("callback_char.backpack_moving"), i-1, itemType)),
-		),
-		tg.NewInlineKeyboardRow(
-			tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %d %d %s", v.GetString("callback_char.delete_item"), items[i].ID, i, itemType)),
-			tg.NewInlineKeyboardButtonData("🔻", fmt.Sprintf("%s %d %s", v.GetString("callback_char.backpack_moving"), i+1, itemType)),
+			tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %d %d food false", v.GetString("callback_char.delete_item"), items[i].ID, i)),
 		),
 	)
 }
@@ -147,11 +125,61 @@ func SproutListBackpackInlineKeyboard(items []r.UserItem, i int, itemType string
 				fmt.Sprintf("%s %d %d %s", v.GetString("callback_char.description"), items[i].ID, i, itemType)),
 		),
 		tg.NewInlineKeyboardRow(
-			tg.NewInlineKeyboardButtonData("👋\U0001F9A0🗺", fmt.Sprintf("%s %d %d %s", v.GetString("callback_char.throw_out_item"), items[i].ID, i, itemType)),
+			tg.NewInlineKeyboardButtonData("👋\U0001F9A0🗺", fmt.Sprintf("%s %d %d 1 %s", v.GetString("callback_char.throw_out_item"), items[i].ID, i, itemType)),
 			tg.NewInlineKeyboardButtonData("🔺", fmt.Sprintf("%s %d %s", v.GetString("callback_char.backpack_moving"), i-1, itemType)),
 		),
 		tg.NewInlineKeyboardRow(
-			tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %d %d %s", v.GetString("callback_char.delete_item"), items[i].ID, i, itemType)),
+			tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %d %d %s false", v.GetString("callback_char.delete_item"), items[i].ID, i, itemType)),
+			tg.NewInlineKeyboardButtonData("🔻", fmt.Sprintf("%s %d %s", v.GetString("callback_char.backpack_moving"), i+1, itemType)),
+		),
+	)
+}
+
+func ResourceListBackpackInlineKeyboard(items []r.UserItem, i int, itemType string) tg.InlineKeyboardMarkup {
+	if len(items) == 0 {
+		return tg.NewInlineKeyboardMarkup(
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Пусто...(", "emptyBackPack"),
+			),
+		)
+	}
+	return tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData(
+				fmt.Sprintf("%s %dшт.", items[i].Item.View, *items[i].Count),
+				fmt.Sprintf("%s %d %d %s", v.GetString("callback_char.description"), items[i].ID, i, itemType)),
+		),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("👋🗑🗺", fmt.Sprintf("%s %d %d %s", v.GetString("callback_char.count_of_throw_out"), items[i].ID, i, itemType)),
+			tg.NewInlineKeyboardButtonData("🔺", fmt.Sprintf("%s %d %s", v.GetString("callback_char.backpack_moving"), i-1, itemType)),
+		),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %d %d %s false", v.GetString("callback_char.delete_item"), items[i].ID, i, itemType)),
+			tg.NewInlineKeyboardButtonData("🔻", fmt.Sprintf("%s %d %s", v.GetString("callback_char.backpack_moving"), i+1, itemType)),
+		),
+	)
+}
+
+func DefaultListBackpackInlineKeyboard(items []r.UserItem, i int, itemType string) tg.InlineKeyboardMarkup {
+	if len(items) == 0 {
+		return tg.NewInlineKeyboardMarkup(
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Пусто...(", "emptyBackPack"),
+			),
+		)
+	}
+	return tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData(
+				fmt.Sprintf("%s %dшт.", items[i].Item.View, *items[i].Count),
+				fmt.Sprintf("%s %d %d %s", v.GetString("callback_char.description"), items[i].ID, i, itemType)),
+		),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("👋🗑🗺", fmt.Sprintf("%s %d %d 1 %s", v.GetString("callback_char.throw_out_item"), items[i].ID, i, itemType)),
+			tg.NewInlineKeyboardButtonData("🔺", fmt.Sprintf("%s %d %s", v.GetString("callback_char.backpack_moving"), i-1, itemType)),
+		),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %d %d %s false", v.GetString("callback_char.delete_item"), items[i].ID, i, itemType)),
 			tg.NewInlineKeyboardButtonData("🔻", fmt.Sprintf("%s %d %s", v.GetString("callback_char.backpack_moving"), i+1, itemType)),
 		),
 	)
@@ -202,11 +230,11 @@ func GoodsInlineKeyboard(user r.User, userItems []r.UserItem, i int) tg.InlineKe
 			tg.NewInlineKeyboardButtonData("🔺", fmt.Sprintf("%s %d", v.GetString("callback_char.goods_moving"), i-1)),
 		),
 		tg.NewInlineKeyboardRow(
-			tg.NewInlineKeyboardButtonData("👋🗑🗺", fmt.Sprintf("%s %d %d good", v.GetString("callback_char.throw_out_item"), userItems[i].ID, i)),
+			tg.NewInlineKeyboardButtonData("👋🗑🗺", fmt.Sprintf("%s %d %d good", v.GetString("callback_char.count_of_throw_out"), userItems[i].ID, i)),
 			tg.NewInlineKeyboardButtonData("🔻", fmt.Sprintf("%s %d", v.GetString("callback_char.goods_moving"), i+1)),
 		),
 		tg.NewInlineKeyboardRow(
-			tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %d %d good", v.GetString("callback_char.delete_item"), userItems[i].ID, i)),
+			tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %d %d good false", v.GetString("callback_char.delete_item"), userItems[i].ID, i)),
 		),
 	)
 }
@@ -226,7 +254,7 @@ func CountItemUserWantsToThrowKeyboard(buttonData []string, userItem r.UserItem)
 			}
 			row = append(row, tg.NewInlineKeyboardButtonData(
 				fmt.Sprintf("%d шт.", x+y),
-				fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.count_of_throw_out"), buttonData[1], buttonData[2], x+y, buttonData[3])),
+				fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.throw_out_item"), buttonData[1], buttonData[2], x+y, buttonData[3])),
 			)
 		}
 		buttons = append(buttons, row)
@@ -234,17 +262,17 @@ func CountItemUserWantsToThrowKeyboard(buttonData []string, userItem r.UserItem)
 
 	for y := 20; y <= maxCountItem; y = y + 20 {
 		var row []tg.InlineKeyboardButton
-		if y < maxCountItem {
+		if y <= maxCountItem {
 			row = append(row, tg.NewInlineKeyboardButtonData(
 				fmt.Sprintf("%d шт.", y),
-				fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.count_of_throw_out"), buttonData[1], buttonData[2], y, buttonData[3])),
+				fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.throw_out_item"), buttonData[1], buttonData[2], y, buttonData[3])),
 			)
 		}
 		x := y + 10
-		if y < maxCountItem {
+		if x <= maxCountItem {
 			row = append(row, tg.NewInlineKeyboardButtonData(
 				fmt.Sprintf("%d шт.", x),
-				fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.count_of_throw_out"), buttonData[1], buttonData[2], x, buttonData[3])),
+				fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.throw_out_item"), buttonData[1], buttonData[2], x, buttonData[3])),
 			)
 		}
 		buttons = append(buttons, row)
@@ -252,7 +280,7 @@ func CountItemUserWantsToThrowKeyboard(buttonData []string, userItem r.UserItem)
 
 	var row []tg.InlineKeyboardButton
 	row = append(row, tg.NewInlineKeyboardButtonData("Все!",
-		fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.count_of_throw_out"), buttonData[1], buttonData[2], maxCountItem, buttonData[3])),
+		fmt.Sprintf("%s %s %s %d %s", v.GetString("callback_char.throw_out_item"), buttonData[1], buttonData[2], maxCountItem, buttonData[3])),
 	)
 	buttons = append(buttons, row)
 
@@ -301,19 +329,19 @@ func MainKeyboard(user r.User) tg.ReplyKeyboardMarkup {
 	)
 }
 
-func ChooseInstrumentKeyboard(char []string, cell r.Cell, user r.User) tg.InlineKeyboardMarkup {
+func ChooseInstrumentKeyboard(char []string, cell r.Cell, user r.User) (tg.InlineKeyboardMarkup, error) {
 	instruments := r.GetInstrumentsUserCanUse(user, cell)
 
-	if len(instruments) != 0 {
+	if len(instruments) != 0 && *cell.ItemCount != 0 {
 		var row []tg.InlineKeyboardButton
 
 		for instrument, i := range instruments {
-			if cell.Item.Cost != nil && *cell.Item.Cost > 0 && (i == "hand" || i == "swap") && cell.NeedPay {
+			if cell.Item.Cost != nil && *cell.Item.Cost > 0 && (i == "hand" || i == "swap") && cell.NeedPay && *cell.Type == "item" && *cell.ItemCount != 0 {
 				row = append(row, tg.NewInlineKeyboardButtonData(
 					fmt.Sprintf("%s ( %d💰 )", instrument, *cell.Item.Cost),
 					fmt.Sprintf("%s %s %s", instrument, char[3], char[4])),
 				)
-			} else {
+			} else if *cell.Type == "item" && *cell.ItemCount != 0 {
 				row = append(row, tg.NewInlineKeyboardButtonData(
 					instrument,
 					fmt.Sprintf("%s %s %s", instrument, char[3], char[4])),
@@ -326,14 +354,14 @@ func ChooseInstrumentKeyboard(char []string, cell r.Cell, user r.User) tg.Inline
 			tg.NewInlineKeyboardRow(
 				tg.NewInlineKeyboardButtonData("Отмена", v.GetString("callback_char.cancel")),
 			),
-		)
+		), nil
 	}
 
 	return tg.NewInlineKeyboardMarkup(
 		tg.NewInlineKeyboardRow(
-			tg.NewInlineKeyboardButtonData("На карту?", v.GetString("callback_char.cancel")),
+			tg.NewInlineKeyboardButtonData("Всё закончилось!", v.GetString("callback_char.cancel")),
 		),
-	)
+	), errors.New("cell is empty")
 }
 
 func WorkbenchKeyboard(char []string) tg.InlineKeyboardMarkup {
@@ -542,7 +570,9 @@ func BuyHomeKeyboard() tg.InlineKeyboardMarkup {
 	)
 }
 
-func BackpackCategoryKeyboard() (tg.InlineKeyboardMarkup, string) {
+func BackpackCategoryKeyboard() tg.MessageConfig {
+	var msg tg.MessageConfig
+
 	categories := str.Fields(v.GetString("user_location.item_categories.categories"))
 
 	var rows [][]tg.InlineKeyboardButton
@@ -554,9 +584,12 @@ func BackpackCategoryKeyboard() (tg.InlineKeyboardMarkup, string) {
 		)))
 	}
 
-	return tg.NewInlineKeyboardMarkup(
+	msg.Text = fmt.Sprintf("🎒 *Рюкзачок*\n%s", v.GetString("user_location.item_categories.category_title"))
+	msg.ReplyMarkup = tg.NewInlineKeyboardMarkup(
 		rows...,
-	), fmt.Sprintf("🎒 *Рюкзачок*\n%s", v.GetString("user_location.item_categories.category_title"))
+	)
+
+	return msg
 }
 
 func OpenChatKeyboard(cell r.Cell, user r.User) (tg.InlineKeyboardMarkup, string) {
@@ -582,4 +615,16 @@ func OpenChatKeyboard(cell r.Cell, user r.User) (tg.InlineKeyboardMarkup, string
 		),
 	)
 	return keyboard, msgText
+}
+
+func DeleteItem(char []string) tg.InlineKeyboardMarkup {
+	button := tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("💥 Уничтожить! 💥", fmt.Sprintf("%s %s %s %s true", v.GetString("callback_char.delete_item"), char[1], char[2], char[3])),
+		),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("Отмена", "cancel"),
+		),
+	)
+	return button
 }

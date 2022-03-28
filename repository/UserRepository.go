@@ -13,7 +13,6 @@ import (
 type User struct {
 	ID           uint   `gorm:"primaryKey"`
 	TgId         uint   `gorm:"embedded"`
-	TgChatId     uint   `gorm:"embedded"`
 	Username     string `gorm:"embedded"`
 	Avatar       string `gorm:"embedded"`
 	FirstName    string `gorm:"embedded"`
@@ -48,12 +47,10 @@ func GetOrCreateUser(update tg.Update) User {
 	UserOnline := false
 
 	replacer := strings.NewReplacer("_", " ", "*", " ")
-	var outUsername string
-	outUsername = replacer.Replace(update.Message.From.UserName)
+	outUsername := replacer.Replace(update.Message.From.UserName)
 
 	result := User{
 		TgId:       userTgId,
-		TgChatId:   uint(update.Message.Chat.ID),
 		Username:   outUsername,
 		FirstName:  update.Message.From.FirstName,
 		LastName:   update.Message.From.LastName,

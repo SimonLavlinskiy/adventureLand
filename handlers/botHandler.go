@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"project0/helpers"
 )
 
 var deleteBotMsg tg.DeleteMessageConfig
@@ -20,49 +20,27 @@ func GetMessage(telegramApiToken string) {
 	updates := bot.GetUpdatesChan(updateConfig)
 
 	for update := range updates {
+		helpers.CheckEventsForUpdate()
 
 		if update.CallbackQuery != nil {
 			deleteBotMsg = tg.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
-			msg, delMes := callBackResolver(update)
-			SendMessage(msg, bot)
-			if delMes {
-				DeleteMessage(deleteBotMsg, bot)
+			msgs, delMes := callBackResolver(update)
+			for i := range msgs {
+				helpers.SendMessage(msgs[i], bot)
+				if delMes {
+					go helpers.DeleteMessage(deleteBotMsg, bot)
+				}
 			}
 		}
 
-		if update.Message == nil {
-			continue
-		} else {
-			msg = messageResolver(update)
-			SendMessage(msg, bot)
+		if update.Message != nil {
+			msgs = messageResolver(update)
+			for _, msg := range msgs {
+				helpers.SendMessage(msg, bot)
+			}
 		}
 	}
-
 }
-
-func DeleteMessage(message tg.DeleteMessageConfig, bot *tg.BotAPI) {
-	if _, err := bot.Request(message); err != nil {
-		fmt.Print("Error delete msg: " + err.Error())
-	}
-}
-
-func SendMessage(message tg.MessageConfig, bot *tg.BotAPI) {
-	_, err := bot.Send(message)
-	if err != nil {
-		panic("Error send msg: " + err.Error())
-	}
-}
-
-//func UpdateMessage(updateMsg tg.EditMessageTextConfig, telegramApiToken string) {
-//	bot, err := tg.NewBotAPI(telegramApiToken)
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	if _, err := bot.Send(updateMsg); err != nil {
-//		panic("Error update msg: " + err.Error())
-//	}
-//}
 
 func GetMessageFromChat(tgApiToken string) {
 	bot, err := tg.NewBotAPI(tgApiToken)
@@ -77,6 +55,6 @@ func GetMessageFromChat(tgApiToken string) {
 	updates := bot.GetUpdatesChan(updateConfig)
 
 	for update := range updates {
-		fmt.Println(update.Message.Text, update.Message.From.ID)
+		helpers.NotifyUsers(SendUserMessageAllChatUsers(update))
 	}
 }
