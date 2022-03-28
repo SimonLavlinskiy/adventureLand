@@ -694,6 +694,8 @@ func ChoseInstrumentMessage(user r.User, char []string, cellLocation r.Location)
 		msg.ReplyMarkup = buttons
 		msg.Text = v.GetString("errors.chose_instrument_to_use")
 		msg.ChatID = int64(user.TgId)
+	} else {
+		msg.Text = "Предметы в ячейке закончились"
 	}
 
 	return msg
