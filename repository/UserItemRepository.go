@@ -212,7 +212,14 @@ func (ui UserItem) GetFullDescriptionOfUserItem() string {
 func UpdateUserInstrument(user User, instrument Item) (string, error) {
 	userItem := UserItem{ItemId: int(instrument.ID), UserId: int(user.ID)}.UserGetUserItem()
 
-	c := *userItem.CountUseLeft - 1
+	var c int
+
+	if userItem.CountUseLeft != nil {
+		c = *userItem.CountUseLeft - 1
+	} else {
+		c = *userItem.Item.CountUse - 1
+	}
+
 	if c > 0 {
 		user.UpdateUserItem(UserItem{ID: userItem.ID, CountUseLeft: &c})
 		return "Ok", nil

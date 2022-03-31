@@ -24,10 +24,13 @@ func CheckWordEquals(userWord string) string {
 	for i, char := range secretArray {
 		if char != userArray[i] {
 			if strings.ContainsRune(activeWord.SecretWord, userArray[i]) {
-				resultString += "🟨"
+				if strings.Count(activeWord.SecretWord, string(userArray[i])) < strings.Count(userWord, string(userArray[i])) {
+					resultString += getCharColor(userArray, secretArray, i)
+				} else {
+					resultString += "🟨"
+				}
 			} else {
 				resultString += "⬜️"
-
 			}
 		} else {
 			resultString += "✅"
@@ -35,6 +38,59 @@ func CheckWordEquals(userWord string) string {
 	}
 
 	return resultString
+}
+
+func getCharColor(userArray []rune, secretArray []rune, i int) string {
+	var secretIndexArray []int
+	for x, char := range secretArray {
+		if char == userArray[i] {
+			secretIndexArray = append(secretIndexArray, x)
+		}
+	}
+
+	var userIndexArray []int
+	for x, char := range userArray {
+		if char == userArray[i] {
+			userIndexArray = append(userIndexArray, x)
+		}
+	}
+
+	var Y []int
+	var X []int
+
+	for y, sIndex := range secretIndexArray {
+		for x, uIndex := range userIndexArray {
+			if sIndex == uIndex {
+				Y = append(Y, y)
+				X = append(X, x)
+			}
+		}
+	}
+
+	resultSecretArray := secretIndexArray
+	resultUserArray := userIndexArray
+
+	for y := len(Y) - 1; y >= 0; y-- {
+		resultSecretArray = RemoveIndex(resultSecretArray, y)
+	}
+
+	for x := len(Y) - 1; x >= 0; x-- {
+		resultUserArray = RemoveIndex(resultUserArray, x)
+	}
+
+	for y, resultIndex := range resultUserArray {
+		if resultIndex == i {
+			if y+1 <= len(resultSecretArray) {
+				return "🟨"
+			}
+		}
+	}
+
+	return "⬜️"
+}
+
+func RemoveIndex(s []int, index int) []int {
+	return append(s[:index], s[index+1:]...)
 }
 
 func FormattedUserWord(userWord string) string {
@@ -120,17 +176,17 @@ func CheckUserWordFormat(user r.User, userWord string) (tg.MessageConfig, error)
 	userWord = FormattedUserWord(userWord)
 
 	if chars := []rune(userWord); len(chars) > 5 {
-		msg.Text = "Слишком много букв"
+		msg.Text = "‼️ Слишком много букв ‼️"
 		return msg, errors.New("too many chars")
 	} else if len(chars) < 5 {
-		msg.Text = "Слишком мало букв"
+		msg.Text = "‼️ Слишком мало букв ‼️"
 		return msg, errors.New("not enough chars")
 	}
 
 	words := r.GetUserWords(user, time.Now())
 	for _, word := range words {
 		if word.Word == userWord {
-			msg.Text = "Такое слово уже было"
+			msg.Text = "‼️ Такое слово уже было ‼️"
 			return msg, errors.New("word duplicate")
 		}
 	}

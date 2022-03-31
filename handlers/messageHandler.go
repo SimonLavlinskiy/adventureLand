@@ -363,6 +363,10 @@ func callBackResolver(update tg.Update) ([]tg.MessageConfig, bool) {
 		msg.ReplyMarkup = tg.ForceReply{ForceReply: true}
 		deletePrevMessage = false
 		msgs = append(msgs, msg)
+	case "wordleUserStatistic":
+		msg.Text = r.GetWordleUserStatistic(user)
+		deletePrevMessage = false
+		msgs = append(msgs, msg)
 
 	// Дом юзера
 	case v.GetString("callback_char.buy_home"):
