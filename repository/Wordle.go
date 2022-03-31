@@ -94,10 +94,10 @@ func GetWordleUserStatistic(user User) string {
 	newGames := GetWordleGameProcessOfUser(user, &statusNew)
 
 	title := "📊 Статистика 📊"
-	totalGames := fmt.Sprintf("*\U0001F9E9 Всего сыграно игр*: _%d игр_", len(games))
-	totalWonGames := fmt.Sprintf("*🥇 Всего выиграно игр*: %d", len(wonGames))
-	totalLoseGames := fmt.Sprintf("*\U0001F97A Всего проиграно игр*: %d", len(loseGames))
-	totalNewGames := fmt.Sprintf("*🏳️ Всего неокончено игр*: %d", len(newGames))
+	totalGames := fmt.Sprintf("*\U0001F9E9 Сыграно игр*: %d", len(games))
+	totalWonGames := fmt.Sprintf("*🥇 Выиграно игр*: %d", len(wonGames))
+	totalLoseGames := fmt.Sprintf("*\U0001F97A Проиграно игр*: %d", len(loseGames))
+	totalNewGames := fmt.Sprintf("*🏳️ Неокончено игр*: %d", len(newGames))
 
 	return fmt.Sprintf("%s%s%s\n%s\n%s\n%s", title, v.GetString("msg_separator"), totalGames, totalWonGames, totalLoseGames, totalNewGames)
 }
