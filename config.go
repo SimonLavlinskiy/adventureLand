@@ -19,33 +19,34 @@ type Messages struct {
 		}
 	}
 	CallbackChar struct {
-		cancel          string
-		category        string
-		backpackMoving  string
-		goodsMoving     string
-		eatFood         string
-		deleteItem      string
-		dressGood       string
-		takeOffGood     string
-		changeLeftHand  string
-		changeRightHand string
-		changeAvatar    string
-		description     string
-		workbench       string
-		receipt         string
-		putItem         string
-		putCountItem    string
-		makeNewItem     string
-		hand            string
-		foot            string
-		throwOutItem    string
-		countOfThrowOut string
-		buyHome         string
-		userDoneQuest   string
-		userGetQuest    string
-		quest           string
-		quests          string
-		joinToChat      string
+		cancel            string
+		category          string
+		backpackMoving    string
+		goodsMoving       string
+		eatFood           string
+		deleteItem        string
+		dressGood         string
+		takeOffGood       string
+		changeLeftHand    string
+		changeRightHand   string
+		changeAvatar      string
+		description       string
+		workbench         string
+		receipt           string
+		putItem           string
+		putCountItem      string
+		makeNewItem       string
+		hand              string
+		foot              string
+		throwOutItem      string
+		countOfThrowOut   string
+		buyHome           string
+		userDoneQuest     string
+		userGetQuest      string
+		quest             string
+		quests            string
+		joinToChat        string
+		wordleRegulations string
 	}
 	Elem struct {
 		colors        string
@@ -85,6 +86,7 @@ type Messages struct {
 			foot            string
 			quest           string
 			chat            string
+			wordleGame      string
 		}
 	}
 	Errors struct {
@@ -106,5 +108,9 @@ type Messages struct {
 		costOfHouse           int
 		messageChatIsClosed   string
 		messageUserSignInChat string
+	}
+	Wordle struct {
+		regulations     string
+		textAwaitingMsg string
 	}
 }

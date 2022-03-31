@@ -2,7 +2,7 @@ package handlers
 
 import (
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"project0/helpers"
+	"project0/services"
 )
 
 var deleteBotMsg tg.DeleteMessageConfig
@@ -20,15 +20,15 @@ func GetMessage(telegramApiToken string) {
 	updates := bot.GetUpdatesChan(updateConfig)
 
 	for update := range updates {
-		helpers.CheckEventsForUpdate()
+		services.CheckEventsForUpdate()
 
 		if update.CallbackQuery != nil {
 			deleteBotMsg = tg.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
 			msgs, delMes := callBackResolver(update)
 			for i := range msgs {
-				helpers.SendMessage(msgs[i], bot)
+				services.SendMessage(msgs[i], bot)
 				if delMes {
-					go helpers.DeleteMessage(deleteBotMsg, bot)
+					go services.DeleteMessage(deleteBotMsg, bot)
 				}
 			}
 		}
@@ -36,7 +36,7 @@ func GetMessage(telegramApiToken string) {
 		if update.Message != nil {
 			msgs = messageResolver(update)
 			for _, msg := range msgs {
-				helpers.SendMessage(msg, bot)
+				services.SendMessage(msg, bot)
 			}
 		}
 	}
@@ -55,6 +55,6 @@ func GetMessageFromChat(tgApiToken string) {
 	updates := bot.GetUpdatesChan(updateConfig)
 
 	for update := range updates {
-		helpers.NotifyUsers(SendUserMessageAllChatUsers(update))
+		services.NotifyUsers(SendUserMessageAllChatUsers(update))
 	}
 }

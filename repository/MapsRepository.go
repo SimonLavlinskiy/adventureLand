@@ -355,6 +355,17 @@ func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons 
 			case 3:
 				btn.Left = cell.isItemCost(btn.Left, resUser)
 			}
+		case cell.IsWordleGame():
+			switch i {
+			case 0:
+				btn.Up = fmt.Sprintf("%s %s %s", v.GetString("message.emoji.wordle_game"), btn.Up, cell.View)
+			case 1:
+				btn.Down = fmt.Sprintf("%s %s %s", v.GetString("message.emoji.wordle_game"), btn.Down, cell.View)
+			case 2:
+				btn.Right = fmt.Sprintf("%s %s %s", v.GetString("message.emoji.wordle_game"), btn.Right, cell.View)
+			case 3:
+				btn.Left = fmt.Sprintf("%s %s %s", v.GetString("message.emoji.wordle_game"), btn.Left, cell.View)
+			}
 		case cell.ID == 0:
 			switch i {
 			case 0:
@@ -423,6 +434,13 @@ func (c Cell) IsQuest() bool {
 
 func (c Cell) IsChat() bool {
 	if c.Type != nil && *c.Type == "chat" && c.ItemID != nil && c.ChatId != nil {
+		return true
+	}
+	return false
+}
+
+func (c Cell) IsWordleGame() bool {
+	if c.Type != nil && *c.Type == "wordleGame" {
 		return true
 	}
 	return false
