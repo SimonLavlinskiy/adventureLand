@@ -103,23 +103,30 @@ func FormattedUserWord(userWord string) string {
 }
 
 func WordleMenuButtons(game r.WordleGameProcess) tg.InlineKeyboardMarkup {
-	var button tg.InlineKeyboardButton
-
 	switch game.Status {
 	case "new":
-		button = tg.NewInlineKeyboardButtonData("Написать слово", "awaitWord")
-	case "lose", "win":
-		button = tg.NewInlineKeyboardButtonData("Статистика", "wordleUserStatistic")
+		return tg.NewInlineKeyboardMarkup(
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("📝 Написать слово 💯", "awaitWord"),
+			), tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("📊 Статистика", "wordleUserStatistic"),
+			),
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("📚 Правила", "wordleRegulations"),
+				tg.NewInlineKeyboardButtonData("⚠️ Выйти", "cancel"),
+			),
+		)
+	default:
+		return tg.NewInlineKeyboardMarkup(
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("📊 Статистика", "wordleUserStatistic"),
+			),
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("📚 Правила", "wordleRegulations"),
+				tg.NewInlineKeyboardButtonData("⚠️ Выйти", "cancel"),
+			),
+		)
 	}
-
-	return tg.NewInlineKeyboardMarkup(
-		tg.NewInlineKeyboardRow(
-			button,
-		), tg.NewInlineKeyboardRow(
-			tg.NewInlineKeyboardButtonData("Правила", "wordleRegulations"),
-			tg.NewInlineKeyboardButtonData("Выйти", "cancel"),
-		),
-	)
 }
 
 func WordleMap(user r.User) []tg.MessageConfig {
