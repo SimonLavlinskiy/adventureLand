@@ -93,11 +93,38 @@ func GetWordleUserStatistic(user User) string {
 	loseGames := GetWordleGameProcessOfUser(user, &statusLose)
 	newGames := GetWordleGameProcessOfUser(user, &statusNew)
 
+	OneStepWon := GetCountGameByStep(wonGames, 1)
+	TwoStepWon := GetCountGameByStep(wonGames, 2)
+	ThreeStepWon := GetCountGameByStep(wonGames, 3)
+	FourStepWon := GetCountGameByStep(wonGames, 4)
+	FiveStepWon := GetCountGameByStep(wonGames, 5)
+	SixStepWon := GetCountGameByStep(wonGames, 6)
+
 	title := "📊 Статистика 📊"
 	totalGames := fmt.Sprintf("*\U0001F9E9 Сыграно игр*: %d", len(games))
 	totalWonGames := fmt.Sprintf("*🥇 Выиграно игр*: %d", len(wonGames))
 	totalLoseGames := fmt.Sprintf("*\U0001F97A Проиграно игр*: %d", len(loseGames))
 	totalNewGames := fmt.Sprintf("*🏳️ Не окончено игр*: %d", len(newGames))
+	totalWonGamesBy1Step := fmt.Sprintf("*🥇 Выиграно игр за 1 шаг*: %d", OneStepWon)
+	totalWonGamesBy2Step := fmt.Sprintf("*🥈 Выиграно игр за 2 шага*: %d", TwoStepWon)
+	totalWonGamesBy3Step := fmt.Sprintf("*🥉 Выиграно игр за 3 шага*: %d", ThreeStepWon)
+	totalWonGamesBy4Step := fmt.Sprintf("*🏅 Выиграно игр за 4 шага*: %d", FourStepWon)
+	totalWonGamesBy5Step := fmt.Sprintf("*🏅 Выиграно игр за 5 шагов*: %d", FiveStepWon)
+	totalWonGamesBy6Step := fmt.Sprintf("*🏅 Выиграно игр за 6 шагов*: %d", SixStepWon)
 
-	return fmt.Sprintf("%s%s%s\n%s\n%s\n%s", title, v.GetString("msg_separator"), totalGames, totalWonGames, totalLoseGames, totalNewGames)
+	return fmt.Sprintf("%s%s%s\n%s\n%s\n%s%s%s\n%s\n%s\n%s\n%s\n%s",
+		title, v.GetString("msg_separator"), totalGames,
+		totalWonGames, totalLoseGames, totalNewGames,
+		v.GetString("msg_separator"), totalWonGamesBy1Step, totalWonGamesBy2Step,
+		totalWonGamesBy3Step, totalWonGamesBy4Step, totalWonGamesBy5Step, totalWonGamesBy6Step)
+}
+
+func GetCountGameByStep(games []WordleGameProcess, countStep int) int {
+	count := 0
+	for _, game := range games {
+		if game.CountTries == countStep {
+			count++
+		}
+	}
+	return count
 }

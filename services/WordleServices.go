@@ -129,16 +129,33 @@ func WordleMenuButtons(game r.WordleGameProcess) tg.InlineKeyboardMarkup {
 	}
 }
 
+func buttonStatistic() tg.InlineKeyboardMarkup {
+	return tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("📊 Статистика", "wordleUserStatistic"),
+		),
+	)
+}
+
 func WordleMap(user r.User) []tg.MessageConfig {
 	var msgs []tg.MessageConfig
-	countTries := 6
-
-	game := r.GetOrCreateWordleGameProcess(user)
-	words := r.GetUserWords(user, time.Now())
-
+	var msg tg.MessageConfig
 	var msgText string
 
 	msgText += "\U0001F9EE *Игра Вуордле!*\U0001F9EE\n"
+	countTries := 6
+
+	_, err := r.GetActiveWord()
+	if err != nil {
+		msg.Text = fmt.Sprintf("%s\n\n_Соре, сегодня нет слова_ \U0001F97A \n\n_Приходи завтра, мб уже будет...)_", msgText)
+		msg.ReplyMarkup = buttonStatistic()
+		msgs = append(msgs, msg)
+
+		return msgs
+	}
+
+	game := r.GetOrCreateWordleGameProcess(user)
+	words := r.GetUserWords(user, time.Now())
 
 	for i, word := range words {
 		if i < countTries {
@@ -157,7 +174,6 @@ func WordleMap(user r.User) []tg.MessageConfig {
 	}
 
 	var lastText string
-	var msg tg.MessageConfig
 	if game.Status == "new" && game.CountTries < countTries {
 		lastText = "Только 5 букв! 👉🤚 Ни больше, ни меньше! 👌"
 	} else if game.Status == "win" {
