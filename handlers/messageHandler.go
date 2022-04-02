@@ -16,6 +16,8 @@ func messageResolver(update tg.Update) []tg.MessageConfig {
 	msgs = []tg.MessageConfig{}
 	user := r.GetOrCreateUser(update)
 
+	fmt.Println(user.Username + " делает действие!")
+
 	switch user.MenuLocation {
 	case v.GetString("user_location.menu"):
 		msgs = userMenuLocation(update, user)
@@ -105,12 +107,19 @@ func userMapLocation(update tg.Update, user r.User) []tg.MessageConfig {
 	newMessage := update.Message.Text
 	char := strings.Fields(newMessage)
 
+	fmt.Println(newMessage)
+
 	if update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.Text == v.GetString("wordle.text_awaiting_msg") {
 		msgs = s.UserSendNextWord(user, newMessage)
-	} else if len(char) != 1 {
+	} else if len(char) > 1 {
 		msgs = useSpecialCell(char, user)
-	} else {
+	} else if len(char) == 1 {
 		msgs = useDefaultCell(update, user)
+	} else {
+		var msg tg.MessageConfig
+		msg.ReplyToMessageID = update.Message.MessageID
+		msg.Text = "🤨 Не пойму... 🧐"
+		msgs = append(msgs, msg)
 	}
 
 	return msgs
@@ -294,7 +303,7 @@ func callBackResolver(update tg.Update) ([]tg.MessageConfig, bool) {
 	// Профиль
 	case v.GetString("callback_char.change_avatar"):
 		res := r.User{TgId: user.TgId, Avatar: charData[1]}.UpdateUser()
-		msg.Text = user.GetUserInfo()
+		msg.Text = res.GetUserInfo()
 		msg.ReplyMarkup = s.ProfileKeyboard(res)
 		msgs = append(msgs, msg)
 

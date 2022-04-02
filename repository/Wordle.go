@@ -70,11 +70,11 @@ func GetWordleGameProcessOfUser(user User, status *string) []WordleGameProcess {
 func (w WordleGameProcess) UpdateWordleGameProcess(user User) {
 	today := time.Now().Format("2006-01-02")
 
-	if w.CountTries < 5 && w.Status == "new" {
+	if w.Status == "new" {
 		w.CountTries++
-	} else if w.CountTries == 5 && w.Status == "new" {
-		w.CountTries++
-		w.Status = "lose"
+		if w.CountTries == 6 {
+			w.Status = "lose"
+		}
 	}
 
 	config.Db.

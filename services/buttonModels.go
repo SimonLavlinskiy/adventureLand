@@ -332,16 +332,16 @@ func MainKeyboard(user r.User) tg.ReplyKeyboardMarkup {
 func ChooseInstrumentKeyboard(char []string, cell r.Cell, user r.User) (tg.InlineKeyboardMarkup, error) {
 	instruments := r.GetInstrumentsUserCanUse(user, cell)
 
-	if len(instruments) != 0 && *cell.ItemCount != 0 {
+	if len(instruments) != 0 && ((cell.ItemCount == nil && *cell.Type == "swap") || *cell.ItemCount != 0) {
 		var row []tg.InlineKeyboardButton
 
 		for instrument, i := range instruments {
-			if cell.Item.Cost != nil && *cell.Item.Cost > 0 && (i == "hand" || i == "swap") && cell.NeedPay && *cell.Type == "item" && *cell.ItemCount != 0 {
+			if cell.Item.Cost != nil && *cell.Item.Cost > 0 && (i == "hand" || i == "swap") && cell.NeedPay && (*cell.Type == "swap" && cell.ItemCount == nil || *cell.Type == "item" && *cell.ItemCount != 0) {
 				row = append(row, tg.NewInlineKeyboardButtonData(
 					fmt.Sprintf("%s ( %d💰 )", instrument, *cell.Item.Cost),
 					fmt.Sprintf("%s %s %s", instrument, char[3], char[4])),
 				)
-			} else if *cell.Type == "item" && *cell.ItemCount != 0 {
+			} else if *cell.Type == "swap" && cell.ItemCount == nil || *cell.Type == "item" && *cell.ItemCount != 0 {
 				row = append(row, tg.NewInlineKeyboardButtonData(
 					instrument,
 					fmt.Sprintf("%s %s %s", instrument, char[3], char[4])),

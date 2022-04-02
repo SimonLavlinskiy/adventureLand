@@ -206,6 +206,11 @@ func CheckUserWordFormat(user r.User, userWord string) (tg.MessageConfig, error)
 		return msg, errors.New("not enough chars")
 	}
 
+	if !IsDictionaryHasWord(userWord) {
+		msg.Text = "‼️ Я не нашел в словаре такое слово! Не придумывай)) ‼️"
+		return msg, errors.New("is not word")
+	}
+
 	words := r.GetUserWords(user, time.Now())
 	for _, word := range words {
 		if word.Word == userWord {
@@ -241,6 +246,7 @@ func UserSendNextWord(user r.User, newMessage string) []tg.MessageConfig {
 
 	if word == activeWord.SecretWord {
 		game.Status = "win"
+		game.CountTries++
 	}
 
 	game.UpdateWordleGameProcess(user)

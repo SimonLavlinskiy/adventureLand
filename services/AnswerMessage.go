@@ -536,7 +536,7 @@ func UserCraftItem(user r.User, receipt *r.Receipt) (tg.MessageConfig, bool) {
 	msg.ReplyMarkup = nil
 	resultItem := r.UserItem{UserId: int(user.ID), ItemId: receipt.ItemResultID}.UserGetUserItem()
 
-	if *receipt.ItemResultCount+*resultItem.Count > *resultItem.Item.MaxCountUserHas {
+	if resultItem.Item.MaxCountUserHas != nil && *receipt.ItemResultCount+*resultItem.Count > *resultItem.Item.MaxCountUserHas {
 		msg.Text = fmt.Sprintf("Вы не можете иметь больше, чем %d %s!\nСори... такие правила(", *resultItem.Item.MaxCountUserHas, resultItem.Item.View)
 		msg.ReplyMarkup = nil
 		deletePrevMessage = false
