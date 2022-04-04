@@ -12,8 +12,7 @@ import (
 
 var msgs []tg.MessageConfig
 
-func messageResolver(update tg.Update) []tg.MessageConfig {
-	msgs = []tg.MessageConfig{}
+func messageResolver(update tg.Update) (msgs []tg.MessageConfig) {
 	user := r.GetOrCreateUser(update)
 
 	fmt.Println(user.Username + " делает действие!")
@@ -25,6 +24,8 @@ func messageResolver(update tg.Update) []tg.MessageConfig {
 		msgs = userMapLocation(update, user)
 	case v.GetString("user_location.profile"):
 		msgs = userProfileLocation(update, user)
+	case "wordle":
+		msgs, _ = gameWordle(update, user)
 	default:
 		msgs = userMenuLocation(update, user)
 	}
@@ -103,15 +104,13 @@ func userProfileLocation(update tg.Update, user r.User) []tg.MessageConfig {
 	return msgs
 }
 
-func userMapLocation(update tg.Update, user r.User) []tg.MessageConfig {
+func userMapLocation(update tg.Update, user r.User) (msgs []tg.MessageConfig) {
 	newMessage := update.Message.Text
 	char := strings.Fields(newMessage)
 
 	fmt.Println(newMessage)
 
-	if update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.Text == v.GetString("wordle.text_awaiting_msg") {
-		msgs = s.UserSendNextWord(user, newMessage)
-	} else if len(char) > 1 {
+	if len(char) > 1 {
 		msgs = useSpecialCell(char, user)
 	} else if len(char) == 1 {
 		msgs = useDefaultCell(update, user)
@@ -132,9 +131,11 @@ func useSpecialCell(char []string, user r.User) []tg.MessageConfig {
 	// При нажатии кнопок
 	switch char[0] {
 	case v.GetString("message.doing.up"), v.GetString("message.doing.down"), v.GetString("message.doing.left"), v.GetString("message.doing.right"):
-		msgs = append(msgs, s.UserMoving(user, char, char[0]))
+		msg = s.UserMoving(user, char, char[0])
+		msgs = append(msgs, msg)
 	case v.GetString("message.emoji.foot"):
-		msgs = append(msgs, s.UserMoving(user, char, char[1]))
+		msg = s.UserMoving(user, char, char[0])
+		msgs = append(msgs, msg)
 	case v.GetString("message.emoji.hand"), ItemLeftHand.View, ItemRightHand.View:
 		msgs = append(msgs, s.UserUseHandOrInstrumentMessage(user, char))
 	case v.GetString("message.emoji.exclamation_mark"):
@@ -148,18 +149,6 @@ func useSpecialCell(char []string, user r.User) []tg.MessageConfig {
 		userItems := r.GetInventoryItems(user.ID)
 		msg.Text = s.MessageGoodsUserItems(user, userItems, 0)
 		msg.ReplyMarkup = s.GoodsInlineKeyboard(user, userItems, 0)
-		msgs = append(msgs, msg)
-	case v.GetString("message.emoji.online"):
-		userOnline := true
-		user = r.User{TgId: user.TgId, OnlineMap: &userOnline}.UpdateUser()
-		msg.Text, msg.ReplyMarkup = r.GetMyMap(user)
-		msg.Text = fmt.Sprintf("%s%sОнлайн включен!", msg.Text, v.GetString("msg_separator"))
-		msgs = append(msgs, msg)
-	case v.GetString("message.emoji.offline"):
-		userOnline := false
-		user = r.User{TgId: user.TgId, OnlineMap: &userOnline}.UpdateUser()
-		msg.Text, msg.ReplyMarkup = r.GetMyMap(user)
-		msg.Text = fmt.Sprintf("%s%sОнлайн выключен!", msg.Text, v.GetString("msg_separator"))
 		msgs = append(msgs, msg)
 	case ItemHead.View:
 		res := s.DirectionCell(user, char[1])
@@ -182,6 +171,7 @@ func useSpecialCell(char []string, user r.User) []tg.MessageConfig {
 		cell := r.Cell{MapsId: *loc.MapsId, AxisX: *loc.AxisX, AxisY: *loc.AxisY}.GetCell()
 		msgs = append(msgs, s.Quest(&cell, user))
 	case v.GetString("message.emoji.wordle_game"):
+		r.User{TgId: user.TgId, MenuLocation: "wordle"}.UpdateUser()
 		msgs = s.WordleMap(user)
 
 		// Чатик
@@ -200,7 +190,7 @@ func useSpecialCell(char []string, user r.User) []tg.MessageConfig {
 	return msgs
 }
 
-func useDefaultCell(update tg.Update, user r.User) []tg.MessageConfig {
+func useDefaultCell(update tg.Update, user r.User) (msgs []tg.MessageConfig) {
 	var msg tg.MessageConfig
 	newMessage := strings.Fields(update.Message.Text)
 	currentTime := time.Now()
@@ -208,7 +198,8 @@ func useDefaultCell(update tg.Update, user r.User) []tg.MessageConfig {
 	// Взаимодействие с предметами на карте, у которых нет действий
 	switch newMessage[0] {
 	case v.GetString("message.doing.up"), v.GetString("message.doing.down"), v.GetString("message.doing.left"), v.GetString("message.doing.right"):
-		msgs = append(msgs, s.UserMoving(user, newMessage, newMessage[0]))
+		msg = s.UserMoving(user, newMessage, newMessage[0])
+		msgs = append(msgs, msg)
 	case v.GetString("message.emoji.water"):
 		msg.Text = "Ты не похож на Jesus! 👮‍♂️"
 		msgs = append(msgs, msg)
@@ -247,6 +238,7 @@ func callBackResolver(update tg.Update) ([]tg.MessageConfig, bool) {
 	msgs = []tg.MessageConfig{}
 	var msg tg.MessageConfig
 	buttons := tg.ReplyKeyboardMarkup{}
+
 	charData := strings.Fields(update.CallbackQuery.Data)
 	deletePrevMessage := true
 
@@ -256,10 +248,20 @@ func callBackResolver(update tg.Update) ([]tg.MessageConfig, bool) {
 
 	if len(charData) == 1 && charData[0] == v.GetString("callback_char.cancel") {
 		msg.Text, msg.ReplyMarkup = r.GetMyMap(user)
+		user = r.User{TgId: user.TgId, MenuLocation: "Карта"}.UpdateUser()
 		msgs = append(msgs, msg)
 	}
 
 	fmt.Println(charData)
+
+	if user.MenuLocation == "wordle" {
+		msgs, delPrevMes := gameWordle(update, user)
+		for i := range msgs {
+			msgs[i].ParseMode = "markdown"
+			msgs[i].ChatID = update.CallbackQuery.Message.Chat.ID
+		}
+		return msgs, delPrevMes
+	}
 
 	switch charData[0] {
 
@@ -336,7 +338,8 @@ func callBackResolver(update tg.Update) ([]tg.MessageConfig, bool) {
 		res := s.DirectionCell(user, charData[1])
 		msgs = append(msgs, s.ChoseInstrumentMessage(user, charData, res))
 	case v.GetString("message.emoji.foot"):
-		msgs = append(msgs, s.UserMoving(user, charData, charData[1]))
+		msg = s.UserMoving(user, charData, charData[1])
+		msgs = append(msgs, msg)
 	case ItemHead.View:
 		res := s.DirectionCell(user, charData[1])
 		text, err := r.UpdateUserInstrument(user, ItemHead)
@@ -361,21 +364,6 @@ func callBackResolver(update tg.Update) ([]tg.MessageConfig, bool) {
 		msgs = append(msgs, s.OpenQuest(uint(r.ToInt(charData[1])), user))
 	case v.GetString("callback_char.user_done_quest"):
 		msgs = append(msgs, s.UserDoneQuest(uint(r.ToInt(charData[1])), user))
-
-	// Wordle
-	case v.GetString("callback_char.wordle_regulations"):
-		msg.Text = v.GetString("wordle.regulations")
-		deletePrevMessage = false
-		msgs = append(msgs, msg)
-	case "awaitWord":
-		msg.Text = v.GetString("wordle.text_awaiting_msg")
-		msg.ReplyMarkup = tg.ForceReply{ForceReply: true}
-		deletePrevMessage = false
-		msgs = append(msgs, msg)
-	case "wordleUserStatistic":
-		msg.Text = r.GetWordleUserStatistic(user)
-		deletePrevMessage = false
-		msgs = append(msgs, msg)
 
 	// Дом юзера
 	case v.GetString("callback_char.buy_home"):
@@ -434,4 +422,50 @@ func SendUserMessageAllChatUsers(update tg.Update) ([]r.ChatUser, string) {
 	message := fmt.Sprintf("<code>От %s %s %s</code>%s%s", user.Avatar, user.Username, user.Avatar, v.GetString("msg_separator"), userMsg)
 
 	return chUsWithoutSender, message
+}
+
+func gameWordle(update tg.Update, user r.User) ([]tg.MessageConfig, bool) {
+	var msg tg.MessageConfig
+	var delPrevMes bool
+
+	if update.Message != nil && update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.Text == v.GetString("wordle.text_awaiting_msg") {
+		msgs = s.UserSendNextWord(user, update.Message.Text)
+		delPrevMes = true
+		return msgs, delPrevMes
+	} else if update.CallbackQuery == nil {
+		msgs = s.WordleMap(user)
+		msg.Text = fmt.Sprintf("%s%sХммм....🤔\nВозможно ты не нажал(-а) кнопку *\"Написать слово\"*", msg.Text, v.GetString("msg_separator"))
+		msgs = append(msgs, msg)
+		delPrevMes = false
+		return msgs, delPrevMes
+	}
+
+	charData := strings.Fields(update.CallbackQuery.Data)
+
+	switch charData[0] {
+	case v.GetString("callback_char.wordle_regulations"):
+		msg.Text = v.GetString("wordle.regulations")
+		msg.ReplyMarkup = s.WordleExitButton()
+		msgs = append(msgs, msg)
+		delPrevMes = true
+	case "awaitWord":
+		msg.Text = v.GetString("wordle.text_awaiting_msg")
+		msg.ReplyMarkup = tg.ForceReply{ForceReply: true}
+		msgs = append(msgs, msg)
+		delPrevMes = false
+	case "wordleUserStatistic":
+		msg.Text = r.GetWordleUserStatistic(user)
+		msg.ReplyMarkup = s.WordleExitButton()
+		msgs = append(msgs, msg)
+		delPrevMes = true
+	case "wordleMenu":
+		msgs = s.WordleMap(user)
+		delPrevMes = true
+	default:
+		msg.Text = fmt.Sprintf("%s%sХммм....🤔\nВозможно ты не нажал(-а) кнопку *\"Написать слово\"*", msg.Text, v.GetString("msg_separator"))
+		msgs = append(msgs, msg)
+		delPrevMes = false
+	}
+
+	return msgs, delPrevMes
 }

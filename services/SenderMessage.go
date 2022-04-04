@@ -29,21 +29,17 @@ func DeleteMessage(message tg.DeleteMessageConfig, bot *tg.BotAPI) {
 	}
 }
 
-func SendMessage(message tg.MessageConfig, bot *tg.BotAPI) {
-	_, err := bot.Send(message)
+func SendMessage(message tg.MessageConfig, bot *tg.BotAPI) tg.Message {
+	resp, err := bot.Send(message)
 	if err != nil {
 		fmt.Printf("Error send msg: %s", err.Error())
 	}
+	return resp
 }
 
-//func UpdateMessage(updateMsg tg.EditMessageTextConfig, telegramApiToken string) {
-//	bot, err := tg.NewBotAPI(telegramApiToken)
-//	if err != nil {
-//		panic(err)
-//	}
-//
+//func UpdateMessage(updateMsg tg.EditMessageTextConfig, bot *tg.BotAPI) {
 //	if _, err := bot.Send(updateMsg); err != nil {
-//		panic("Error update msg: " + err.Error())
+//		panic(fmt.Sprintf("Error update msg: %s, %d", err.Error(), updateMsg.MessageID))
 //	}
 //}
 

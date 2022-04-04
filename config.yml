@@ -47,6 +47,7 @@ main_info:
   cost_of_house: 1000
   message_chat_is_closed: "Чатик истек!"
   message_user_sign_in_chat: "Добро пожаловать в чатик!"
+  last_step_user_online_min: -180
 
 quest_statuses:
   completed: "✅ Выполнен"
@@ -93,9 +94,6 @@ message:
     quest: "📟"
     chat: "📨"
     wordle_game: "🔤"
-  user:
-    online: "📴 ♻️ 📳"
-    offline: "📳 ♻️ 📴"
 
 errors:
   no_quest_item: "Здесь нет доски с квестами!"

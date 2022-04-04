@@ -114,9 +114,9 @@ func GetMyMap(us User) (textMessage string, buttons tg.ReplyKeyboardMarkup) {
 	}
 
 	resultLocationsOnlineUser := GetLocationOnlineUser(loc, mapSize)
-	for _, user := range resultLocationsOnlineUser {
-		if user.User.ID != 0 && *user.User.OnlineMap {
-			m[Point{*user.AxisX, *user.AxisY}] = Cell{View: user.User.Avatar, ID: m[Point{*user.AxisX, *user.AxisY}].ID}
+	for _, location := range resultLocationsOnlineUser {
+		if location.User.ID != 0 {
+			m[Point{*location.AxisX, *location.AxisY}] = Cell{View: location.User.Avatar, ID: m[Point{*location.AxisX, *location.AxisY}].ID}
 		}
 	}
 
@@ -371,7 +371,7 @@ func CreateMapKeyboard(buttons MapButtons) tg.ReplyKeyboardMarkup {
 			tg.NewKeyboardButton(buttons.Right),
 		),
 		tg.NewKeyboardButtonRow(
-			tg.NewKeyboardButton(nearUsers), //onlineButton),
+			tg.NewKeyboardButton(nearUsers),
 			tg.NewKeyboardButton(buttons.Down),
 			tg.NewKeyboardButton(v.GetString("user_location.menu")),
 		),

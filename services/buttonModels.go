@@ -628,3 +628,11 @@ func DeleteItem(char []string) tg.InlineKeyboardMarkup {
 	)
 	return button
 }
+
+func WordleExitButton() tg.InlineKeyboardMarkup {
+	return tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("В меню...", "wordleMenu"),
+		),
+	)
+}

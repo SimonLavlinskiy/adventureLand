@@ -28,7 +28,6 @@ type User struct {
 	MenuLocation string    `gorm:"embedded"`
 	CreatedAt    time.Time `gorm:"autoCreateTime"`
 	Deleted      bool      `gorm:"embedded"`
-	OnlineMap    *bool     `gorm:"embedded"`
 }
 
 type Clothes struct {
@@ -54,7 +53,6 @@ type Clothes struct {
 func GetOrCreateUser(update tg.Update) User {
 	userTgId := GetUserTgId(update)
 	MoneyUserStart := 10
-	UserOnline := true
 
 	replacer := strings.NewReplacer("_", " ", "*", " ")
 	outUsername := replacer.Replace(update.Message.From.UserName)
@@ -70,7 +68,6 @@ func GetOrCreateUser(update tg.Update) User {
 		Experience: 0,
 		Steps:      0,
 		Money:      &MoneyUserStart,
-		OnlineMap:  &UserOnline,
 	}
 	err := config.Db.
 		Preload("Head").
@@ -246,9 +243,20 @@ func (u User) UserBuyHome(m Map) {
 }
 
 func (u User) UserStepCounter() {
+	u.Steps += 1
+	if u.Steps%10 == 0 && u.Satiety > 0 {
+		u.Satiety -= 1
+	} else if u.Steps%10 == 0 && u.Satiety == 0 {
+		u.Health -= 1
+	}
 	config.Db.
 		Where(&User{ID: u.ID}).
-		Updates(User{Steps: u.Steps + 1})
+		Updates(User{
+			Steps:   u.Steps,
+			Satiety: u.Satiety,
+			Health:  u.Health,
+		})
+
 }
 
 func (u User) GetStepsPlace() int {

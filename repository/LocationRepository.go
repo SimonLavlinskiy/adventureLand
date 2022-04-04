@@ -2,7 +2,10 @@ package repository
 
 import (
 	"errors"
+	"fmt"
+	v "github.com/spf13/viper"
 	"project0/config"
+	"time"
 )
 
 type Location struct {
@@ -14,6 +17,7 @@ type Location struct {
 	AxisY    *int
 	MapsId   *int `gorm:"embedded"`
 	Maps     Map
+	UpdateAt time.Time `gorm:"autoUpdateTime"`
 }
 
 func GetOrCreateMyLocation(user User) Location {
@@ -118,16 +122,17 @@ func isCellHome(char []string, cell Cell, location Location, user User) (Locatio
 	return location, nil
 }
 
-func GetLocationOnlineUser(userlocation Location, mapSize UserMap) []Location {
+func GetLocationOnlineUser(userLocation Location, mapSize UserMap) []Location {
 	var resultLocationsOnlineUser []Location
 
 	err := config.Db.
-		Preload("User", "online_map", true).
-		Where(Cell{MapsId: *userlocation.MapsId}).
+		Preload("User").
+		Where(Cell{MapsId: *userLocation.MapsId}).
 		Where("axis_x >= " + ToString(mapSize.LeftIndent)).
 		Where("axis_x <= " + ToString(mapSize.RightIndent)).
 		Where("axis_y >= " + ToString(mapSize.DownIndent)).
 		Where("axis_y <= " + ToString(mapSize.UpperIndent)).
+		Where(fmt.Sprintf("update_at >= '%s'", time.Now().Add(time.Duration(v.GetInt("main_info.last_step_user_online_min"))*time.Minute).Format("2006-01-02 15:04:05"))).
 		Order("axis_x ASC").
 		Order("axis_y ASC").
 		Find(&resultLocationsOnlineUser).Error
