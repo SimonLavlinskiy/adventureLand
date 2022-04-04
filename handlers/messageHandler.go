@@ -382,15 +382,17 @@ func callBackResolver(update tg.Update) ([]tg.MessageConfig, bool) {
 		err := user.CreateUserHouse()
 		text := "Поздравляю с покупкой дома!"
 
-		switch err.Error() {
-		case "user doesn't have money enough":
-			text = "Не хватает деняк! Прийдется еще поднакопить :( "
-		default:
-			text = "Не получилось :("
+		if err != nil {
+			switch err.Error() {
+			case "user doesn't have money enough":
+				text = "Не хватает деняк! Прийдется еще поднакопить :( "
+			default:
+				text = "Не получилось :("
+			}
 		}
 
 		msg.Text, buttons = r.GetMyMap(user)
-		msg.Text = fmt.Sprintf("%s%s%s", msgs[0].Text, v.GetString("msg_separator"), text)
+		msg.Text = fmt.Sprintf("%s%s%s", msg.Text, v.GetString("msg_separator"), text)
 		msg.ReplyMarkup = buttons
 		msgs = append(msgs, msg)
 

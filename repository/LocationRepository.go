@@ -64,11 +64,11 @@ func UpdateLocation(char []string, locStruct Location, user User) (string, error
 		return "\nУ тебя еще нет дома, очень жаль...", errors.New("user has not home")
 	}
 
-	var result Cell
+	var resultCell Cell
 
 	err = config.Db.
 		Preload("Item").
-		First(&result, &Cell{MapsId: *locStruct.MapsId, AxisX: *locStruct.AxisX, AxisY: *locStruct.AxisY}).
+		First(&resultCell, &Cell{MapsId: *locStruct.MapsId, AxisX: *locStruct.AxisX, AxisY: *locStruct.AxisY}).
 		Error
 	if err != nil {
 		if err.Error() == "record not found" {
@@ -76,7 +76,7 @@ func UpdateLocation(char []string, locStruct Location, user User) (string, error
 		}
 	}
 
-	if !result.CanStep || result.Item != nil && *result.ItemCount > 0 && !result.Item.CanStep {
+	if !resultCell.CanStep || resultCell.Item != nil && *resultCell.ItemCount > 0 && !resultCell.Item.CanStep {
 		return "\nСюда никак не пройти(", errors.New("can't get through")
 	}
 
@@ -87,6 +87,8 @@ func UpdateLocation(char []string, locStruct Location, user User) (string, error
 	if err != nil {
 		panic(err)
 	}
+
+	user.UserStepCounter()
 
 	return "Ok", nil
 }
@@ -122,10 +124,10 @@ func GetLocationOnlineUser(userlocation Location, mapSize UserMap) []Location {
 	err := config.Db.
 		Preload("User", "online_map", true).
 		Where(Cell{MapsId: *userlocation.MapsId}).
-		Where("axis_x >= " + ToString(mapSize.leftIndent)).
-		Where("axis_x <= " + ToString(mapSize.rightIndent)).
-		Where("axis_y >= " + ToString(mapSize.downIndent)).
-		Where("axis_y <= " + ToString(mapSize.upperIndent)).
+		Where("axis_x >= " + ToString(mapSize.LeftIndent)).
+		Where("axis_x <= " + ToString(mapSize.RightIndent)).
+		Where("axis_y >= " + ToString(mapSize.DownIndent)).
+		Where("axis_y <= " + ToString(mapSize.UpperIndent)).
 		Order("axis_x ASC").
 		Order("axis_y ASC").
 		Find(&resultLocationsOnlineUser).Error

@@ -281,3 +281,92 @@ func UpdateCellWithFiredChat(chat Chat) {
 		cell.UpdateCellIfChatIsTimeout()
 	}
 }
+
+func (c Cell) IsDefaultCell() bool {
+	if c.Type != nil && *c.Type == "cell" && !c.CanStep {
+		return true
+	}
+	return false
+}
+
+func (c Cell) IsWorkbench() bool {
+	if c.Type != nil && *c.Type == "workbench" && c.ItemID != nil {
+		return true
+	}
+	return false
+}
+
+func (c Cell) IsTeleport() bool {
+	if c.Type != nil && *c.Type == "teleport" && c.TeleportID != nil {
+		return true
+	}
+	return false
+}
+
+func (c Cell) IsHome() bool {
+	if c.Type != nil && *c.Type == "home" {
+		return true
+	}
+	return false
+}
+
+func (c Cell) IsItem() bool {
+	if c.Type != nil && *c.Type == "item" && c.ItemID != nil && *c.ItemCount > 0 {
+		return true
+	}
+	return false
+}
+
+func (c Cell) IsSwap() bool {
+	if c.Type != nil && *c.Type == "swap" && c.ItemID != nil {
+		return true
+	}
+	return false
+}
+
+func (c Cell) IsQuest() bool {
+	if c.Type != nil && *c.Type == "quest" && c.ItemID != nil {
+		return true
+	}
+	return false
+}
+
+func (c Cell) IsChat() bool {
+	if c.Type != nil && *c.Type == "chat" && c.ItemID != nil && c.ChatId != nil {
+		return true
+	}
+	return false
+}
+
+func (c Cell) IsWordleGame() bool {
+	if c.Type != nil && *c.Type == "wordleGame" {
+		return true
+	}
+	return false
+}
+
+func (c Cell) IsSpecialItem(user User) string {
+	instrumentsUserCanUse := GetInstrumentsUserCanUse(user, c)
+
+	if len(instrumentsUserCanUse) > 1 {
+		return "❗ 🛠 ❓"
+	} else if len(instrumentsUserCanUse) == 1 {
+		for i := range instrumentsUserCanUse {
+			return i
+		}
+	}
+
+	return "🚷"
+}
+
+func (c Cell) IsItemCost(button string, resUser User) string {
+	var firstElem = c.IsSpecialItem(resUser)
+
+	button = firstElem + " " + button + " " + c.Item.View
+
+	if c.Item.Cost != nil && *c.Item.Cost > 0 && firstElem != "❗ 🛠 ❓" && c.NeedPay {
+		button = button + " ( " + ToString(*c.Item.Cost) + "💰 )"
+	}
+
+	return button
+}

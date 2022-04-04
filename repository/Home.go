@@ -208,5 +208,7 @@ func (u User) CreateUserHouse() error {
 		return errors.New("map is not created")
 	}
 
+	u.UserBuyHome(m)
+
 	return nil
 }

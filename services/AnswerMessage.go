@@ -255,34 +255,40 @@ func DressUserItem(user r.User, charData []string) tg.MessageConfig {
 	switch *userItem.Item.DressType {
 	case "hand":
 		if user.LeftHandId == nil {
-			user = r.User{TgId: user.TgId, LeftHandId: &userItem.ItemId}.UpdateUser()
+			clothes := &r.Clothes{LeftHandId: &userItem.ItemId}
+			user = r.User{TgId: user.TgId, Clothes: *clothes}.UpdateUser()
 		} else if user.RightHandId == nil {
-			user = r.User{TgId: user.TgId, RightHandId: &userItem.ItemId}.UpdateUser()
+			clothes := &r.Clothes{RightHandId: &userItem.ItemId}
+			user = r.User{TgId: user.TgId, Clothes: *clothes}.UpdateUser()
 		} else {
 			result = "У вас заняты все руки! Что хочешь снять?"
 			changeHandItem = true
 		}
 	case "head":
 		if user.HeadId == nil {
-			user = r.User{TgId: user.TgId, HeadId: &userItem.ItemId}.UpdateUser()
+			clothes := &r.Clothes{HeadId: &userItem.ItemId}
+			user = r.User{TgId: user.TgId, Clothes: *clothes}.UpdateUser()
 		} else {
 			result = v.GetString("errors.user_has_other_item")
 		}
 	case "body":
 		if user.BodyId == nil {
-			user = r.User{TgId: user.TgId, BodyId: &userItem.ItemId}.UpdateUser()
+			clothes := &r.Clothes{BodyId: &userItem.ItemId}
+			user = r.User{TgId: user.TgId, Clothes: *clothes}.UpdateUser()
 		} else {
 			result = v.GetString("errors.user_has_other_item")
 		}
 	case "foot":
 		if user.FootId == nil {
-			user = r.User{TgId: user.TgId, FootId: &userItem.ItemId}.UpdateUser()
+			clothes := &r.Clothes{FootId: &userItem.ItemId}
+			user = r.User{TgId: user.TgId, Clothes: *clothes}.UpdateUser()
 		} else {
 			result = v.GetString("errors.user_has_other_item")
 		}
 	case "shoes":
 		if user.ShoesId == nil {
-			user = r.User{TgId: user.TgId, ShoesId: &userItem.ItemId}.UpdateUser()
+			clothes := &r.Clothes{ShoesId: &userItem.ItemId}
+			user = r.User{TgId: user.TgId, Clothes: *clothes}.UpdateUser()
 		} else {
 			result = v.GetString("errors.user_has_other_item")
 		}

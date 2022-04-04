@@ -13,11 +13,11 @@ func IsDictionaryHasWord(word string) bool {
 	resp, _ := http.Get(
 		fmt.Sprintf("https://dictionary.yandex.net/api/v1/dicservice.json/lookup?key=%s&lang=ru-ru&text=%s", key, word),
 	)
-	defer resp.Body.Close()
 
 	r := Response{}
 	body, _ := ioutil.ReadAll(resp.Body)
 	err := json.Unmarshal(body, &r)
+
 	if err != nil {
 		fmt.Println(err)
 		return false
@@ -31,7 +31,7 @@ func IsDictionaryHasWord(word string) bool {
 }
 
 type Response struct {
-	Head string
+	Head struct{}
 	Def  []struct {
 		Text string
 		Pos  string

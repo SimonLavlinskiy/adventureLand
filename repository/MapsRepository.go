@@ -20,6 +20,8 @@ type Map struct {
 	EmptySpaceSymbol string `gorm:"embedded"`
 }
 
+var displaySize = 6
+
 func (m Map) CreateMap() Map {
 	err := config.Db.
 		Create(&m).
@@ -30,6 +32,25 @@ func (m Map) CreateMap() Map {
 	}
 
 	return m
+}
+
+func GetMaps() []Map {
+	var result []Map
+
+	err := config.Db.Find(&result).Error
+
+	if err != nil {
+		fmt.Println("Нет карт!")
+	}
+
+	return result
+}
+
+type UserMap struct {
+	LeftIndent  int
+	RightIndent int
+	UpperIndent int
+	DownIndent  int
 }
 
 type MapButtons struct {
@@ -50,34 +71,13 @@ func DefaultButtons(center string) MapButtons {
 	}
 }
 
-type UserMap struct {
-	leftIndent  int
-	rightIndent int
-	upperIndent int
-	downIndent  int
-}
-
-var displaySize = 6
-
 func DefaultUserMap(location Location, displaySize int) UserMap {
 	return UserMap{
-		leftIndent:  *location.AxisX - displaySize,
-		rightIndent: *location.AxisX + displaySize,
-		upperIndent: *location.AxisY + displaySize,
-		downIndent:  *location.AxisY - displaySize,
+		LeftIndent:  *location.AxisX - displaySize,
+		RightIndent: *location.AxisX + displaySize,
+		UpperIndent: *location.AxisY + displaySize,
+		DownIndent:  *location.AxisY - displaySize,
 	}
-}
-
-func GetMaps() []Map {
-	var result []Map
-
-	err := config.Db.Find(&result).Error
-
-	if err != nil {
-		fmt.Println("Нет карт!")
-	}
-
-	return result
 }
 
 func GetMyMap(us User) (textMessage string, buttons tg.ReplyKeyboardMarkup) {
@@ -98,10 +98,10 @@ func GetMyMap(us User) (textMessage string, buttons tg.ReplyKeyboardMarkup) {
 		Preload("Item.Instruments.Result").
 		Preload("Item.Instruments.NextStageItem").
 		Where(Cell{MapsId: *loc.MapsId}).
-		Where("axis_x >= " + ToString(mapSize.leftIndent)).
-		Where("axis_x <= " + ToString(mapSize.rightIndent)).
-		Where("axis_y >= " + ToString(mapSize.downIndent)).
-		Where("axis_y <= " + ToString(mapSize.upperIndent)).
+		Where("axis_x >= " + ToString(mapSize.LeftIndent)).
+		Where("axis_x <= " + ToString(mapSize.RightIndent)).
+		Where("axis_y >= " + ToString(mapSize.DownIndent)).
+		Where("axis_y <= " + ToString(mapSize.UpperIndent)).
 		Order("axis_x ASC").
 		Order("axis_y ASC").
 		Find(&resultCell).Error
@@ -130,138 +130,17 @@ func GetMyMap(us User) (textMessage string, buttons tg.ReplyKeyboardMarkup) {
 	Maps := configurationMap(mapSize, loc.Maps, loc, us, m)
 
 	for i, row := range Maps {
-		if i >= mapSize.downIndent && i <= mapSize.upperIndent {
+		if i >= mapSize.DownIndent && i <= mapSize.UpperIndent {
 			messageMap = fmt.Sprintf("%s\n%s", strings.Join(row, ""), messageMap)
 		}
 	}
 
+	messageMap = fmt.Sprintf("%s\n%s", GetStatsLine(us), messageMap)
+
 	return messageMap, buttons
 }
 
-func CalculateUserMapBorder(resLocation Location, resMap Map) UserMap {
-	d := displaySize
-	if d*2 > resMap.SizeX || d*2 > resMap.SizeY {
-		if resMap.SizeX-resMap.SizeY > 0 {
-			d = resMap.SizeY / 2
-		} else {
-			d = resMap.SizeX / 2
-		}
-	}
-	mapSize := DefaultUserMap(resLocation, d)
-
-	if *resLocation.AxisX < d {
-		mapSize.leftIndent = 0
-		mapSize.rightIndent = d * 2
-	}
-	if *resLocation.AxisY < d {
-		mapSize.downIndent = 0
-		mapSize.upperIndent = d * 2
-	}
-	if mapSize.rightIndent >= resMap.SizeX && *resLocation.AxisX > d {
-		mapSize.leftIndent = resMap.SizeX - d*2
-		mapSize.rightIndent = resMap.SizeX
-	}
-	if mapSize.upperIndent >= resMap.SizeY && *resLocation.AxisY > d {
-		mapSize.downIndent = resMap.SizeY - d*2
-		mapSize.upperIndent = resMap.SizeY
-	}
-
-	return mapSize
-}
-
-func CalculateButtonMap(resLocation Location, resUser User, m map[[2]int]Cell) tg.ReplyKeyboardMarkup {
-	type Point = [2]int
-
-	buttons := DefaultButtons(resUser.Avatar)
-
-	var CellsAroundUser []Cell
-	CellsAroundUser = append(CellsAroundUser,
-		m[Point{*resLocation.AxisX, *resLocation.AxisY + 1}],
-		m[Point{*resLocation.AxisX, *resLocation.AxisY - 1}],
-		m[Point{*resLocation.AxisX + 1, *resLocation.AxisY}],
-		m[Point{*resLocation.AxisX - 1, *resLocation.AxisY}],
-	)
-
-	buttons = PutButton(CellsAroundUser, buttons, resUser)
-
-	return CreateMapKeyboard(buttons)
-}
-
-func CreateMapKeyboard(buttons MapButtons) tg.ReplyKeyboardMarkup {
-	// Цэ кнопка была включения онлайна и офлайна
-	//onlineButton := v.GetString("message.user.online")
-	//if *user.OnlineMap {
-	//	onlineButton = v.GetString("message.user.offline")
-	//}
-
-	nearUsers := "👥"
-
-	return tg.NewReplyKeyboard(
-		tg.NewKeyboardButtonRow(
-			tg.NewKeyboardButton("Вещи 🧥"),
-			tg.NewKeyboardButton(buttons.Up),
-			tg.NewKeyboardButton("Рюкзак 🎒"),
-		),
-		tg.NewKeyboardButtonRow(
-			tg.NewKeyboardButton(buttons.Left),
-			tg.NewKeyboardButton(buttons.Center),
-			tg.NewKeyboardButton(buttons.Right),
-		),
-		tg.NewKeyboardButtonRow(
-			tg.NewKeyboardButton(nearUsers), //onlineButton),
-			tg.NewKeyboardButton(buttons.Down),
-			tg.NewKeyboardButton(v.GetString("user_location.menu")),
-		),
-	)
-}
-
-func configurationMap(mapSize UserMap, resMap Map, resLocation Location, user User, m map[[2]int]Cell) [][]string {
-	t := time.Now()
-	day := "06" <= t.Format("15") && t.Format("15") <= "23"
-	type Point [2]int
-	Maps := make([][]string, resMap.SizeY+1)
-
-	if (day && resLocation.Maps.DayType == "default") || resLocation.Maps.DayType == "alwaysDay" {
-		DayMap(Maps, mapSize, m, resLocation)
-	} else {
-		NightMap(Maps, mapSize, m, resLocation, user)
-	}
-	return Maps
-}
-
-func DayMap(Maps [][]string, mapSize UserMap, m map[[2]int]Cell, resLocation Location) {
-	type Point [2]int
-
-	for y := range Maps {
-		for x := mapSize.leftIndent; x <= mapSize.rightIndent; x++ {
-			if m[Point{x, y}].ID != 0 || m[Point{x, y}] == m[Point{*resLocation.AxisX, *resLocation.AxisY}] {
-				appendVisibleUserZone(m, x, y, Maps)
-			} else {
-				Maps[y] = append(Maps[y], resLocation.Maps.EmptySpaceSymbol)
-			}
-		}
-	}
-}
-
-func NightMap(Maps [][]string, mapSize UserMap, m map[[2]int]Cell, resLocation Location, user User) {
-	type Point [2]int
-
-	for y := range Maps {
-		for x := mapSize.leftIndent; x <= mapSize.rightIndent; x++ {
-			if calculateNightMap(user, resLocation, x, y) && m[Point{x, y}].ID != 0 {
-				appendVisibleUserZone(m, x, y, Maps)
-			} else if (y+x)%2 == 1 || m[Point{x, y}].ID != 0 && (y+x)%2 == 1 {
-				Maps[y] = append(Maps[y], "⬛️")
-			} else if (y+x)%2 == 0 || m[Point{x, y}].ID != 0 && (y+x)%2 == 0 {
-				Maps[y] = append(Maps[y], "✨")
-			} else {
-				Maps[y] = append(Maps[y], resLocation.Maps.EmptySpaceSymbol)
-			}
-		}
-	}
-}
-
-func calculateNightMap(user User, l Location, x int, y int) bool {
+func CalculateNightMap(user User, l Location, x int, y int) bool {
 
 	if (*l.AxisX == x-2 || *l.AxisX == x+2) && (*l.AxisY >= y-1 && *l.AxisY <= y+1) {
 		return true
@@ -288,6 +167,52 @@ func calculateNightMap(user User, l Location, x int, y int) bool {
 	return false
 }
 
+func configurationMap(mapSize UserMap, resMap Map, resLocation Location, user User, m map[[2]int]Cell) [][]string {
+	t := time.Now()
+	day := "06" <= t.Format("15") && t.Format("15") <= "23"
+	type Point [2]int
+	Maps := make([][]string, resMap.SizeY+1)
+
+	if (day && resLocation.Maps.DayType == "default") || resLocation.Maps.DayType == "alwaysDay" {
+		DayMap(Maps, mapSize, m, resLocation)
+	} else {
+		NightMap(Maps, mapSize, m, resLocation, user)
+	}
+	return Maps
+}
+
+func DayMap(Maps [][]string, mapSize UserMap, m map[[2]int]Cell, resLocation Location) {
+	type Point [2]int
+
+	for y := range Maps {
+		for x := mapSize.LeftIndent; x <= mapSize.RightIndent; x++ {
+			if m[Point{x, y}].ID != 0 || m[Point{x, y}] == m[Point{*resLocation.AxisX, *resLocation.AxisY}] {
+				appendVisibleUserZone(m, x, y, Maps)
+			} else {
+				Maps[y] = append(Maps[y], resLocation.Maps.EmptySpaceSymbol)
+			}
+		}
+	}
+}
+
+func NightMap(Maps [][]string, mapSize UserMap, m map[[2]int]Cell, resLocation Location, user User) {
+	type Point [2]int
+
+	for y := range Maps {
+		for x := mapSize.LeftIndent; x <= mapSize.RightIndent; x++ {
+			if CalculateNightMap(user, resLocation, x, y) && m[Point{x, y}].ID != 0 {
+				appendVisibleUserZone(m, x, y, Maps)
+			} else if (y+x)%2 == 1 || m[Point{x, y}].ID != 0 && (y+x)%2 == 1 {
+				Maps[y] = append(Maps[y], "⬛️")
+			} else if (y+x)%2 == 0 || m[Point{x, y}].ID != 0 && (y+x)%2 == 0 {
+				Maps[y] = append(Maps[y], "✨")
+			} else {
+				Maps[y] = append(Maps[y], resLocation.Maps.EmptySpaceSymbol)
+			}
+		}
+	}
+}
+
 func appendVisibleUserZone(m map[[2]int]Cell, x int, y int, Maps [][]string) {
 	type Point [2]int
 
@@ -298,8 +223,56 @@ func appendVisibleUserZone(m map[[2]int]Cell, x int, y int, Maps [][]string) {
 	}
 }
 
-func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons {
+func CalculateUserMapBorder(resLocation Location, resMap Map) UserMap {
+	d := displaySize
+	if d*2 > resMap.SizeX || d*2 > resMap.SizeY {
+		if resMap.SizeX-resMap.SizeY > 0 {
+			d = resMap.SizeY / 2
+		} else {
+			d = resMap.SizeX / 2
+		}
+	}
+	mapSize := DefaultUserMap(resLocation, d)
 
+	if *resLocation.AxisX < d {
+		mapSize.LeftIndent = 0
+		mapSize.RightIndent = d * 2
+	}
+	if *resLocation.AxisY < d {
+		mapSize.DownIndent = 0
+		mapSize.UpperIndent = d * 2
+	}
+	if mapSize.RightIndent >= resMap.SizeX && *resLocation.AxisX > d {
+		mapSize.LeftIndent = resMap.SizeX - d*2
+		mapSize.RightIndent = resMap.SizeX
+	}
+	if mapSize.UpperIndent >= resMap.SizeY && *resLocation.AxisY > d {
+		mapSize.DownIndent = resMap.SizeY - d*2
+		mapSize.UpperIndent = resMap.SizeY
+	}
+
+	return mapSize
+}
+
+func CalculateButtonMap(resLocation Location, resUser User, m map[[2]int]Cell) tg.ReplyKeyboardMarkup {
+	type Point = [2]int
+
+	buttons := DefaultButtons(resUser.Avatar)
+
+	var CellsAroundUser []Cell
+	CellsAroundUser = append(CellsAroundUser,
+		m[Point{*resLocation.AxisX, *resLocation.AxisY + 1}],
+		m[Point{*resLocation.AxisX, *resLocation.AxisY - 1}],
+		m[Point{*resLocation.AxisX + 1, *resLocation.AxisY}],
+		m[Point{*resLocation.AxisX - 1, *resLocation.AxisY}],
+	)
+
+	buttons = PutButton(CellsAroundUser, buttons, resUser)
+
+	return CreateMapKeyboard(buttons)
+}
+
+func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons {
 	for i, cell := range CellsAroundUser {
 		switch true {
 		case cell.IsDefaultCell():
@@ -347,13 +320,13 @@ func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons 
 		case cell.IsItem() || cell.IsSwap():
 			switch i {
 			case 0:
-				btn.Up = cell.isItemCost(btn.Up, resUser)
+				btn.Up = cell.IsItemCost(btn.Up, resUser)
 			case 1:
-				btn.Down = cell.isItemCost(btn.Down, resUser)
+				btn.Down = cell.IsItemCost(btn.Down, resUser)
 			case 2:
-				btn.Right = cell.isItemCost(btn.Right, resUser)
+				btn.Right = cell.IsItemCost(btn.Right, resUser)
 			case 3:
-				btn.Left = cell.isItemCost(btn.Left, resUser)
+				btn.Left = cell.IsItemCost(btn.Left, resUser)
 			}
 		case cell.IsWordleGame():
 			switch i {
@@ -383,91 +356,47 @@ func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons 
 	return btn
 }
 
-func (c Cell) IsDefaultCell() bool {
-	if c.Type != nil && *c.Type == "cell" && !c.CanStep {
-		return true
-	}
-	return false
+func CreateMapKeyboard(buttons MapButtons) tg.ReplyKeyboardMarkup {
+	nearUsers := "Это не кнопка"
+
+	return tg.NewReplyKeyboard(
+		tg.NewKeyboardButtonRow(
+			tg.NewKeyboardButton("Вещи 🧥"),
+			tg.NewKeyboardButton(buttons.Up),
+			tg.NewKeyboardButton("Рюкзак 🎒"),
+		),
+		tg.NewKeyboardButtonRow(
+			tg.NewKeyboardButton(buttons.Left),
+			tg.NewKeyboardButton(buttons.Center),
+			tg.NewKeyboardButton(buttons.Right),
+		),
+		tg.NewKeyboardButtonRow(
+			tg.NewKeyboardButton(nearUsers), //onlineButton),
+			tg.NewKeyboardButton(buttons.Down),
+			tg.NewKeyboardButton(v.GetString("user_location.menu")),
+		),
+	)
 }
 
-func (c Cell) IsWorkbench() bool {
-	if c.Type != nil && *c.Type == "workbench" && c.ItemID != nil {
-		return true
+func GetStatsLine(user User) string {
+	var hpRes string
+	var stRes string
+	hp := fmt.Sprintf("%d", user.Health)
+	st := fmt.Sprintf("%d", user.Satiety)
+
+	length := len(hp)
+	for i := 0; i < length; i++ {
+		point := string(hp[i])
+		hpRes += fmt.Sprintf("%s⃣", point)
 	}
-	return false
-}
+	hpRes += "♥️"
 
-func (c Cell) IsTeleport() bool {
-	if c.Type != nil && *c.Type == "teleport" && c.TeleportID != nil {
-		return true
-	}
-	return false
-}
-
-func (c Cell) IsHome() bool {
-	if c.Type != nil && *c.Type == "home" {
-		return true
-	}
-	return false
-}
-
-func (c Cell) IsItem() bool {
-	if c.Type != nil && *c.Type == "item" && c.ItemID != nil && *c.ItemCount > 0 {
-		return true
-	}
-	return false
-}
-
-func (c Cell) IsSwap() bool {
-	if c.Type != nil && *c.Type == "swap" && c.ItemID != nil {
-		return true
-	}
-	return false
-}
-
-func (c Cell) IsQuest() bool {
-	if c.Type != nil && *c.Type == "quest" && c.ItemID != nil {
-		return true
-	}
-	return false
-}
-
-func (c Cell) IsChat() bool {
-	if c.Type != nil && *c.Type == "chat" && c.ItemID != nil && c.ChatId != nil {
-		return true
-	}
-	return false
-}
-
-func (c Cell) IsWordleGame() bool {
-	if c.Type != nil && *c.Type == "wordleGame" {
-		return true
-	}
-	return false
-}
-
-func (c Cell) IsSpecialItem(user User) string {
-	instrumentsUserCanUse := GetInstrumentsUserCanUse(user, c)
-
-	if len(instrumentsUserCanUse) > 1 {
-		return "❗ 🛠 ❓"
-	} else if len(instrumentsUserCanUse) == 1 {
-		for i := range instrumentsUserCanUse {
-			return i
-		}
+	length = len(st)
+	stRes += "\U0001F9C3"
+	for i := 0; i < length; i++ {
+		point := string(st[i])
+		stRes += fmt.Sprintf("%s⃣", point)
 	}
 
-	return "🚷"
-}
-
-func (c Cell) isItemCost(button string, resUser User) string {
-	var firstElem = c.IsSpecialItem(resUser)
-
-	button = firstElem + " " + button + " " + c.Item.View
-
-	if c.Item.Cost != nil && *c.Item.Cost > 0 && firstElem != "❗ 🛠 ❓" && c.NeedPay {
-		button = button + " ( " + ToString(*c.Item.Cost) + "💰 )"
-	}
-
-	return button
+	return fmt.Sprintf("%s    🅱️%s⃣%s⃣%s⃣    %s\n", hpRes, "e", "t", "a", stRes)
 }
