@@ -85,11 +85,10 @@ message:
     casino: "🎰"
     forbidden: "🚫"
     wrench: "🔧"
-    offline: "📳"
-    online: "📴"
     stop_use: "🚷"
     exclamation_mark: "❗"
     hand: "👋"
+    fist: "🤜"
     foot: "\U0001F9B6"
     quest: "📟"
     chat: "📨"
@@ -104,6 +103,7 @@ errors:
 
 wordle:
   text_awaiting_msg: "1 слово! 5 букв! Не ошибись)"
+  wordle_error: "Хммм....🤔\nВозможно ты не нажал(-а) кнопку *Написать слово*\nИли хочешь ⚠️ *Выйти?* ☝️"
   regulations: "*ПРАВИЛА ИГРЫ:*
 \n\n〰️〰️〰️〰️〰️〰️〰️〰️〰️️〰️〰️〰️️\n\n
 Угадайте загаданное слово в игре *Wordle* с шести попыток. У всех одинаковое слово, поэтому, пожалуйста, без спойлеров!

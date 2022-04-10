@@ -8,28 +8,29 @@ import (
 )
 
 type Item struct {
-	ID              uint         `gorm:"primaryKey"`
-	Name            string       `gorm:"embedded"`
-	Description     *string      `gorm:"embedded"`
-	View            string       `gorm:"embedded"`
-	Type            string       `gorm:"embedded"`
-	Cost            *int         `gorm:"embedded"`
-	Healing         *int         `gorm:"embedded"`
-	Damage          *int         `gorm:"embedded"`
-	Satiety         *int         `gorm:"embedded"`
-	Destruction     *int         `gorm:"embedded"`
-	DestructionHp   *int         `gorm:"embedded"`
-	GrowingUpTime   *int         `gorm:"embedded"`
-	Growing         *int         `gorm:"embedded"`
-	IntervalGrowing *int         `gorm:"embedded"`
-	CanTake         bool         `gorm:"embedded"`
-	CanStep         bool         `gorm:"embedded"`
-	Instruments     []Instrument `gorm:"many2many:instrument_item;"`
-	DressType       *string      `gorm:"embedded"`
-	IsBackpack      bool         `gorm:"embedded"`
-	IsInventory     bool         `gorm:"embedded"`
-	MaxCountUserHas *int         `gorm:"embedded"`
-	CountUse        *int         `gorm:"embedded"`
+	ID                uint         `gorm:"primaryKey"`
+	Name              string       `gorm:"embedded"`
+	Description       *string      `gorm:"embedded"`
+	View              string       `gorm:"embedded"`
+	Type              string       `gorm:"embedded"`
+	Cost              *int         `gorm:"embedded"`
+	Healing           *int         `gorm:"embedded"`
+	Damage            *int         `gorm:"embedded"`
+	Satiety           *int         `gorm:"embedded"`
+	Destruction       *int         `gorm:"embedded"`
+	DestructionHp     *int         `gorm:"embedded"`
+	GrowingUpTime     *int         `gorm:"embedded"`
+	Growing           *int         `gorm:"embedded"`
+	IntervalGrowing   *int         `gorm:"embedded"`
+	CanTake           bool         `gorm:"embedded"`
+	CanStep           bool         `gorm:"embedded"`
+	CanDestructByHand bool         `gorm:"embedded"`
+	Instruments       []Instrument `gorm:"many2many:instrument_item;"`
+	DressType         *string      `gorm:"embedded"`
+	IsBackpack        bool         `gorm:"embedded"`
+	IsInventory       bool         `gorm:"embedded"`
+	MaxCountUserHas   *int         `gorm:"embedded"`
+	CountUse          *int         `gorm:"embedded"`
 }
 
 type InstrumentItem struct {
@@ -62,6 +63,7 @@ func checkItemsOnNeededInstrument(cell Cell, msgInstrumentView string) (error, *
 	if msgInstrumentView == "👋" && cell.Item.CanTake {
 		return nil, nil
 	}
+
 	return errors.New("user has not instrument"), nil
 }
 
@@ -191,7 +193,7 @@ func GrowingItem(cell Cell, user User, instrument Instrument) (string, error) {
 			NextStateTime: &updateItemTime,
 			LastGrowing:   &t,
 		}.UpdateCell(cell.ID)
-		return "Вырастет " + updateItemTime.Format("15:04:05 02.01.06") + "!", nil
+		return "\U0001F973 Вырастет " + updateItemTime.Format("15:04:05 02.01.06") + "!", nil
 
 	}
 }
@@ -276,7 +278,9 @@ func UserGetItemUpdateModels(user User, cell Cell, instrumentView string) string
 
 	if instrumentView == "👋" {
 		return UserGetItemWithHand(cell, user, userGetItem)
-	} else if instrumentView != "👋" && len(cell.Item.Instruments) != 0 {
+	} else if instrumentView == "🤜" {
+		return DestructItem(cell, user, *instrument)
+	} else if len(cell.Item.Instruments) != 0 {
 		return UserGetItemWithInstrument(cell, user, *instrument)
 	}
 
@@ -347,7 +351,7 @@ func ViewItemInfo(location Location) string {
 		itemInfo = itemInfo + fmt.Sprintf("*Прочность*: `%d`\n", *cell.Item.DestructionHp)
 	}
 	if cell.Item.Growing != nil && cell.NextStateTime != nil {
-		itemInfo = itemInfo + fmt.Sprintf("*Вырастет*: %s\n", cell.NextStateTime.Format("15:04:05 02.01.06"))
+		itemInfo = itemInfo + fmt.Sprintf("*\U0001F973 Вырастет*: %s\n", cell.NextStateTime.Format("15:04:05 02.01.06"))
 	} else if cell.Item.Growing != nil {
 		itemInfo = itemInfo + fmt.Sprintf("*Время роста*: `%d мин.`\n", *cell.Item.Growing)
 	}

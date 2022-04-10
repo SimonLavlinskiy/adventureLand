@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-var msgs []tg.MessageConfig
-
 func messageResolver(update tg.Update) (msgs []tg.MessageConfig) {
 	user := r.GetOrCreateUser(update)
 
@@ -40,6 +38,8 @@ func messageResolver(update tg.Update) (msgs []tg.MessageConfig) {
 
 func userMenuLocation(update tg.Update, user r.User) []tg.MessageConfig {
 	var msg tg.MessageConfig
+	var msgs []tg.MessageConfig
+
 	newMessage := update.Message.Text
 
 	switch newMessage {
@@ -67,6 +67,8 @@ func userMenuLocation(update tg.Update, user r.User) []tg.MessageConfig {
 
 func userProfileLocation(update tg.Update, user r.User) []tg.MessageConfig {
 	var msg tg.MessageConfig
+	var msgs []tg.MessageConfig
+
 	newMessage := update.Message.Text
 
 	if user.Username == "waiting" {
@@ -127,6 +129,7 @@ func userMapLocation(update tg.Update, user r.User) (msgs []tg.MessageConfig) {
 func useSpecialCell(char []string, user r.User) []tg.MessageConfig {
 	ItemLeftHand, ItemRightHand, ItemHead := s.UsersHandItemsView(user)
 	var msg tg.MessageConfig
+	var msgs []tg.MessageConfig
 
 	// При нажатии кнопок
 	switch char[0] {
@@ -136,7 +139,7 @@ func useSpecialCell(char []string, user r.User) []tg.MessageConfig {
 	case v.GetString("message.emoji.foot"):
 		msg = s.UserMoving(user, char, char[0])
 		msgs = append(msgs, msg)
-	case v.GetString("message.emoji.hand"), ItemLeftHand.View, ItemRightHand.View:
+	case v.GetString("message.emoji.hand"), ItemLeftHand.View, ItemRightHand.View, v.GetString("message.emoji.fist"):
 		msgs = append(msgs, s.UserUseHandOrInstrumentMessage(user, char))
 	case v.GetString("message.emoji.exclamation_mark"):
 		cell := s.DirectionCell(user, char[3])
@@ -235,8 +238,8 @@ func useDefaultCell(update tg.Update, user r.User) (msgs []tg.MessageConfig) {
 }
 
 func callBackResolver(update tg.Update) ([]tg.MessageConfig, bool) {
-	msgs = []tg.MessageConfig{}
 	var msg tg.MessageConfig
+	var msgs []tg.MessageConfig
 	buttons := tg.ReplyKeyboardMarkup{}
 
 	charData := strings.Fields(update.CallbackQuery.Data)
@@ -249,6 +252,7 @@ func callBackResolver(update tg.Update) ([]tg.MessageConfig, bool) {
 	if len(charData) == 1 && charData[0] == v.GetString("callback_char.cancel") {
 		msg.Text, msg.ReplyMarkup = r.GetMyMap(user)
 		user = r.User{TgId: user.TgId, MenuLocation: "Карта"}.UpdateUser()
+		deletePrevMessage = true
 		msgs = append(msgs, msg)
 	}
 
@@ -333,7 +337,7 @@ func callBackResolver(update tg.Update) ([]tg.MessageConfig, bool) {
 		msgs = append(msgs, msg)
 
 	// Использование надетых итемов
-	case v.GetString("message.emoji.hand"), ItemLeftHand.View, ItemRightHand.View:
+	case v.GetString("message.emoji.hand"), ItemLeftHand.View, ItemRightHand.View, v.GetString("message.emoji.fist"):
 		msgs = append(msgs, s.UserUseHandOrInstrumentMessage(user, charData))
 		res := s.DirectionCell(user, charData[1])
 		msgs = append(msgs, s.ChoseInstrumentMessage(user, charData, res))
@@ -426,6 +430,8 @@ func SendUserMessageAllChatUsers(update tg.Update) ([]r.ChatUser, string) {
 
 func gameWordle(update tg.Update, user r.User) ([]tg.MessageConfig, bool) {
 	var msg tg.MessageConfig
+	var msgs []tg.MessageConfig
+
 	var delPrevMes bool
 
 	if update.Message != nil && update.Message.ReplyToMessage != nil && update.Message.ReplyToMessage.Text == v.GetString("wordle.text_awaiting_msg") {
@@ -434,9 +440,9 @@ func gameWordle(update tg.Update, user r.User) ([]tg.MessageConfig, bool) {
 		return msgs, delPrevMes
 	} else if update.CallbackQuery == nil {
 		msgs = s.WordleMap(user)
-		msg.Text = fmt.Sprintf("%s%sХммм....🤔\nВозможно ты не нажал(-а) кнопку *\"Написать слово\"*", msg.Text, v.GetString("msg_separator"))
+		msg.Text = fmt.Sprintf("%s%s%s", msg.Text, v.GetString("msg_separator"), v.GetString("wordle.wordle_error"))
 		msgs = append(msgs, msg)
-		delPrevMes = false
+		delPrevMes = true
 		return msgs, delPrevMes
 	}
 
@@ -461,10 +467,6 @@ func gameWordle(update tg.Update, user r.User) ([]tg.MessageConfig, bool) {
 	case "wordleMenu":
 		msgs = s.WordleMap(user)
 		delPrevMes = true
-	default:
-		msg.Text = fmt.Sprintf("%s%sХммм....🤔\nВозможно ты не нажал(-а) кнопку *\"Написать слово\"*", msg.Text, v.GetString("msg_separator"))
-		msgs = append(msgs, msg)
-		delPrevMes = false
 	}
 
 	return msgs, delPrevMes

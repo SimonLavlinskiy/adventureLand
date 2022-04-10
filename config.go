@@ -78,11 +78,10 @@ type Messages struct {
 			casino          string
 			forbidden       string
 			wrench          string
-			offline         string
-			online          string
 			stopUse         string
 			exclamationMark string
 			hand            string
+			fist            string
 			foot            string
 			quest           string
 			chat            string
@@ -112,6 +111,7 @@ type Messages struct {
 	}
 	Wordle struct {
 		regulations     string
+		wordleError     string
 		textAwaitingMsg string
 	}
 }

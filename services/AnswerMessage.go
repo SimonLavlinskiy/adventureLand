@@ -51,7 +51,7 @@ func MessageBackpackUserItems(userItems []r.UserItem, rowUser int, itemType stri
 		case "food":
 			userItemMsg += fmt.Sprintf("%s   %d%s     *HP*:  _%d_ ♥️️     *ST*:  _%d_ \U0001F9C3 ️\n", firstCell, *item.Count, item.Item.View, *item.Item.Healing, *item.Item.Satiety)
 		case "resource", "sprout", "furniture":
-			userItemMsg += fmt.Sprintf("%s   %s %d шт.\n", firstCell, item.Item.View, *item.Count)
+			userItemMsg += fmt.Sprintf("%s   %s %d шт. - _%s_\n", firstCell, item.Item.View, *item.Count, item.Item.Name)
 		default:
 			userItemMsg += fmt.Sprintf("%s   %s %d шт.\n", firstCell, item.Item.View, *item.Count)
 		}
@@ -98,13 +98,17 @@ func MessageGoodsUserItems(user r.User, userItems []r.UserItem, rowUser int) str
 func BackPackMoving(charData []string, user r.User) tg.MessageConfig {
 	var msg tg.MessageConfig
 
-	i := r.ToInt(charData[1])
 	category := charData[2]
 	userItems := r.GetBackpackItems(user.ID, category)
 
-	switch i {
-	case len(userItems):
-		i = i - 1
+	var i int
+	switch charData[1] {
+	case "-1":
+		i = len(userItems) - 1
+	case fmt.Sprintf("%d", len(userItems)):
+		i = 0
+	default:
+		i = r.ToInt(charData[1])
 	}
 
 	msg.Text = MessageBackpackUserItems(userItems, i, category)
@@ -116,13 +120,16 @@ func BackPackMoving(charData []string, user r.User) tg.MessageConfig {
 func GoodsMoving(charData []string, user r.User) tg.MessageConfig {
 	var msg tg.MessageConfig
 
-	i := r.ToInt(charData[1])
-
 	userItems := r.GetInventoryItems(user.ID)
 
-	switch i {
-	case len(userItems):
-		i = i - 1
+	var i int
+	switch charData[1] {
+	case "-1":
+		i = len(userItems) - 1
+	case fmt.Sprintf("%d", len(userItems)):
+		i = 0
+	default:
+		i = r.ToInt(charData[1])
 	}
 
 	msg.Text = MessageGoodsUserItems(user, userItems, i)

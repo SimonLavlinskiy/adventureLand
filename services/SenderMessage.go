@@ -37,11 +37,11 @@ func SendMessage(message tg.MessageConfig, bot *tg.BotAPI) tg.Message {
 	return resp
 }
 
-//func UpdateMessage(updateMsg tg.EditMessageTextConfig, bot *tg.BotAPI) {
-//	if _, err := bot.Send(updateMsg); err != nil {
-//		panic(fmt.Sprintf("Error update msg: %s, %d", err.Error(), updateMsg.MessageID))
-//	}
-//}
+func UpdateMessage(updateMsg tg.EditMessageTextConfig, bot *tg.BotAPI) {
+	if _, err := bot.Send(updateMsg); err != nil {
+		panic(fmt.Sprintf("Error update msg: %s, %d", err.Error(), updateMsg.MessageID))
+	}
+}
 
 func NotifyUsers(chatUsers []repository.ChatUser, message string) {
 	var msg tg.MessageConfig

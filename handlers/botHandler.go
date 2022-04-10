@@ -8,6 +8,10 @@ import (
 var deleteBotMsg tg.DeleteMessageConfig
 
 func GetMessage(telegramApiToken string) {
+	//services.UpdateMap()
+
+	var msgs []tg.MessageConfig
+	var delMes bool
 	bot, err := tg.NewBotAPI(telegramApiToken)
 	if err != nil {
 		panic(err)
@@ -24,7 +28,7 @@ func GetMessage(telegramApiToken string) {
 
 		if update.CallbackQuery != nil {
 			deleteBotMsg = tg.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
-			msgs, delMes := callBackResolver(update)
+			msgs, delMes = callBackResolver(update)
 			for i := range msgs {
 				services.SendMessage(msgs[i], bot)
 				if delMes {

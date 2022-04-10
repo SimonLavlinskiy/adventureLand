@@ -52,7 +52,7 @@ type Clothes struct {
 
 func GetOrCreateUser(update tg.Update) User {
 	userTgId := GetUserTgId(update)
-	MoneyUserStart := 10
+	MoneyUserStart := 100
 
 	replacer := strings.NewReplacer("_", " ", "*", " ")
 	outUsername := replacer.Replace(update.Message.From.UserName)

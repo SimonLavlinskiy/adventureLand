@@ -21,9 +21,9 @@ type Location struct {
 }
 
 func GetOrCreateMyLocation(user User) Location {
-	AsX := 7
-	AsY := 2
-	startMap := 1
+	AsX := 155
+	AsY := 54
+	startMap := 50
 
 	result := Location{
 		UserTgId: user.TgId,
@@ -80,7 +80,7 @@ func UpdateLocation(char []string, locStruct Location, user User) (string, error
 		}
 	}
 
-	if !resultCell.CanStep || resultCell.Item != nil && *resultCell.ItemCount > 0 && !resultCell.Item.CanStep {
+	if !resultCell.CanStep || resultCell.Item != nil && resultCell.ItemCount != nil && *resultCell.ItemCount > 0 && !resultCell.Item.CanStep {
 		return "\nСюда никак не пройти(", errors.New("can't get through")
 	}
 
