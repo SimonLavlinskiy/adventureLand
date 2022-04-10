@@ -52,6 +52,9 @@ func userMenuLocation(update tg.Update, user r.User) []tg.MessageConfig {
 		msg.ReplyMarkup = s.ProfileKeyboard(user)
 		msgs = append(msgs, msg)
 		r.User{TgId: user.TgId, MenuLocation: "Профиль"}.UpdateUser()
+	case "/start":
+		msg.Text = v.GetString("main_info.start_msg")
+		msgs = append(msgs, msg)
 	default:
 		msg.Text = "Меню"
 		msg.ReplyMarkup = s.MainKeyboard(user)
@@ -223,6 +226,9 @@ func useDefaultCell(update tg.Update, user r.User) (msgs []tg.MessageConfig) {
 		msgs = append(msgs, msg)
 	case v.GetString("message.emoji.forbidden"):
 		msg.Text = "🚫 Сюда нельзя! 🚫"
+		msgs = append(msgs, msg)
+	case "👨‍🔧":
+		msg.Text = "👨‍🔧 Зачем зашел за кассу? 😑"
 		msgs = append(msgs, msg)
 	default:
 		msg.Text, msg.ReplyMarkup = r.GetMyMap(user)

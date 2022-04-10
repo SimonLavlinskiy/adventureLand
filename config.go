@@ -108,6 +108,7 @@ type Messages struct {
 		messageChatIsClosed   string
 		messageUserSignInChat string
 		lastStepUserOnlineMin int
+		startMsg              string
 	}
 	Wordle struct {
 		regulations     string
