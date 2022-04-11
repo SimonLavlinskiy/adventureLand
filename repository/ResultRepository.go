@@ -1,5 +1,7 @@
 package repository
 
+import "project0/config"
+
 type Result struct {
 	ID               uint   `gorm:"primaryKey"`
 	Type             string `gorm:"embedded"`
@@ -24,4 +26,15 @@ func (u User) UserGetResult(r Result) {
 		u.UserGetResultItem(r)
 		u.UserGetResultSpecialItem(r)
 	}
+}
+
+func (r Result) GetResult() Result {
+	var res Result
+	config.Db.
+		Preload("Item").
+		Preload("SpecialItem").
+		Where(Result{ID: r.ID}).
+		First(&res)
+
+	return res
 }

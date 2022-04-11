@@ -653,8 +653,10 @@ func UserDoneQuest(questId uint, user r.User) tg.MessageConfig {
 	userQuest.UserDoneQuest(user)
 	user.UserGetResult(userQuest.Quest.Result)
 
+	msgQuestResult := msgQuestResult(userQuest.Quest.Result)
+
 	msg = OpenQuest(questId, user)
-	msg.Text = fmt.Sprintf("*Задание выполнено!*\n%s", msg.Text)
+	msg.Text = fmt.Sprintf("*Задание выполнено!*\n%s%s%s", msg.Text, v.GetString("msg_separator"), msgQuestResult)
 
 	return msg
 }
@@ -709,6 +711,20 @@ func ChoseInstrumentMessage(user r.User, char []string, cellLocation r.Location)
 		msg.ChatID = int64(user.TgId)
 	} else {
 		msg.Text = "Предметы в ячейке закончились"
+	}
+
+	return msg
+}
+
+func msgQuestResult(result r.Result) string {
+	result = result.GetResult()
+
+	msg := "🏆 *Ты получил*:"
+	if result.Item != nil {
+		msg = fmt.Sprintf("%s\n_%s %s - %d шт._", msg, result.Item.View, result.Item.Name, *result.CountItem)
+	}
+	if result.SpecialItem != nil {
+		msg = fmt.Sprintf("%s\n_%s %s - %d шт._", msg, result.SpecialItem.View, result.SpecialItem.Name, *result.SpecialItemCount)
 	}
 
 	return msg
