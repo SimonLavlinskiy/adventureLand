@@ -70,7 +70,7 @@ func (u User) UserGetResultItem(r Result) {
 func (u User) UserGetResultSpecialItem(r Result) {
 	ui := UserItem{UserId: int(u.ID), ItemId: int(*r.SpecialItemId)}.UserGetUserItem()
 	resItemCount := *ui.Count + int(*r.SpecialItemCount)
-	u.UpdateUserItem(UserItem{Count: &resItemCount})
+	u.UpdateUserItem(UserItem{ID: ui.ID, Count: &resItemCount})
 }
 
 func GetUserItems(userId uint) []UserItem {
