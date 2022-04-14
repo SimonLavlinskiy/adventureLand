@@ -30,8 +30,8 @@ func (i Instrument) GetInstrument() Instrument {
 		Preload("Result").
 		Preload("Result.Item").
 		Preload("NextStageItem").
-		Where(Instrument{ID: i.ID}).
-		First(&result).Error
+		//Where(Instrument{ID: i.ID}).
+		First(&result, Instrument{ID: i.ID}).Error
 
 	if err != nil {
 		fmt.Println("Инструмент не найден")
@@ -42,6 +42,9 @@ func (i Instrument) GetInstrument() Instrument {
 
 func GetInstrumentsUserCanUse(user User, cell Cell) map[string]string {
 	instrumentsUserCanUse := map[string]string{}
+	if cell.Item == nil {
+		return instrumentsUserCanUse
+	}
 	instruments := cell.Item.Instruments
 
 	for _, instrument := range instruments {

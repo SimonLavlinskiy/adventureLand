@@ -128,10 +128,10 @@ func GetLocationOnlineUser(userLocation Location, mapSize UserMap) []Location {
 	err := config.Db.
 		Preload("User").
 		Where(Cell{MapsId: *userLocation.MapsId}).
-		Where("axis_x >= " + ToString(mapSize.LeftIndent)).
-		Where("axis_x <= " + ToString(mapSize.RightIndent)).
-		Where("axis_y >= " + ToString(mapSize.DownIndent)).
-		Where("axis_y <= " + ToString(mapSize.UpperIndent)).
+		Where("axis_x >= ?", mapSize.LeftIndent).
+		Where("axis_x <= ?", mapSize.RightIndent).
+		Where("axis_y >= ?", mapSize.DownIndent).
+		Where("axis_y <= ?", mapSize.UpperIndent).
 		Where(fmt.Sprintf("update_at >= '%s'", time.Now().Add(time.Duration(v.GetInt("main_info.last_step_user_online_min"))*time.Minute).Format("2006-01-02 15:04:05"))).
 		Order("axis_x ASC").
 		Order("axis_y ASC").
