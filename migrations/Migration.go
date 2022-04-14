@@ -7,11 +7,33 @@ import (
 )
 
 func Migrate() bool {
-	err := config.Db.AutoMigrate(repository.User{}, repository.Location{}, repository.Cellule{}, repository.Map{}, repository.Teleport{})
+	err := config.Db.AutoMigrate(
+		repository.User{},
+		repository.Location{},
+		repository.Teleport{},
+		repository.Item{},
+		repository.Cell{},
+		repository.Map{},
+		repository.UserItem{},
+		repository.Instrument{},
+		repository.Receipt{},
+		repository.Quest{},
+		repository.UserQuest{},
+		repository.QuestTask{},
+		repository.Result{},
+		repository.Chat{},
+		repository.ChatUser{},
+		repository.Word{},
+		repository.WordleGameProcess{},
+		repository.UserWords{},
+		repository.UserMsg{},
+	)
 	if err != nil {
 		fmt.Println("Migration failed")
 		panic(err)
 		return false
 	}
+	//err = config.Db.SetupJoinTable(&repository.Item{}, "Instruments", &repository.InstrumentItem{})
+
 	return true
 }

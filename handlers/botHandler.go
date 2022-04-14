@@ -1,96 +1,75 @@
 package handlers
 
 import (
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"project0/repository"
+	"project0/services"
+	"time"
 )
 
-// TODO вынести костантные названия кнопок в отдельный файл(Можно даже в yml)
-
-var mainKeyboard = tgbotapi.NewReplyKeyboard(
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("🗺 Карта 🗺"),
-		tgbotapi.NewKeyboardButton("👤 Профиль 👔"),
-	),
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("👜 Инвентарь 👜"),
-	),
-)
-
-var backpackKeyboard = tgbotapi.NewReplyKeyboard(
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("\U0001F9BA Шмот \U0001F9BA"),
-		tgbotapi.NewKeyboardButton("🍕 Еда 🍕"),
-	),
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("Меню"),
-	),
-)
-
-var profileKeyboard = tgbotapi.NewReplyKeyboard(
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("📝 Изменить имя? 📝"),
-		tgbotapi.NewKeyboardButton("👤 Изменить аватар? 👤"),
-	),
-	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("Меню"),
-	),
-)
-
-//var deleteBotMsg = tgbotapi.DeleteMessageConfig{}
-
-//var updateMsg = tgbotapi.EditMessageTextConfig{}
+var deleteBotMsg tg.DeleteMessageConfig
 
 func GetMessage(telegramApiToken string) {
-	bot, err := tgbotapi.NewBotAPI(telegramApiToken)
+	//services.UpdateMap()
+
+	bot, err := tg.NewBotAPI(telegramApiToken)
 	if err != nil {
 		panic(err)
 	}
 	bot.Debug = false
-	updateConfig := tgbotapi.NewUpdate(0)
+	updateConfig := tg.NewUpdate(0)
 
 	updateConfig.Timeout = 30
 
 	updates := bot.GetUpdatesChan(updateConfig)
 
 	for update := range updates {
-
-		if update.Message == nil {
-			continue
-		}
-
-		//deleteBotMsg = tgbotapi.NewDeleteMessage(update.Message.Chat.ID, update.Message.MessageID-1)
-		msg = messageResolver(update)
-
-		//updateMsg = tgbotapi.NewEditMessageText(366780332, 6304, "пипися")
-		//if _, err := bot.Send(updateMsg); err != nil
-		//	panic("Error update msg: " + err.Error())
-		//}
-
-		//DeleteMessage(deleteBotMsg, telegramApiToken)
-		SendMessage(msg, telegramApiToken)
-		//msg.ReplyToMessageID = update.Message.MessageID
-
-		//ents := update.Message.Entities
+		go messageHandler(bot, update)
 	}
-
 }
 
-//func DeleteMessage(message tgbotapi.DeleteMessageConfig, telegramApiToken string) {
-//	bot, err := tgbotapi.NewBotAPI(telegramApiToken)
-//	if err != nil {
-//		panic(err)
-//	}
-//	if _, err := bot.Request(message); err != nil {
-//		panic("Error delete msg: " + err.Error())
-//	}
-//}
-
-func SendMessage(message tgbotapi.MessageConfig, telegramApiToken string) {
-	bot, err := tgbotapi.NewBotAPI(telegramApiToken)
+func GetMessageFromChat(tgApiToken string) {
+	bot, err := tg.NewBotAPI(tgApiToken)
 	if err != nil {
 		panic(err)
 	}
-	if _, err := bot.Send(message); err != nil {
-		panic("Error send msg: " + err.Error())
+	bot.Debug = false
+	updateConfig := tg.NewUpdate(0)
+
+	updateConfig.Timeout = 30
+
+	updates := bot.GetUpdatesChan(updateConfig)
+
+	for update := range updates {
+		services.NotifyUsers(SendUserMessageAllChatUsers(update))
+	}
+}
+
+func messageHandler(bot *tg.BotAPI, update tg.Update) {
+	var msgs []tg.MessageConfig
+	var delMes bool
+
+	services.CheckEventsForUpdate()
+
+	if update.CallbackQuery != nil {
+		deleteBotMsg = tg.NewDeleteMessage(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID)
+		msgs, delMes = callBackResolver(update)
+		for i := range msgs {
+			services.SendMessage(msgs[i], bot)
+			if delMes {
+				go services.DeleteMessage(deleteBotMsg, bot)
+			}
+		}
+	}
+
+	if update.Message != nil {
+		repository.UserMsgCreate(update)
+		msgs = messageResolver(update)
+		time.Sleep(500 * time.Millisecond)
+		if repository.IsUserMsgLatest(update) {
+			for _, msg := range msgs {
+				services.SendMessage(msg, bot)
+			}
+		}
 	}
 }

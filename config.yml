@@ -1,0 +1,144 @@
+msg_separator: "\n\n〰️〰️〰️〰️〰️〰️〰️〰️〰️️〰️〰️〰️️\n"
+
+user_location:
+  menu: "Меню"
+  maps: "Карта"
+  profile: "Профиль"
+  tasks_menu_message: "📜 *Квесты* 📟 *Задания* 📆 *Ежедневки* 📜"
+  item_categories:
+    category_title: "🍕 \U0001F9F1 Категории 🌱 🛋"
+    categories: "food resource sprout furniture other"
+    other_categories: "chat"
+    food: "Еда 🍕"
+    resource: "Ресурсы \U0001F9F1"
+    sprout: "Семена 🌱"
+    furniture: "Мебель 🛋"
+    other: "Всякое 🧩"
+
+callback_char:
+  cancel: "cancel"
+  category: "category"
+  backpack_moving: "backpackMoving"
+  goods_moving: "goodsMoving"
+  eat_food: "eatFood"
+  delete_item: "deleteItem"
+  dress_good: "dressGood"
+  take_off_good: "takeOffGood"
+  change_left_hand: "changeLeftHand"
+  change_right_hand: "changeRightHand"
+  change_avatar: "changeAvatar"
+  description: "description"
+  workbench: "workbench"
+  receipt: "receipt"
+  put_item: "putItem"
+  put_count_item: "putCountItem"
+  make_new_item: "makeNewItem"
+  throw_out_item: "throwOutItem"
+  count_of_throw_out: "countOfThrowOut"
+  buy_home: "buyHome"
+  user_done_quest: "user_done_quest"
+  user_get_quest: "user_get_quest"
+  quest: "quest"
+  quests: "quests"
+  join_to_chat: "joinToChat"
+  wordle_regulations: "wordleRegulations"
+
+main_info:
+  cost_of_house: 1000
+  message_chat_is_closed: "Чатик истек!"
+  message_user_sign_in_chat: "Добро пожаловать в чатик!"
+  last_step_user_online_min: -180
+  start_msg: "Привет!\n\n
+Я очень сильно захотел сделать рпг игру в телеграмме!\n
+И вот она - *Adventure Land Bot*! (_пока что beta_)\n
+Здесь есть:\n
+- Открытый мир, по которому реально можно ходить и исследовать\n
+- Много предметов для взаимодействия\n
+- Разные локации, не бойся заходить в 🚪\n
+- Квесты ➡️🪧\n
+- Крафт предметов ➡️🗜\n
+- Выращивание еды (чтобы выжить надо кушать)\n
+- Добыча ресурсов 🪓⛏\n\n
+
+Выбирай в профиле аватар, выходи на карту и удачи!\n
+Надеюсь ты разберешься и тебе понравится)"
+
+quest_statuses:
+  completed: "✅ Выполнен"
+  processed: "✴️ В работе"
+  new: "🆕 Новый"
+  completed_emoji: "✅"
+  processed_emoji: "✴️"
+  new_emoji: "🆕"
+
+elem:
+  black: "⬛"
+  brown: "🟫"
+  red: "🟥"
+  purple: "🟪"
+  orange: "🟧"
+  yellow: "🟨"
+  green: "🟩"
+  blue: "🟦"
+  white: "⬜"
+  door: "🚪"
+  day_window: "🌁 🏙️ 🏞️"
+  evening_window: "🌆 🌇 🌄 🌅"
+  night_window: "🌃 🌌 🌉 🎑"
+
+message:
+  list_of_avatar: "🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 ‍️🐨 🐯 🦁 🐮 🐷 🐸 🐵 🐦 🐧 🐔 🐤 🐥 🦆 🐴 🦄 🐺 🐗 🐝 🦋 🐛 🐌 🐞 🪲 🪰 🐜 🕷 🪳 🦖 🦕 🐙 🦀 🐟 🐠 🐡 🦭"
+  doing:
+    up: "🔼"
+    down: "🔽"
+    left: "◀️️"
+    right: "▶️"
+  emoji:
+    water: "\U0001F7E6"
+    clock: "🕦"
+    casino: "🎰"
+    forbidden: "🚫"
+    wrench: "🔧"
+    stop_use: "🚷"
+    exclamation_mark: "❗"
+    hand: "👋"
+    fist: "🤜"
+    foot: "\U0001F9B6"
+    quest: "📟"
+    chat: "📨"
+    wordle_game: "🔤"
+
+errors:
+  no_quest_item: "Здесь нет доски с квестами!"
+  user_not_has_item_in_hand: "Нельзя взять без инструмента в руке"
+  user_has_other_item: "Сначала снимите предмет, чтоб надеть другой"
+  user_did_not_task: "Задание не выполнено!"
+  chose_instrument_to_use: "В зависимости от предмета в твоих руках ты можешь получить разный результат. Выбирай..."
+
+wordle:
+  text_awaiting_msg: "1 слово! 5 букв! Не ошибись)"
+  wordle_error: "Хммм....🤔\nВозможно ты не нажал(-а) кнопку *Написать слово*\nИли хочешь ⚠️ *Выйти?* ☝️"
+  regulations: "*ПРАВИЛА ИГРЫ:*
+\n\n〰️〰️〰️〰️〰️〰️〰️〰️〰️️〰️〰️〰️️\n\n
+Угадайте загаданное слово в игре *Wordle* с шести попыток. У всех одинаковое слово, поэтому, пожалуйста, без спойлеров!
+\n\n
+После каждой попытки цвет букв будет меняться, чтобы показать, какие буквы есть в загаданном слове!
+\nНапример, мы пытаемся отгадать слово *ГОCТЬ*
+\n\n〰️〰️〰️〰️〰️〰️〰️〰️〰️️〰️〰️〰️️\n\n
+Первым мы ввели слово Ребус. Буква С есть в загаданном слове, но стоит в другом месте.
+\n\n⬜️⬜️⬜️⬜️🟨 - *РЕБУС*
+\n\n_Если буквы нет_ в загаданном слове, то _она выделяется белым_. 
+\n\n〰️〰️〰️〰️〰️〰️〰️〰️〰️️〰️〰️〰️️\n\n
+Затем ввели слово _Сосна_. Буква *С* и *О* есть в загаданном слове и стоят на правильных местах.
+\n\n⬜️✅✅⬜️⬜️ - *СОСНА*
+Обратите внимание, что если в введенном слове две одинаковых буквы, а в загаданном слове только одна такая буква, то выделяется только одна буква.
+\n\n〰️〰️〰️〰️〰️〰️〰️〰️〰️️〰️〰️〰️️\n\n
+Если слово угадано правильно, то все буквы будут выделены зеленым!
+\n\n✅✅✅✅✅ - *ГОСТЬ*
+\n\n〰️〰️〰️〰️〰️〰️〰️〰️〰️️〰️〰️〰️️\n\n
+Также важно знать, что *в загаданном слове могут быть одинаковые буквы*. 
+По правилам русских кроссвордов буква Ё в словах заменена на E!
+\n\n
+Каждый день загадывается новое слово!
+\n\n
+*Удачи!*"
