@@ -37,9 +37,12 @@ func SendMessage(message tg.MessageConfig, bot *tg.BotAPI) tg.Message {
 	return resp
 }
 
-func UpdateMessage(updateMsg tg.EditMessageTextConfig, bot *tg.BotAPI) {
+func UpdateMessage(updateMsg tg.EditMessageTextConfig, updButton tg.EditMessageReplyMarkupConfig, bot *tg.BotAPI) {
 	if _, err := bot.Send(updateMsg); err != nil {
-		panic(fmt.Sprintf("Error update msg: %s, %d", err.Error(), updateMsg.MessageID))
+		fmt.Println(fmt.Sprintf("Error update msg: %s, %d", err.Error(), updateMsg.MessageID))
+	}
+	if _, err := bot.Send(updButton); err != nil {
+		fmt.Println(fmt.Sprintf("Error update button: %s, %d", err.Error(), updateMsg.MessageID))
 	}
 }
 

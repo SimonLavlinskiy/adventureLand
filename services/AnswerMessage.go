@@ -28,8 +28,8 @@ func DirectionCell(user r.User, direction string) r.Location {
 	return res
 }
 
-func MessageBackpackUserItems(userItems []r.UserItem, rowUser int, itemType string) string {
-	var userItemMsg = fmt.Sprintf("🎒 *Рюкзачок* ➡️ *%s* \n \n", v.GetString(fmt.Sprintf("user_location.item_categories.%s", itemType)))
+func MessageBackpackUserItems(user r.User, userItems []r.UserItem, rowUser int, itemType string) string {
+	var userItemMsg = fmt.Sprintf("%s🎒 *Рюкзачок* ➡️ *%s* \n \n", r.GetStatsLine(user), v.GetString(fmt.Sprintf("user_location.item_categories.%s", itemType)))
 
 	if len(userItems) == 0 {
 		return userItemMsg + "👻 \U0001F9B4  Пусто .... 🕸 🕷"
@@ -95,9 +95,7 @@ func MessageGoodsUserItems(user r.User, userItems []r.UserItem, rowUser int) str
 	return userItemMsg
 }
 
-func BackPackMoving(charData []string, user r.User) tg.MessageConfig {
-	var msg tg.MessageConfig
-
+func BackPackMoving(charData []string, user r.User) (msgText string, buttons tg.InlineKeyboardMarkup) {
 	category := charData[2]
 	userItems := r.GetBackpackItems(user.ID, category)
 
@@ -111,15 +109,13 @@ func BackPackMoving(charData []string, user r.User) tg.MessageConfig {
 		i = r.ToInt(charData[1])
 	}
 
-	msg.Text = MessageBackpackUserItems(userItems, i, category)
-	msg.ReplyMarkup = BackpackInlineKeyboard(userItems, i, category)
+	msgText = MessageBackpackUserItems(user, userItems, i, category)
+	buttons = BackpackInlineKeyboard(userItems, i, category)
 
-	return msg
+	return msgText, buttons
 }
 
-func GoodsMoving(charData []string, user r.User) tg.MessageConfig {
-	var msg tg.MessageConfig
-
+func GoodsMoving(charData []string, user r.User) (msgText string, buttons tg.InlineKeyboardMarkup) {
 	userItems := r.GetInventoryItems(user.ID)
 
 	var i int
@@ -132,37 +128,33 @@ func GoodsMoving(charData []string, user r.User) tg.MessageConfig {
 		i = r.ToInt(charData[1])
 	}
 
-	msg.Text = MessageGoodsUserItems(user, userItems, i)
-	msg.ReplyMarkup = GoodsInlineKeyboard(user, userItems, i)
+	msgText = MessageGoodsUserItems(user, userItems, i)
+	buttons = GoodsInlineKeyboard(user, userItems, i)
 
-	return msg
+	return msgText, buttons
 }
 
-func UserEatItem(user r.User, charData []string) tg.MessageConfig {
-	var msg tg.MessageConfig
-
+func UserEatItem(user r.User, charData []string) (msgText string, buttons tg.InlineKeyboardMarkup) {
 	userItemId := r.ToInt(charData[1])
 
 	userItem := r.UserItem{ID: userItemId}.UserGetUserItem()
 
 	res := userItem.EatItem(user)
 	charDataForOpenBackPack := strings.Fields(fmt.Sprintf("%s %s food", v.GetString("callback_char.backpack_moving"), charData[2]))
-	msg = BackPackMoving(charDataForOpenBackPack, user)
-	msg.Text = fmt.Sprintf("%s%s%s", msg.Text, v.GetString("msg_separator"), res)
+	msgText, buttons = BackPackMoving(charDataForOpenBackPack, user)
+	msgText = fmt.Sprintf("%s%s%s", msgText, v.GetString("msg_separator"), res)
 
-	return msg
+	return msgText, buttons
 }
 
-func UserDeleteItem(user r.User, charData []string) tg.MessageConfig {
-	var msg tg.MessageConfig
-
+func UserDeleteItem(user r.User, charData []string) (msgText string, buttons tg.InlineKeyboardMarkup) {
 	userItemId := r.ToInt(charData[1])
 	userItem := r.UserItem{ID: userItemId}.UserGetUserItem()
 
 	if charData[4] == "false" {
-		msg.ReplyMarkup = DeleteItem(charData)
-		msg.Text = fmt.Sprintf("Вы точно хотите уничтожить %s %s _(%d шт.)_?", userItem.Item.View, userItem.Item.Name, *userItem.Count)
-		return msg
+		buttons = DeleteItem(charData)
+		msgText = fmt.Sprintf("Вы точно хотите уничтожить %s %s _(%d шт.)_?", userItem.Item.View, userItem.Item.Name, *userItem.Count)
+		return msgText, buttons
 	}
 
 	countAfterUserThrowOutItem := 0
@@ -178,15 +170,15 @@ func UserDeleteItem(user r.User, charData []string) tg.MessageConfig {
 		charDataForOpenList = strings.Fields(fmt.Sprintf("%s %s", v.GetString("callback_char.goods_moving"), charData[2]))
 		UserTakeOffGood(user, charData)
 		user = r.GetUser(r.User{TgId: user.TgId})
-		msg = GoodsMoving(charDataForOpenList, user)
+		msgText, buttons = GoodsMoving(charDataForOpenList, user)
 	} else {
 		charDataForOpenList = strings.Fields(fmt.Sprintf("%s %s %s", v.GetString("callback_char.backpack_moving"), charData[2], charData[3]))
-		msg = BackPackMoving(charDataForOpenList, user)
+		msgText, buttons = BackPackMoving(charDataForOpenList, user)
 	}
 
-	msg.Text = fmt.Sprintf("%s%s🗑 Вы уничтожили %s%dшт.", msg.Text, v.GetString("msg_separator"), userItem.Item.View, *userItem.Count)
+	msgText = fmt.Sprintf("%s%s🗑 Вы уничтожили %s%dшт.", msgText, v.GetString("msg_separator"), userItem.Item.View, *userItem.Count)
 
-	return msg
+	return msgText, buttons
 }
 
 func UsersHandItemsView(user r.User) (r.Item, r.Item, r.Item) {
@@ -207,23 +199,19 @@ func UsersHandItemsView(user r.User) (r.Item, r.Item, r.Item) {
 	return ItemLeftHand, ItemRightHand, ItemHead
 }
 
-func Quest(cell *r.Cell, user r.User) tg.MessageConfig {
-	var msg tg.MessageConfig
-
+func Quest(cell *r.Cell, user r.User) (msgText string, buttons tg.InlineKeyboardMarkup) {
 	if !cell.IsQuest() {
-		msg.Text = v.GetString("error.no_quest_item")
-		return msg
+		msgText = v.GetString("error.no_quest_item")
+		return msgText, CancelButton()
 	}
 
-	msg.Text = v.GetString("user_location.tasks_menu_message")
-	msg.ReplyMarkup = AllQuestsMessageKeyboard(user)
+	msgText = v.GetString("user_location.tasks_menu_message")
+	buttons = AllQuestsMessageKeyboard(user)
 
-	return msg
+	return msgText, buttons
 }
 
-func UserTakeOffGood(user r.User, charData []string) tg.MessageConfig {
-	var msg tg.MessageConfig
-
+func UserTakeOffGood(user r.User, charData []string) (msgText string, buttons tg.InlineKeyboardMarkup) {
 	userItemId := r.ToInt(charData[1])
 	userItem := r.UserItem{ID: userItemId}.UserGetUserItem()
 
@@ -244,14 +232,13 @@ func UserTakeOffGood(user r.User, charData []string) tg.MessageConfig {
 	user = r.GetUser(r.User{TgId: user.TgId})
 
 	charDataForOpenGoods := strings.Fields(fmt.Sprintf("%s %s", v.GetString("callback_char.goods_moving"), charData[2]))
-	msg = GoodsMoving(charDataForOpenGoods, user)
-	msg.Text = fmt.Sprintf("%s%sВещь снята!", msg.Text, v.GetString("msg_separator"))
+	msgText, buttons = GoodsMoving(charDataForOpenGoods, user)
+	msgText = fmt.Sprintf("%s%sВещь снята!", msgText, v.GetString("msg_separator"))
 
-	return msg
+	return msgText, buttons
 }
 
-func DressUserItem(user r.User, charData []string) tg.MessageConfig {
-	var msg tg.MessageConfig
+func DressUserItem(user r.User, charData []string) (msgText string, buttons tg.InlineKeyboardMarkup) {
 
 	userItemId := r.ToInt(charData[1])
 	userItem := r.UserItem{ID: userItemId}.UserGetUserItem()
@@ -302,20 +289,18 @@ func DressUserItem(user r.User, charData []string) tg.MessageConfig {
 	}
 
 	if changeHandItem {
-		msg.ReplyMarkup = ChangeItemInHandKeyboard(user, userItemId, charData[2])
+		buttons = ChangeItemInHandKeyboard(user, userItemId, charData[2])
 	} else {
 		charDataForOpenGoods := strings.Fields(fmt.Sprintf("%s %s", v.GetString("callback_char.goods_moving"), charData[2]))
-		msg = GoodsMoving(charDataForOpenGoods, user)
+		msgText, buttons = GoodsMoving(charDataForOpenGoods, user)
 	}
 
-	msg.Text = fmt.Sprintf("%s%s%s", msg.Text, v.GetString("msg_separator"), result)
+	msgText = fmt.Sprintf("%s%s%s", msgText, v.GetString("msg_separator"), result)
 
-	return msg
+	return msgText, buttons
 }
 
-func UserThrowOutItem(user r.User, charData []string) tg.MessageConfig {
-	var msg tg.MessageConfig
-
+func UserThrowOutItem(user r.User, charData []string) (msg string, buttons tg.InlineKeyboardMarkup) {
 	cellType := "item"
 	userItem := r.UserItem{ID: r.ToInt(charData[1])}.UserGetUserItem()
 
@@ -341,24 +326,22 @@ func UserThrowOutItem(user r.User, charData []string) tg.MessageConfig {
 		if *userItem.Count == 0 {
 			UserTakeOffGood(user, charData)
 		}
-		msg = GoodsMoving(charDataForOpenList, user)
+		msg, buttons = GoodsMoving(charDataForOpenList, user)
 	} else {
 		charDataForOpenList = strings.Fields(fmt.Sprintf("%s %s %s", v.GetString("callback_char.backpack_moving"), charData[2], charData[4]))
-		msg = BackPackMoving(charDataForOpenList, user)
+		msg, buttons = BackPackMoving(charDataForOpenList, user)
 	}
 
-	msg.Text = fmt.Sprintf("%s%s", msg.Text, msgText)
+	msg = fmt.Sprintf("%s%s", msg, msgText)
 
-	return msg
+	return msg, buttons
 }
 
-func Workbench(cell *r.Cell, char []string) tg.MessageConfig {
-	var msg tg.MessageConfig
-
+func Workbench(cell *r.Cell, char []string) (msgText string, buttons tg.InlineKeyboardMarkup) {
 	var charData []string
 	if cell != nil && !cell.IsWorkbench() {
-		msg.Text = "Здесь нет верстака!"
-		return msg
+		msgText = "Здесь нет верстака!"
+		return msgText, buttons
 	}
 
 	if cell != nil {
@@ -367,10 +350,10 @@ func Workbench(cell *r.Cell, char []string) tg.MessageConfig {
 		charData = strings.Fields(fmt.Sprintf("workbench usPoint %s 1stComp %s %s 2ndComp %s %s 3rdComp %s %s", char[2], char[4], char[5], char[7], char[8], char[10], char[11]))
 	}
 
-	msg.Text = OpenWorkbenchMessage(charData)
-	msg.ReplyMarkup = WorkbenchKeyboard(charData)
+	msgText = OpenWorkbenchMessage(charData)
+	buttons = WorkbenchKeyboard(charData)
 
-	return msg
+	return msgText, buttons
 }
 
 func OpenWorkbenchMessage(char []string) string {
@@ -421,9 +404,7 @@ func viewComponent(id string) string {
 	return "⚪"
 }
 
-func UserWantsToThrowOutItem(user r.User, charData []string) tg.MessageConfig {
-	var msg tg.MessageConfig
-
+func UserWantsToThrowOutItem(user r.User, charData []string) (msgText string, buttons tg.InlineKeyboardMarkup) {
 	userItem := r.UserItem{ID: r.ToInt(charData[1])}.UserGetUserItem()
 
 	if userItem.CountUseLeft != nil && *userItem.CountUseLeft != *userItem.Item.CountUse {
@@ -437,18 +418,18 @@ func UserWantsToThrowOutItem(user r.User, charData []string) tg.MessageConfig {
 			if *userItem.CountUseLeft == *userItem.Item.CountUse {
 				UserTakeOffGood(user, charData)
 			}
-			msg = GoodsMoving(charDataForOpenList, user)
+			msgText, buttons = GoodsMoving(charDataForOpenList, user)
 		} else {
 			charDataForOpenList = strings.Fields(fmt.Sprintf("%s %s %s", v.GetString("callback_char.backpack_moving"), charData[2], charData[3]))
-			msg = BackPackMoving(charDataForOpenList, user)
+			msgText, buttons = BackPackMoving(charDataForOpenList, user)
 		}
-		msg.Text = fmt.Sprintf("%s%sНельзя выкинуть на карту предмет, который уже был использован!", msg.Text, v.GetString("msg_separator"))
+		msgText = fmt.Sprintf("%s%sНельзя выкинуть на карту предмет, который уже был использован!", msgText, v.GetString("msg_separator"))
 	} else {
-		msg.ReplyMarkup = CountItemUserWantsToThrowKeyboard(charData, userItem)
-		msg.Text = fmt.Sprintf("%sСколько %s ты хочешь скинуть на карту?", v.GetString("msg_separator"), userItem.Item.View)
+		buttons = CountItemUserWantsToThrowKeyboard(charData, userItem)
+		msgText = fmt.Sprintf("%sСколько %s ты хочешь скинуть на карту?", v.GetString("msg_separator"), userItem.Item.View)
 	}
 
-	return msg
+	return msgText, buttons
 }
 
 func messageUserDressedGoods(user r.User) string {
@@ -524,36 +505,27 @@ func AllReceiptsMsg() string {
 	return msgText
 }
 
-func PutCountComponent(char []string) tg.MessageConfig {
-	var msg tg.MessageConfig
-
+func PutCountComponent(char []string) (buttons tg.InlineKeyboardMarkup) {
 	userItemId := char[r.ToInt(char[2])+(4+r.ToInt(char[2])*2)] // char[x + (4+x*2 )] = char[4]
 	userItem := r.UserItem{ID: r.ToInt(userItemId)}.UserGetUserItem()
 
-	msg.ReplyMarkup = ChangeCountUserItemKeyboard(char, userItem)
-
-	return msg
+	buttons = ChangeCountUserItemKeyboard(char, userItem)
+	return buttons
 }
 
-func UserCraftItem(user r.User, receipt *r.Receipt) (tg.MessageConfig, bool) {
-	var msg tg.MessageConfig
+func UserCraftItem(user r.User, receipt *r.Receipt, charData []string) (msgText string, buttons tg.InlineKeyboardMarkup) {
 
-	deletePrevMessage := true
 	if receipt == nil {
-		msg.Text = "Такого рецепта не существует!"
-		msg.ReplyMarkup = nil
-		deletePrevMessage = false
-		return msg, deletePrevMessage
+		msgText, buttons = Workbench(nil, charData)
+		msgText = fmt.Sprintf("%s%sТакого рецепта не существует!", msgText, v.GetString("msg_separator"))
+		return msgText, buttons
 	}
 
-	msg.ReplyMarkup = nil
 	resultItem := r.UserItem{UserId: int(user.ID), ItemId: receipt.ItemResultID}.UserGetUserItem()
 
 	if resultItem.Item.MaxCountUserHas != nil && *receipt.ItemResultCount+*resultItem.Count > *resultItem.Item.MaxCountUserHas {
-		msg.Text = fmt.Sprintf("Вы не можете иметь больше, чем %d %s!\nСори... такие правила(", *resultItem.Item.MaxCountUserHas, resultItem.Item.View)
-		msg.ReplyMarkup = nil
-		deletePrevMessage = false
-		return msg, deletePrevMessage
+		msgText = fmt.Sprintf("Вы не можете иметь больше, чем %d %s!\nСори... такие правила(", *resultItem.Item.MaxCountUserHas, resultItem.Item.View)
+		return msgText, buttons
 	}
 
 	if receipt.Component1ID != nil && receipt.Component1Count != nil {
@@ -578,15 +550,14 @@ func UserCraftItem(user r.User, receipt *r.Receipt) (tg.MessageConfig, bool) {
 	*resultItem.Count = *resultItem.Count + *receipt.ItemResultCount
 	user.UpdateUserItem(r.UserItem{ID: resultItem.ID, Count: resultItem.Count, CountUseLeft: resultItem.CountUseLeft})
 
-	charData := strings.Fields("workbench usPoint 0 1stComp nil 0 2ndComp nil 0 3rdComp nil 0")
-	msg = Workbench(nil, charData)
-	msg.Text = fmt.Sprintf("%s%sСупер! Ты получил %s %d шт. %s!", msg.Text, v.GetString("msg_separator"), resultItem.Item.View, *receipt.ItemResultCount, receipt.ItemResult.Name)
-	return msg, deletePrevMessage
+	charData = strings.Fields("workbench usPoint 0 1stComp nil 0 2ndComp nil 0 3rdComp nil 0")
+	msgText, buttons = Workbench(nil, charData)
+	msgText = fmt.Sprintf("%s%sСупер! Ты получил %s %d шт. %s!", msgText, v.GetString("msg_separator"), resultItem.Item.View, *receipt.ItemResultCount, receipt.ItemResult.Name)
+
+	return msgText, buttons
 }
 
-func UserMoving(user r.User, char []string, charDirection string) tg.MessageConfig {
-	var msg tg.MessageConfig
-
+func UserMoving(user r.User, char []string, charDirection string) (msg tg.EditMessageTextConfig, buttons tg.InlineKeyboardMarkup) {
 	var text string
 	res := DirectionCell(user, charDirection)
 
@@ -598,14 +569,12 @@ func UserMoving(user r.User, char []string, charDirection string) tg.MessageConf
 	if err != nil {
 		if err.Error() == "user has not home" {
 			inlineButtons = BuyHomeKeyboard()
-			msg.ReplyMarkup = inlineButtons
+			buttons = inlineButtons
 			text = locMsg
 		} else {
 			text = fmt.Sprintf("%s%s%s", msgMap, v.GetString("msg_separator"), locMsg)
 		}
 	} else {
-		msg.ReplyMarkup = buttons
-
 		lighterMsg, err := user.CheckUserHasLighter()
 		if err != nil {
 			text = fmt.Sprintf("%s%s", v.GetString("msg_separator"), lighterMsg)
@@ -614,51 +583,44 @@ func UserMoving(user r.User, char []string, charDirection string) tg.MessageConf
 	}
 
 	msg.Text = text
-	return msg
+	return msg, buttons
 }
 
-func UserUseHandOrInstrumentMessage(user r.User, char []string) tg.MessageConfig {
-	var msg tg.MessageConfig
-
+func UserUseHandOrInstrumentMessage(user r.User, char []string) (msgText string, buttons tg.InlineKeyboardMarkup) {
 	res := DirectionCell(user, char[1])
 	resultOfGetItem := r.UserGetItem(user, res, char)
-	resText, buttons := r.GetMyMap(user)
-	msg.Text = fmt.Sprintf("%s%s%s", resText, v.GetString("msg_separator"), resultOfGetItem)
-	msg.ReplyMarkup = buttons
+	msgText, buttons = r.GetMyMap(user)
+	msgText = fmt.Sprintf("%s%s%s", msgText, v.GetString("msg_separator"), resultOfGetItem)
 
-	return msg
+	return msgText, buttons
 }
 
-func OpenQuest(questId uint, user r.User) tg.MessageConfig {
-	var msg tg.MessageConfig
-
+func OpenQuest(questId uint, user r.User) (msgText string, buttons tg.InlineKeyboardMarkup) {
 	quest := r.Quest{ID: questId}.GetQuest()
 	userQuest := r.UserQuest{UserId: user.ID, QuestId: questId}.GetUserQuest()
 
-	msg.Text = quest.QuestInfo(userQuest)
-	msg.ReplyMarkup = OpenQuestKeyboard(quest, userQuest)
+	msgText = quest.QuestInfo(userQuest)
+	buttons = OpenQuestKeyboard(quest, userQuest)
 
-	return msg
+	return msgText, buttons
 }
 
-func UserDoneQuest(questId uint, user r.User) tg.MessageConfig {
-	var msg tg.MessageConfig
-
+func UserDoneQuest(questId uint, user r.User) (msgText string, buttons tg.InlineKeyboardMarkup) {
 	userQuest := r.UserQuest{UserId: user.ID, QuestId: questId}.GetUserQuest()
 	if !userQuest.Quest.Task.HasUserDoneTask(user) {
-		msg.Text = v.GetString("errors.user_did_not_task")
-		return msg
+		msgText = v.GetString("errors.user_did_not_task")
+		return msgText, CancelButton()
 	}
 
 	userQuest.UserDoneQuest(user)
 	user.UserGetResult(userQuest.Quest.Result)
 
-	msgQuestResult := msgQuestResult(userQuest.Quest.Result)
+	questResult := msgQuestResult(userQuest.Quest.Result)
 
-	msg = OpenQuest(questId, user)
-	msg.Text = fmt.Sprintf("*Задание выполнено!*\n%s%s%s", msg.Text, v.GetString("msg_separator"), msgQuestResult)
+	msgText, buttons = OpenQuest(questId, user)
+	msgText = fmt.Sprintf("*Задание выполнено!*\n%s%s%s", msgText, v.GetString("msg_separator"), questResult)
 
-	return msg
+	return msgText, buttons
 }
 
 func GetReceiptFromData(char []string) r.Receipt {
@@ -694,8 +656,7 @@ func GetReceiptFromData(char []string) r.Receipt {
 	return result
 }
 
-func ChoseInstrumentMessage(user r.User, char []string, cellLocation r.Location) tg.MessageConfig {
-	var msg tg.MessageConfig
+func ChoseInstrumentMessage(user r.User, char []string, cellLocation r.Location) (msgText string, buttons tg.InlineKeyboardMarkup) {
 
 	if char[0] != v.GetString("message.emoji.exclamation_mark") {
 		char = strings.Fields(fmt.Sprintf("❗ 🛠 ❓ %s %s", char[1], char[2]))
@@ -706,14 +667,12 @@ func ChoseInstrumentMessage(user r.User, char []string, cellLocation r.Location)
 	buttons, err := ChooseInstrumentKeyboard(char, cell, user)
 
 	if err == nil {
-		msg.ReplyMarkup = buttons
-		msg.Text = v.GetString("errors.chose_instrument_to_use")
-		msg.ChatID = int64(user.TgId)
+		msgText = v.GetString("errors.chose_instrument_to_use")
 	} else {
-		msg.Text = "Тут ничего нет..."
+		msgText = "Тут ничего нет..."
 	}
 
-	return msg
+	return msgText, buttons
 }
 
 func msgQuestResult(result r.Result) string {

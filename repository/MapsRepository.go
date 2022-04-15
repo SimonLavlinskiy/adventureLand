@@ -54,11 +54,16 @@ type UserMap struct {
 }
 
 type MapButtons struct {
-	Up     string
-	Left   string
-	Right  string
-	Down   string
-	Center string
+	Up         string
+	UpData     string
+	Left       string
+	LeftData   string
+	Right      string
+	RightData  string
+	Down       string
+	DownData   string
+	Center     string
+	CenterData string
 }
 
 func DefaultButtons(center string) MapButtons {
@@ -80,7 +85,7 @@ func DefaultUserMap(location Location, displaySize int) UserMap {
 	}
 }
 
-func GetMyMap(us User) (textMessage string, buttons tg.ReplyKeyboardMarkup) {
+func GetMyMap(us User) (textMessage string, buttons tg.InlineKeyboardMarkup) {
 	loc := GetOrCreateMyLocation(us)
 	mapSize := CalculateUserMapBorder(loc, loc.Maps)
 	messageMap := fmt.Sprintf("*Карта*: _%s_ *X*: _%d_  *Y*: _%d_", loc.Maps.Name, *loc.AxisX, *loc.AxisY)
@@ -254,7 +259,7 @@ func CalculateUserMapBorder(resLocation Location, resMap Map) UserMap {
 	return mapSize
 }
 
-func CalculateButtonMap(resLocation Location, resUser User, m map[[2]int]Cell) tg.ReplyKeyboardMarkup {
+func CalculateButtonMap(resLocation Location, resUser User, m map[[2]int]Cell) tg.InlineKeyboardMarkup {
 	type Point = [2]int
 
 	buttons := DefaultButtons(resUser.Avatar)
@@ -279,24 +284,34 @@ func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons 
 			switch i {
 			case 0:
 				btn.Up = cell.View
+				btn.UpData = cell.View
+				fmt.Printf("data: %s\n", btn.UpData)
 			case 1:
 				btn.Down = cell.View
+				btn.DownData = cell.View
 			case 2:
 				btn.Right = cell.View
+				btn.RightData = cell.View
 			case 3:
 				btn.Left = cell.View
+				btn.LeftData = cell.View
 			}
 		case cell.IsTeleport() || cell.IsHome():
-			button := fmt.Sprintf(" %s %s", resUser.Avatar, cell.View)
+			buttonData := fmt.Sprintf(" %s %s", resUser.Avatar, cell.View)
+			button := fmt.Sprintf("%s%s", resUser.Avatar, cell.View)
 			switch i {
 			case 0:
-				btn.Up += button
+				btn.UpData = btn.Up + buttonData
+				btn.Up = button
 			case 1:
-				btn.Down += button
+				btn.DownData = btn.Down + buttonData
+				btn.Down = button
 			case 2:
-				btn.Right += button
+				btn.RightData = btn.Right + buttonData
+				btn.Right = button
 			case 3:
-				btn.Left += button
+				btn.LeftData = btn.Left + buttonData
+				btn.Left = button
 			}
 		case cell.IsWorkbench() || cell.IsQuest() || cell.IsChat():
 			var el string
@@ -309,46 +324,65 @@ func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons 
 			}
 			switch i {
 			case 0:
-				btn.Up = fmt.Sprintf("%s %s %s", v.GetString(fmt.Sprintf("message.emoji.%s", el)), btn.Up, cell.Item.View)
+				btn.UpData = fmt.Sprintf("%s %s %s", v.GetString(fmt.Sprintf("message.emoji.%s", el)), btn.Up, cell.Item.View)
+				btn.Up += cell.Item.View
 			case 1:
-				btn.Down = fmt.Sprintf("%s %s %s", v.GetString(fmt.Sprintf("message.emoji.%s", el)), btn.Down, cell.Item.View)
+				btn.DownData = fmt.Sprintf("%s %s %s", v.GetString(fmt.Sprintf("message.emoji.%s", el)), btn.Down, cell.Item.View)
+				btn.Down += cell.Item.View
 			case 2:
-				btn.Right = fmt.Sprintf("%s %s %s", v.GetString(fmt.Sprintf("message.emoji.%s", el)), btn.Right, cell.Item.View)
+				btn.RightData = fmt.Sprintf("%s %s %s", v.GetString(fmt.Sprintf("message.emoji.%s", el)), btn.Right, cell.Item.View)
+				btn.Right += cell.Item.View
 			case 3:
-				btn.Left = fmt.Sprintf("%s %s %s", v.GetString(fmt.Sprintf("message.emoji.%s", el)), btn.Left, cell.Item.View)
+				btn.LeftData = fmt.Sprintf("%s %s %s", v.GetString(fmt.Sprintf("message.emoji.%s", el)), btn.Left, cell.Item.View)
+				btn.Left += cell.Item.View
 			}
 		case cell.IsItem() || cell.IsSwap():
 			switch i {
 			case 0:
-				btn.Up = cell.IsItemCost(btn.Up, resUser)
+				btn.Up, btn.UpData = cell.IsItemCost(btn.Up)
 			case 1:
-				btn.Down = cell.IsItemCost(btn.Down, resUser)
+				btn.Down, btn.DownData = cell.IsItemCost(btn.Down)
 			case 2:
-				btn.Right = cell.IsItemCost(btn.Right, resUser)
+				btn.Right, btn.RightData = cell.IsItemCost(btn.Right)
 			case 3:
-				btn.Left = cell.IsItemCost(btn.Left, resUser)
+				btn.Left, btn.LeftData = cell.IsItemCost(btn.Left)
 			}
 		case cell.IsWordleGame():
 			switch i {
 			case 0:
-				btn.Up = fmt.Sprintf("%s %s %s", v.GetString("message.emoji.wordle_game"), btn.Up, cell.View)
+				btn.UpData = fmt.Sprintf("%s %s %s", v.GetString("message.emoji.wordle_game"), btn.Up, cell.View)
+				btn.Up = fmt.Sprintf("%s%s", btn.Up, cell.View)
 			case 1:
-				btn.Down = fmt.Sprintf("%s %s %s", v.GetString("message.emoji.wordle_game"), btn.Down, cell.View)
+				btn.DownData = fmt.Sprintf("%s %s %s", v.GetString("message.emoji.wordle_game"), btn.Down, cell.View)
+				btn.Down = fmt.Sprintf("%s%s", btn.Down, cell.View)
 			case 2:
-				btn.Right = fmt.Sprintf("%s %s %s", v.GetString("message.emoji.wordle_game"), btn.Right, cell.View)
+				btn.RightData = fmt.Sprintf("%s %s %s", v.GetString("message.emoji.wordle_game"), btn.Right, cell.View)
+				btn.Right = fmt.Sprintf("%s%s", btn.Right, cell.View)
 			case 3:
-				btn.Left = fmt.Sprintf("%s %s %s", v.GetString("message.emoji.wordle_game"), btn.Left, cell.View)
+				btn.LeftData = fmt.Sprintf("%s %s %s", v.GetString("message.emoji.wordle_game"), btn.Left, cell.View)
+				btn.Left = fmt.Sprintf("%s%s", btn.Left, cell.View)
 			}
 		case cell.ID == 0:
 			switch i {
 			case 0:
-				btn.Up = "🚫"
+				btn.Up, btn.UpData = "🚫", "🚫"
 			case 1:
-				btn.Down = "🚫"
+				btn.Down, btn.DownData = "🚫", "🚫"
 			case 2:
-				btn.Right = "🚫"
+				btn.Right, btn.RightData = "🚫", "🚫"
 			case 3:
-				btn.Left = "🚫"
+				btn.Left, btn.LeftData = "🚫", "🚫"
+			}
+		default:
+			switch i {
+			case 0:
+				btn.UpData = btn.Up
+			case 1:
+				btn.DownData = btn.Down
+			case 2:
+				btn.RightData = btn.Right
+			case 3:
+				btn.LeftData = btn.Left
 			}
 		}
 	}
@@ -356,24 +390,24 @@ func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons 
 	return btn
 }
 
-func CreateMapKeyboard(buttons MapButtons) tg.ReplyKeyboardMarkup {
+func CreateMapKeyboard(buttons MapButtons) tg.InlineKeyboardMarkup {
 	nearUsers := "Это не кнопка"
 
-	return tg.NewReplyKeyboard(
-		tg.NewKeyboardButtonRow(
-			tg.NewKeyboardButton("Вещи 🧥"),
-			tg.NewKeyboardButton(buttons.Up),
-			tg.NewKeyboardButton("Рюкзак 🎒"),
+	return tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("Вещи 🧥", "goodsMoving"),
+			tg.NewInlineKeyboardButtonData(buttons.Up, buttons.UpData),
+			tg.NewInlineKeyboardButtonData("Рюкзак 🎒", "category"),
 		),
-		tg.NewKeyboardButtonRow(
-			tg.NewKeyboardButton(buttons.Left),
-			tg.NewKeyboardButton(buttons.Center),
-			tg.NewKeyboardButton(buttons.Right),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData(buttons.Left, buttons.LeftData),
+			tg.NewInlineKeyboardButtonData(buttons.Center, buttons.Center),
+			tg.NewInlineKeyboardButtonData(buttons.Right, buttons.RightData),
 		),
-		tg.NewKeyboardButtonRow(
-			tg.NewKeyboardButton(nearUsers),
-			tg.NewKeyboardButton(buttons.Down),
-			tg.NewKeyboardButton(v.GetString("user_location.menu")),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData(nearUsers, nearUsers),
+			tg.NewInlineKeyboardButtonData(buttons.Down, buttons.DownData),
+			tg.NewInlineKeyboardButtonData(v.GetString("user_location.menu"), v.GetString("user_location.menu")),
 		),
 	)
 }
@@ -398,5 +432,5 @@ func GetStatsLine(user User) string {
 		stRes += fmt.Sprintf("%s⃣", point)
 	}
 
-	return fmt.Sprintf("%s    🅱️%s⃣%s⃣%s⃣    %s\n", hpRes, "e", "t", "a", stRes)
+	return fmt.Sprintf("%s   🅱️ E T 🅰️   %s\n", hpRes, stRes)
 }

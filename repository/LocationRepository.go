@@ -59,25 +59,23 @@ func (u User) GetUserLocation() Location {
 
 func UpdateLocation(char []string, locStruct Location, user User) (string, error) {
 	var err error
+	var resultCell Cell
 
 	cell := Cell{MapsId: *locStruct.MapsId, AxisX: *locStruct.AxisX, AxisY: *locStruct.AxisY}
 	cell = cell.GetCell()
 
 	locStruct = isCellTeleport(char, cell, locStruct)
+
 	if locStruct, err = isCellHome(char, cell, locStruct, user); err != nil {
 		return "\nУ тебя еще нет дома, очень жаль...", errors.New("user has not home")
 	}
-
-	var resultCell Cell
 
 	err = config.Db.
 		Preload("Item").
 		First(&resultCell, &Cell{MapsId: *locStruct.MapsId, AxisX: *locStruct.AxisX, AxisY: *locStruct.AxisY}).
 		Error
-	if err != nil {
-		if err.Error() == "record not found" {
-			return "\nСюда никак не пройти(", errors.New("can't get through")
-		}
+	if err != nil && err.Error() == "record not found" {
+		return "\nСюда никак не пройти(", errors.New("can't get through")
 	}
 
 	if !resultCell.CanStep || resultCell.Item != nil && resultCell.ItemCount != nil && *resultCell.ItemCount > 0 && !resultCell.Item.CanStep {
@@ -86,7 +84,7 @@ func UpdateLocation(char []string, locStruct Location, user User) (string, error
 
 	err = config.Db.
 		Where(&Location{UserTgId: user.TgId}).
-		Updates(locStruct).
+		Updates(&locStruct).
 		Error
 	if err != nil {
 		panic(err)

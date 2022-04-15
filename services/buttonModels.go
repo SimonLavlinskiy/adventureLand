@@ -1,7 +1,6 @@
 package services
 
 import (
-	"errors"
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
@@ -107,6 +106,9 @@ func FoodListBackpackInlineKeyboard(items []r.UserItem, i int) tg.InlineKeyboard
 		tg.NewInlineKeyboardRow(
 			tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %d %d food false", v.GetString("callback_char.delete_item"), items[i].ID, i)),
 		),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("Выйти", "cancel"),
+		),
 	)
 }
 
@@ -131,6 +133,9 @@ func SproutListBackpackInlineKeyboard(items []r.UserItem, i int, itemType string
 		tg.NewInlineKeyboardRow(
 			tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %d %d %s false", v.GetString("callback_char.delete_item"), items[i].ID, i, itemType)),
 			tg.NewInlineKeyboardButtonData("🔻", fmt.Sprintf("%s %d %s", v.GetString("callback_char.backpack_moving"), i+1, itemType)),
+		),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("Выйти", "cancel"),
 		),
 	)
 }
@@ -157,6 +162,9 @@ func ResourceListBackpackInlineKeyboard(items []r.UserItem, i int, itemType stri
 			tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %d %d %s false", v.GetString("callback_char.delete_item"), items[i].ID, i, itemType)),
 			tg.NewInlineKeyboardButtonData("🔻", fmt.Sprintf("%s %d %s", v.GetString("callback_char.backpack_moving"), i+1, itemType)),
 		),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("Выйти", "cancel"),
+		),
 	)
 }
 
@@ -181,6 +189,9 @@ func DefaultListBackpackInlineKeyboard(items []r.UserItem, i int, itemType strin
 		tg.NewInlineKeyboardRow(
 			tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %d %d %s false", v.GetString("callback_char.delete_item"), items[i].ID, i, itemType)),
 			tg.NewInlineKeyboardButtonData("🔻", fmt.Sprintf("%s %d %s", v.GetString("callback_char.backpack_moving"), i+1, itemType)),
+		),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("Выйти", "cancel"),
 		),
 	)
 }
@@ -235,6 +246,9 @@ func GoodsInlineKeyboard(user r.User, userItems []r.UserItem, i int) tg.InlineKe
 		),
 		tg.NewInlineKeyboardRow(
 			tg.NewInlineKeyboardButtonData("💥🗑💥", fmt.Sprintf("%s %d %d good false", v.GetString("callback_char.delete_item"), userItems[i].ID, i)),
+		),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("Выйти", "cancel"),
 		),
 	)
 }
@@ -308,23 +322,23 @@ func EmojiInlineKeyboard() tg.InlineKeyboardMarkup {
 	return tg.NewInlineKeyboardMarkup(buttons...)
 }
 
-func ProfileKeyboard(user r.User) tg.ReplyKeyboardMarkup {
-	return tg.NewReplyKeyboard(
-		tg.NewKeyboardButtonRow(
-			tg.NewKeyboardButton("📝 Изменить имя? 📝"),
-			tg.NewKeyboardButton(fmt.Sprintf("%s Изменить аватар? %s", user.Avatar, user.Avatar)),
+func ProfileKeyboard(user r.User) tg.InlineKeyboardMarkup {
+	return tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("📝 Изменить имя? 📝", "📝 Изменить имя? 📝"),
+			tg.NewInlineKeyboardButtonData(fmt.Sprintf("%s Изменить аватар? %s", user.Avatar, user.Avatar), "avatarList"),
 		),
-		tg.NewKeyboardButtonRow(
-			tg.NewKeyboardButton("Меню"),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("Меню", "/menu"),
 		),
 	)
 }
 
-func MainKeyboard(user r.User) tg.ReplyKeyboardMarkup {
-	return tg.NewReplyKeyboard(
-		tg.NewKeyboardButtonRow(
-			tg.NewKeyboardButton("🗺 Карта 🗺"),
-			tg.NewKeyboardButton(user.Avatar+" Профиль 👔"),
+func MainKeyboard(user r.User) tg.InlineKeyboardMarkup {
+	return tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("🗺 Карта 🗺", "🗺 Карта 🗺"),
+			tg.NewInlineKeyboardButtonData(user.Avatar+" Профиль 👔", user.Avatar+" Профиль 👔"),
 		),
 	)
 }
@@ -357,11 +371,9 @@ func ChooseInstrumentKeyboard(char []string, cell r.Cell, user r.User) (tg.Inlin
 		), nil
 	}
 
-	return tg.NewInlineKeyboardMarkup(
-		tg.NewInlineKeyboardRow(
-			tg.NewInlineKeyboardButtonData("Всё закончилось!", v.GetString("callback_char.cancel")),
-		),
-	), errors.New("cell is empty")
+	_, mapButton := r.GetMyMap(user)
+
+	return mapButton, nil
 }
 
 func WorkbenchKeyboard(char []string) tg.InlineKeyboardMarkup {
@@ -379,10 +391,10 @@ func WorkbenchKeyboard(char []string) tg.InlineKeyboardMarkup {
 
 	if userPointer == 0 {
 		leftArrow = "✖️"
-		leftArrowData = "nothing"
+		leftArrowData = fmt.Sprintf("workbench %s", defaultData)
 	} else if userPointer == 2 {
 		rightArrow = "✖️"
-		rightArrowData = "nothing"
+		rightArrowData = fmt.Sprintf("workbench %s", defaultData)
 	}
 
 	putItem := tg.NewInlineKeyboardRow(tg.NewInlineKeyboardButtonData("Вставить предмет!", putItemData))
@@ -408,7 +420,19 @@ func WorkbenchKeyboard(char []string) tg.InlineKeyboardMarkup {
 		),
 		ButtonManageItem,
 		tg.NewInlineKeyboardRow(
-			tg.NewInlineKeyboardButtonData("Рецепты 📚", v.GetString("callback_char.receipt")),
+			tg.NewInlineKeyboardButtonData("Рецепты 📚", fmt.Sprintf("%s %s", v.GetString("callback_char.receipt"), defaultData)),
+		),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("Выйти", "cancel"),
+		),
+	)
+}
+
+func ReturnToWorkbench(char []string) tg.InlineKeyboardMarkup {
+	defaultData := fmt.Sprintf("workbench usPoint %s 1stComp %s %s 2ndComp %s %s 3rdComp %s %s", char[2], char[4], char[5], char[7], char[8], char[10], char[11])
+	return tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("Назад", defaultData),
 		),
 	)
 }
@@ -518,11 +542,14 @@ func AllQuestsMessageKeyboard(u r.User) tg.InlineKeyboardMarkup {
 		)
 	}
 
+	result = append(result, tg.NewInlineKeyboardRow(tg.NewInlineKeyboardButtonData("Выйти", "cancel")))
+
 	return tg.NewInlineKeyboardMarkup(result...)
 }
 
 func OpenQuestKeyboard(q r.Quest, uq r.UserQuest) tg.InlineKeyboardMarkup {
-	if uq.Status == "" {
+	switch uq.Status {
+	case "":
 		return tg.NewInlineKeyboardMarkup(
 			tg.NewInlineKeyboardRow(
 				tg.NewInlineKeyboardButtonData("Взять в работу", fmt.Sprintf("user_get_quest %d", q.ID)),
@@ -531,9 +558,6 @@ func OpenQuestKeyboard(q r.Quest, uq r.UserQuest) tg.InlineKeyboardMarkup {
 				tg.NewInlineKeyboardButtonData("Назад", "quests"),
 			),
 		)
-	}
-
-	switch uq.Status {
 	case "processed":
 		var buttonStatus tg.InlineKeyboardButton
 		if q.Task.HasUserDoneTask(uq.User) {
@@ -550,13 +574,11 @@ func OpenQuestKeyboard(q r.Quest, uq r.UserQuest) tg.InlineKeyboardMarkup {
 				tg.NewInlineKeyboardButtonData("Назад", "quests"),
 			),
 		)
-	}
-
-	return tg.NewInlineKeyboardMarkup(
-		tg.NewInlineKeyboardRow(
+	default:
+		return tg.NewInlineKeyboardMarkup(tg.NewInlineKeyboardRow(
 			tg.NewInlineKeyboardButtonData("Назад", "quests"),
-		),
-	)
+		))
+	}
 }
 
 func BuyHomeKeyboard() tg.InlineKeyboardMarkup {
@@ -570,9 +592,7 @@ func BuyHomeKeyboard() tg.InlineKeyboardMarkup {
 	)
 }
 
-func BackpackCategoryKeyboard() tg.MessageConfig {
-	var msg tg.MessageConfig
-
+func BackpackCategoryKeyboard() (msgText string, buttons tg.InlineKeyboardMarkup) {
 	categories := str.Fields(v.GetString("user_location.item_categories.categories"))
 
 	var rows [][]tg.InlineKeyboardButton
@@ -584,17 +604,20 @@ func BackpackCategoryKeyboard() tg.MessageConfig {
 		)))
 	}
 
-	msg.Text = fmt.Sprintf("🎒 *Рюкзачок*\n%s", v.GetString("user_location.item_categories.category_title"))
-	msg.ReplyMarkup = tg.NewInlineKeyboardMarkup(
+	cancel := tg.NewInlineKeyboardRow(tg.NewInlineKeyboardButtonData("Отмена", "cancel"))
+	rows = append(rows, cancel)
+
+	msgText = fmt.Sprintf("🎒 *Рюкзачок*\n%s", v.GetString("user_location.item_categories.category_title"))
+	buttons = tg.NewInlineKeyboardMarkup(
 		rows...,
 	)
 
-	return msg
+	return msgText, buttons
 }
 
-func OpenChatKeyboard(cell r.Cell, user r.User) (tg.InlineKeyboardMarkup, string) {
+func OpenChatKeyboard(cell r.Cell, user r.User) (msgText string, buttons tg.InlineKeyboardMarkup) {
 	var button tg.InlineKeyboardButton
-	msgText := "Присоединяйся и общайтесь!"
+	msgText = "Присоединяйся и общайтесь!"
 
 	if !cell.IsChat() {
 		msgText = "Здесь нет чата! Поищи в другом месте..."
@@ -609,12 +632,15 @@ func OpenChatKeyboard(cell r.Cell, user r.User) (tg.InlineKeyboardMarkup, string
 		}
 	}
 
-	keyboard := tg.NewInlineKeyboardMarkup(
+	buttons = tg.NewInlineKeyboardMarkup(
 		tg.NewInlineKeyboardRow(
 			button,
 		),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("Назад", "cancel"),
+		),
 	)
-	return keyboard, msgText
+	return msgText, buttons
 }
 
 func DeleteItem(char []string) tg.InlineKeyboardMarkup {
@@ -633,6 +659,22 @@ func WordleExitButton() tg.InlineKeyboardMarkup {
 	return tg.NewInlineKeyboardMarkup(
 		tg.NewInlineKeyboardRow(
 			tg.NewInlineKeyboardButtonData("В меню...", "wordleMenu"),
+		),
+	)
+}
+
+func CancelButton() tg.InlineKeyboardMarkup {
+	return tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("Выйти", "cancel"),
+		),
+	)
+}
+
+func CancelChangeNameButton(username string) tg.InlineKeyboardMarkup {
+	return tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData(username+" ❓", "cancelChangeName"),
 		),
 	)
 }

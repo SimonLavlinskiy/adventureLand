@@ -359,14 +359,10 @@ func (c Cell) IsSpecialItem(user User) string {
 	return "🚷"
 }
 
-func (c Cell) IsItemCost(button string, resUser User) string {
-	var firstElem = c.IsSpecialItem(resUser)
+func (c Cell) IsItemCost(button string) (btn string, btnData string) {
+	btnData = fmt.Sprintf("❗ 🛠 ❓ %s %s", button, c.Item.View)
 
-	button = firstElem + " " + button + " " + c.Item.View
+	btn = fmt.Sprintf("🛠❓%s", c.Item.View)
 
-	if c.Item.Cost != nil && *c.Item.Cost > 0 && firstElem != "❗ 🛠 ❓" && c.NeedPay {
-		button = button + " ( " + ToString(*c.Item.Cost) + "💰 )"
-	}
-
-	return button
+	return btn, btnData
 }

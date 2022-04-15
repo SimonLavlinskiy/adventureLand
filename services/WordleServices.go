@@ -102,31 +102,16 @@ func FormattedUserWord(userWord string) string {
 
 }
 
-func WordleMenuButtons(game r.WordleGameProcess) tg.InlineKeyboardMarkup {
-	switch game.Status {
-	case "new":
-		return tg.NewInlineKeyboardMarkup(
-			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("📝 Написать слово 💯", "awaitWord"),
-			), tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("📊 Статистика", "wordleUserStatistic"),
-			),
-			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("📚 Правила", "wordleRegulations"),
-				tg.NewInlineKeyboardButtonData("⚠️ Выйти", "cancel"),
-			),
-		)
-	default:
-		return tg.NewInlineKeyboardMarkup(
-			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("📊 Статистика", "wordleUserStatistic"),
-			),
-			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("📚 Правила", "wordleRegulations"),
-				tg.NewInlineKeyboardButtonData("⚠️ Выйти", "cancel"),
-			),
-		)
-	}
+func WordleMenuButtons() tg.InlineKeyboardMarkup {
+	return tg.NewInlineKeyboardMarkup(
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("📊 Статистика", "wordleUserStatistic"),
+		),
+		tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("📚 Правила", "wordleRegulations"),
+			tg.NewInlineKeyboardButtonData("⚠️ Выйти", "cancel"),
+		),
+	)
 }
 
 func buttonStatistic() tg.InlineKeyboardMarkup {
@@ -137,21 +122,19 @@ func buttonStatistic() tg.InlineKeyboardMarkup {
 	)
 }
 
-func WordleMap(user r.User) []tg.MessageConfig {
-	var msgs []tg.MessageConfig
-	var msg tg.MessageConfig
+func WordleMap(user r.User) (string, tg.InlineKeyboardMarkup) {
 	var msgText string
+	var btns tg.InlineKeyboardMarkup
 
 	msgText += "\U0001F9EE *Игра Вуордле!*\U0001F9EE\n"
 	countTries := 6
 
 	_, err := r.GetActiveWord()
 	if err != nil {
-		msg.Text = fmt.Sprintf("%s\n\n_Соре, сегодня нет слова_ \U0001F97A \n\n_Приходи завтра, мб уже будет...)_", msgText)
-		msg.ReplyMarkup = buttonStatistic()
-		msgs = append(msgs, msg)
+		msgText = fmt.Sprintf("%s\n\n_Соре, сегодня нет слова_ \U0001F97A \n\n_Приходи завтра, мб уже будет...)_", msgText)
+		btns = buttonStatistic()
 
-		return msgs
+		return msgText, btns
 	}
 
 	game := r.GetOrCreateWordleGameProcess(user)
@@ -177,67 +160,64 @@ func WordleMap(user r.User) []tg.MessageConfig {
 	if game.Status == "new" && game.CountTries < countTries {
 		lastText = "Только 5 букв! 👉🤚 Ни больше, ни меньше! 👌"
 	} else if game.Status == "win" {
-		lastText = "🏆 Поздравляю, ты выйграл! 🏆"
+		lastText = "🏆 Поздравляю, сегодня ты выйграл! 🏆"
 	} else if game.Status == "lose" {
 		lastText = "☠️ Ты проиграл :C Ну ничего, попробуй завтра еще раз! 👋"
 	}
 
-	msg.ReplyMarkup = WordleMenuButtons(game)
-	msg.Text = fmt.Sprintf("%s%s_%s_", msgText, v.GetString("msg_separator"), lastText)
-	msgs = append(msgs, msg)
+	btns = WordleMenuButtons()
+	msgText = fmt.Sprintf("%s%s_%s_", msgText, v.GetString("msg_separator"), lastText)
 
-	return msgs
+	return msgText, btns
 }
 
-func CheckUserWordFormat(user r.User, userWord string) (tg.MessageConfig, error) {
-	var msg tg.MessageConfig
+func CheckUserWordFormat(user r.User, game r.WordleGameProcess, userWord string) (string, error) {
+	var msgText string
+
+	if game.Status != "new" {
+		msgText = "\U0001FAC2 Игра уже окончена! Приходи завтра) 🤝"
+		return msgText, errors.New("game ended")
+	}
+
 	if len(strings.Fields(userWord)) != 1 {
-		msg.Text = "Некорректное количество слов"
-		return msg, errors.New("too many words")
+		msgText = "Некорректное количество слов"
+		return msgText, errors.New("too many words")
 	}
 
 	userWord = FormattedUserWord(userWord)
 
 	if chars := []rune(userWord); len(chars) > 5 {
-		msg.Text = "‼️ Слишком много букв ‼️"
-		return msg, errors.New("too many chars")
+		msgText = "‼️ Слишком много букв ‼️"
+		return msgText, errors.New("too many chars")
 	} else if len(chars) < 5 {
-		msg.Text = "‼️ Слишком мало букв ‼️"
-		return msg, errors.New("not enough chars")
+		msgText = "‼️ Слишком мало букв ‼️"
+		return msgText, errors.New("not enough chars")
 	}
 
 	if !IsDictionaryHasWord(userWord) {
-		msg.Text = "‼️ Я не нашел в словаре такое слово! Не придумывай)) ‼️"
-		return msg, errors.New("is not word")
+		msgText = "‼️ Я не нашел в словаре такое слово! Не придумывай)) ‼️"
+		return msgText, errors.New("is not word")
 	}
 
 	words := r.GetUserWords(user, time.Now())
 	for _, word := range words {
 		if word.Word == userWord {
-			msg.Text = "‼️ Такое слово уже было ‼️"
-			return msg, errors.New("word duplicate")
+			msgText = "‼️ Такое слово уже было ‼️"
+			return msgText, errors.New("word duplicate")
 		}
 	}
 
-	return msg, nil
+	return msgText, nil
 }
 
-func UserSendNextWord(user r.User, newMessage string) []tg.MessageConfig {
-	var msgs []tg.MessageConfig
-
-	msg, err := CheckUserWordFormat(user, newMessage)
-	if err != nil {
-		msgs = WordleMap(user)
-		msgs = append(msgs, msg)
-		return msgs
-	}
-
+func UserSendNextWord(user r.User, newMessage string) (string, tg.InlineKeyboardMarkup) {
 	game := r.GetOrCreateWordleGameProcess(user)
 
-	if game.Status != "new" {
-		msg.Text = "\U0001FAC2 Успокойся, игра уже окончена! Приходи завтра) 🤝"
-		msgs = append(msgs, msg)
-		return msgs
+	msgText, err := CheckUserWordFormat(user, game, newMessage)
+	if err != nil {
+		msg, btns := WordleMap(user)
+		msgText = fmt.Sprintf("%s\n%s", msg, msgText)
+		return msgText, btns
 	}
 
 	word := FormattedUserWord(newMessage)
@@ -251,7 +231,5 @@ func UserSendNextWord(user r.User, newMessage string) []tg.MessageConfig {
 
 	game.UpdateWordleGameProcess(user)
 
-	msgs = WordleMap(user)
-
-	return msgs
+	return WordleMap(user)
 }

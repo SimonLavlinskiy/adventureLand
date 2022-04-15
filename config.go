@@ -6,6 +6,7 @@ type Messages struct {
 		menu             string
 		maps             string
 		profile          string
+		wordle           string
 		tasksMenuMessage string
 		ItemCategories   struct {
 			categoryTitle   string
