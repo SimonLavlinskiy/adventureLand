@@ -40,7 +40,7 @@ func (i Instrument) GetInstrument() Instrument {
 	return result
 }
 
-func GetInstrumentsUserCanUse(user User, cell Cell) map[string]string {
+func GetInstrumentsUserCanUse(user User, cell Cell) map[string]string { //todo
 	instrumentsUserCanUse := map[string]string{}
 	if cell.Item == nil {
 		return instrumentsUserCanUse
@@ -65,7 +65,7 @@ func GetInstrumentsUserCanUse(user User, cell Cell) map[string]string {
 		instrumentsUserCanUse["🤜"] = "fist"
 	}
 	if cell.Item.CanStep && *cell.Type != "swap" {
-		instrumentsUserCanUse["\U0001F9B6"] = "step"
+		instrumentsUserCanUse["👣"] = "step"
 	}
 
 	return instrumentsUserCanUse

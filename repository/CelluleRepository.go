@@ -345,24 +345,16 @@ func (c Cell) IsWordleGame() bool {
 	return false
 }
 
-func (c Cell) IsSpecialItem(user User) string {
+func (c Cell) ViewItemButton(button string, user User) (btn string, btnData string) {
 	instrumentsUserCanUse := GetInstrumentsUserCanUse(user, c)
 
-	if len(instrumentsUserCanUse) > 1 {
-		return "❗ 🛠 ❓"
-	} else if len(instrumentsUserCanUse) == 1 {
-		for i := range instrumentsUserCanUse {
-			return i
-		}
+	if len(instrumentsUserCanUse) > 0 {
+		btnData = fmt.Sprintf("❗ 🛠 ❓ %s %s", button, c.Item.View)
+		btn = fmt.Sprintf("🛠❓%s", c.Item.View)
+	} else {
+		btnData = c.Item.View
+		btn = c.Item.View
 	}
-
-	return "🚷"
-}
-
-func (c Cell) IsItemCost(button string) (btn string, btnData string) {
-	btnData = fmt.Sprintf("❗ 🛠 ❓ %s %s", button, c.Item.View)
-
-	btn = fmt.Sprintf("🛠❓%s", c.Item.View)
 
 	return btn, btnData
 }

@@ -153,7 +153,7 @@ func UserDeleteItem(user r.User, charData []string) (msgText string, buttons tg.
 
 	if charData[4] == "false" {
 		buttons = DeleteItem(charData)
-		msgText = fmt.Sprintf("Вы точно хотите уничтожить %s %s _(%d шт.)_?", userItem.Item.View, userItem.Item.Name, *userItem.Count)
+		msgText = fmt.Sprintf("Вы точно хотите уничтожить 🚮 %s %s _(%d шт.)_?", userItem.Item.View, userItem.Item.Name, *userItem.Count)
 		return msgText, buttons
 	}
 
@@ -557,38 +557,32 @@ func UserCraftItem(user r.User, receipt *r.Receipt, charData []string) (msgText 
 	return msgText, buttons
 }
 
-func UserMoving(user r.User, char []string, charDirection string) (msg tg.EditMessageTextConfig, buttons tg.InlineKeyboardMarkup) {
-	var text string
+func UserMoving(user r.User, char []string, charDirection string) (msg string, buttons tg.InlineKeyboardMarkup) {
 	res := DirectionCell(user, charDirection)
-
-	var inlineButtons tg.InlineKeyboardMarkup
 
 	locMsg, err := r.UpdateLocation(char, res, user)
 	msgMap, buttons := r.GetMyMap(user)
 
 	if err != nil {
 		if err.Error() == "user has not home" {
-			inlineButtons = BuyHomeKeyboard()
-			buttons = inlineButtons
-			text = locMsg
+			buttons = BuyHomeKeyboard()
+			msg = locMsg
 		} else {
-			text = fmt.Sprintf("%s%s%s", msgMap, v.GetString("msg_separator"), locMsg)
+			msg = fmt.Sprintf("%s%s%s", msgMap, v.GetString("msg_separator"), locMsg)
 		}
 	} else {
 		lighterMsg, err := user.CheckUserHasLighter()
 		if err != nil {
-			text = fmt.Sprintf("%s%s", v.GetString("msg_separator"), lighterMsg)
+			msg = fmt.Sprintf("%s%s", v.GetString("msg_separator"), lighterMsg)
 		}
-		text = fmt.Sprintf("%s%s", msgMap, text)
+		msg = fmt.Sprintf("%s%s", msgMap, msg)
 	}
 
-	msg.Text = text
 	return msg, buttons
 }
 
-func UserUseHandOrInstrumentMessage(user r.User, char []string) (msgText string, buttons tg.InlineKeyboardMarkup) {
-	res := DirectionCell(user, char[1])
-	resultOfGetItem := r.UserGetItem(user, res, char)
+func UserUseHandOrInstrumentMessage(user r.User, cell r.Location, char []string) (msgText string, buttons tg.InlineKeyboardMarkup) {
+	resultOfGetItem := r.UserGetItem(user, cell, char)
 	msgText, buttons = r.GetMyMap(user)
 	msgText = fmt.Sprintf("%s%s%s", msgText, v.GetString("msg_separator"), resultOfGetItem)
 

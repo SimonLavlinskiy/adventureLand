@@ -31,6 +31,8 @@ type Item struct {
 	IsInventory       bool         `gorm:"embedded"`
 	MaxCountUserHas   *int         `gorm:"embedded"`
 	CountUse          *int         `gorm:"embedded"`
+	ResultsId         *uint        `gorm:"embedded"`
+	Results           *Result
 }
 
 type InstrumentItem struct {
@@ -53,7 +55,7 @@ func UserGetItem(user User, LocationStruct Location, char []string) string {
 	return UserGetItemUpdateModels(user, resultCell, char[0])
 }
 
-func checkItemsOnNeededInstrument(cell Cell, msgInstrumentView string) (error, *Instrument) {
+func checkItemsOnNeededInstrument(cell Cell, msgInstrumentView string) (error, *Instrument) { //todo
 	for _, instrument := range cell.Item.Instruments {
 		if instrument.Good.View == msgInstrumentView {
 			res := Instrument{ID: instrument.ID}.GetInstrument()

@@ -129,8 +129,6 @@ func SetNullUserField(user User, queryFeild string) {
 }
 
 func (u User) GetUserInfo() string {
-
-	fmt.Println(u.Avatar)
 	messageMap := fmt.Sprintf("🔅 🔆 *Профиль* 🔆 🔅\n\n"+
 		"*Твое имя*: %s\n"+
 		"*Аватар*: %s\n"+

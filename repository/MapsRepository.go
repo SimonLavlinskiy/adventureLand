@@ -285,7 +285,6 @@ func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons 
 			case 0:
 				btn.Up = cell.View
 				btn.UpData = cell.View
-				fmt.Printf("data: %s\n", btn.UpData)
 			case 1:
 				btn.Down = cell.View
 				btn.DownData = cell.View
@@ -339,13 +338,17 @@ func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons 
 		case cell.IsItem() || cell.IsSwap():
 			switch i {
 			case 0:
-				btn.Up, btn.UpData = cell.IsItemCost(btn.Up)
+				btn.Up, btn.UpData = cell.ViewItemButton(btn.Up, resUser)
+				btn.UpData = fmt.Sprintf("%s %s", btn.UpData, "up")
 			case 1:
-				btn.Down, btn.DownData = cell.IsItemCost(btn.Down)
+				btn.Down, btn.DownData = cell.ViewItemButton(btn.Down, resUser)
+				btn.DownData = fmt.Sprintf("%s %s", btn.UpData, "down")
 			case 2:
-				btn.Right, btn.RightData = cell.IsItemCost(btn.Right)
+				btn.Right, btn.RightData = cell.ViewItemButton(btn.Right, resUser)
+				btn.RightData = fmt.Sprintf("%s %s", btn.UpData, "right")
 			case 3:
-				btn.Left, btn.LeftData = cell.IsItemCost(btn.Left)
+				btn.Left, btn.LeftData = cell.ViewItemButton(btn.Left, resUser)
+				btn.LeftData = fmt.Sprintf("%s %s", btn.UpData, "left")
 			}
 		case cell.IsWordleGame():
 			switch i {
@@ -432,5 +435,5 @@ func GetStatsLine(user User) string {
 		stRes += fmt.Sprintf("%s⃣", point)
 	}
 
-	return fmt.Sprintf("%s   🅱️ E T 🅰️   %s\n", hpRes, stRes)
+	return fmt.Sprintf("%s   🅱️ *E T* 🅰️   %s\n", hpRes, stRes)
 }

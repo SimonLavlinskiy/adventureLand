@@ -646,7 +646,7 @@ func OpenChatKeyboard(cell r.Cell, user r.User) (msgText string, buttons tg.Inli
 func DeleteItem(char []string) tg.InlineKeyboardMarkup {
 	button := tg.NewInlineKeyboardMarkup(
 		tg.NewInlineKeyboardRow(
-			tg.NewInlineKeyboardButtonData("💥 Уничтожить! 💥", fmt.Sprintf("%s %s %s %s true", v.GetString("callback_char.delete_item"), char[1], char[2], char[3])),
+			tg.NewInlineKeyboardButtonData("🚮 Уничтожить! 💥", fmt.Sprintf("%s %s %s %s true", v.GetString("callback_char.delete_item"), char[1], char[2], char[3])),
 		),
 		tg.NewInlineKeyboardRow(
 			tg.NewInlineKeyboardButtonData("Отмена", "cancel"),

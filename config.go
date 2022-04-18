@@ -87,6 +87,7 @@ type Messages struct {
 			quest           string
 			chat            string
 			wordleGame      string
+			cassir          string
 		}
 	}
 	Errors struct {

@@ -104,10 +104,11 @@ message:
     exclamation_mark: "❗"
     hand: "👋"
     fist: "🤜"
-    foot: "\U0001F9B6"
+    foot: "👣"
     quest: "📟"
     chat: "📨"
     wordle_game: "🔤"
+    cassir: "👨‍🔧"
 
 errors:
   no_quest_item: "Здесь нет доски с квестами!"
