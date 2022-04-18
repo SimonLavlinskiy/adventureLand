@@ -343,24 +343,17 @@ func MainKeyboard(user r.User) tg.InlineKeyboardMarkup {
 	)
 }
 
-func ChooseInstrumentKeyboard(char []string, cell r.Cell, user r.User) (tg.InlineKeyboardMarkup, error) {
+func ChooseInstrumentKeyboard(cell r.Cell, user r.User) (tg.InlineKeyboardMarkup, error) {
 	instruments := r.GetInstrumentsUserCanUse(user, cell)
 
 	if len(instruments) != 0 && ((cell.ItemCount == nil && *cell.Type == "swap") || *cell.ItemCount != 0) {
 		var row []tg.InlineKeyboardButton
 
-		for instrument, i := range instruments {
-			if cell.Item.Cost != nil && *cell.Item.Cost > 0 && (i == "hand" || i == "swap") && cell.NeedPay && (*cell.Type == "swap" && cell.ItemCount == nil || *cell.Type == "item" && *cell.ItemCount != 0) {
-				row = append(row, tg.NewInlineKeyboardButtonData(
-					fmt.Sprintf("%s ( %d💰 )", instrument, *cell.Item.Cost),
-					fmt.Sprintf("%s %s %s", instrument, char[3], char[4])),
-				)
-			} else if *cell.Type == "swap" && cell.ItemCount == nil || *cell.Type == "item" && *cell.ItemCount != 0 {
-				row = append(row, tg.NewInlineKeyboardButtonData(
-					instrument,
-					fmt.Sprintf("%s %s %s", instrument, char[3], char[4])),
-				)
-			}
+		for view, instrument := range instruments {
+			button := tg.NewInlineKeyboardButtonData(
+				getButtonTextAndData(cell, instrument, view),
+			)
+			row = append(row, button)
 		}
 
 		return tg.NewInlineKeyboardMarkup(
@@ -374,6 +367,30 @@ func ChooseInstrumentKeyboard(char []string, cell r.Cell, user r.User) (tg.Inlin
 	_, mapButton := r.GetMyMap(user)
 
 	return mapButton, nil
+}
+
+func getButtonTextAndData(cell r.Cell, instrument r.Item, instrumentView string) (text string, data string) {
+	if cell.NeedPay && cell.Item.Cost != nil && *cell.Item.Cost > 0 {
+		if (instrument.Type == "hand" || instrument.Type == "swap") && (*cell.Type == "swap" || *cell.Type == "item" && *cell.ItemCount != 0) {
+			text = fmt.Sprintf("%s ( %d💰 )", instrumentView, *cell.Item.Cost)
+		} else {
+			text = instrumentView
+		}
+	} else {
+		text = instrumentView
+	}
+
+	if instrument.DressType != nil && *instrument.DressType == "head" {
+		data = fmt.Sprintf("head %d %d", cell.ID, instrument.ID)
+	} else if instrument.DressType != nil {
+		data = fmt.Sprintf("item %d %d", cell.ID, instrument.ID)
+	} else if instrument.Type == "fist" {
+		data = fmt.Sprintf("fist %d %d", cell.ID, instrument.ID)
+	} else {
+		data = fmt.Sprintf("%s %d", instrument.Type, cell.ID)
+	}
+
+	return text, data
 }
 
 func WorkbenchKeyboard(char []string) tg.InlineKeyboardMarkup {

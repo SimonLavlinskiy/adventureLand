@@ -57,34 +57,22 @@ func (u User) GetUserLocation() Location {
 	return result
 }
 
-func UpdateLocation(char []string, locStruct Location, user User) (string, error) {
+func UpdateLocation(user User, cell Cell) (string, error) {
 	var err error
-	var resultCell Cell
 
-	cell := Cell{MapsId: *locStruct.MapsId, AxisX: *locStruct.AxisX, AxisY: *locStruct.AxisY}
-	cell = cell.GetCell()
+	cell = isCellTeleport(cell)
 
-	locStruct = isCellTeleport(char, cell, locStruct)
-
-	if locStruct, err = isCellHome(char, cell, locStruct, user); err != nil {
+	if cell, err = isCellHome(cell, user); err != nil {
 		return "\nУ тебя еще нет дома, очень жаль...", errors.New("user has not home")
 	}
 
-	err = config.Db.
-		Preload("Item").
-		First(&resultCell, &Cell{MapsId: *locStruct.MapsId, AxisX: *locStruct.AxisX, AxisY: *locStruct.AxisY}).
-		Error
-	if err != nil && err.Error() == "record not found" {
-		return "\nСюда никак не пройти(", errors.New("can't get through")
-	}
-
-	if !resultCell.CanStep || resultCell.Item != nil && resultCell.ItemCount != nil && *resultCell.ItemCount > 0 && !resultCell.Item.CanStep {
+	if !cell.CanStep || cell.Item != nil && cell.ItemCount != nil && *cell.ItemCount > 0 && !cell.Item.CanStep {
 		return "\nСюда никак не пройти(", errors.New("can't get through")
 	}
 
 	err = config.Db.
 		Where(&Location{UserTgId: user.TgId}).
-		Updates(&locStruct).
+		Updates(&Location{MapsId: &cell.MapsId, AxisX: &cell.AxisX, AxisY: &cell.AxisY}).
 		Error
 	if err != nil {
 		panic(err)
@@ -95,29 +83,29 @@ func UpdateLocation(char []string, locStruct Location, user User) (string, error
 	return "Ok", nil
 }
 
-func isCellTeleport(char []string, cell Cell, location Location) Location {
-	if len(char) != 1 && *cell.Type == "teleport" && cell.TeleportID != nil {
-		return Location{
-			AxisX:  &cell.Teleport.StartX,
-			AxisY:  &cell.Teleport.StartY,
-			MapsId: &cell.Teleport.MapId,
-		}
+func isCellTeleport(cell Cell) Cell {
+	if *cell.Type == "teleport" && cell.TeleportID != nil {
+		return Cell{
+			AxisX:  cell.Teleport.StartX,
+			AxisY:  cell.Teleport.StartY,
+			MapsId: cell.Teleport.MapId,
+		}.GetCell()
 	}
-	return location
+	return cell
 }
 
-func isCellHome(char []string, cell Cell, location Location, user User) (Location, error) {
-	if len(char) != 1 && *cell.Type == "home" && user.HomeId != nil {
-		masId := int(user.Home.ID)
-		return Location{
-			AxisX:  &user.Home.StartX,
-			AxisY:  &user.Home.StartY,
-			MapsId: &masId,
-		}, nil
-	} else if len(char) != 1 && *cell.Type == "home" && user.HomeId == nil {
-		return location, errors.New("user has not home")
+func isCellHome(cell Cell, user User) (Cell, error) {
+	if *cell.Type == "home" && user.HomeId != nil {
+		mapId := int(user.Home.ID)
+		return Cell{
+			AxisX:  user.Home.StartX,
+			AxisY:  user.Home.StartY,
+			MapsId: mapId,
+		}.GetCell(), nil
+	} else if *cell.Type == "home" && user.HomeId == nil {
+		return cell, errors.New("user has not home")
 	}
-	return location, nil
+	return cell, nil
 }
 
 func GetLocationOnlineUser(userLocation Location, mapSize UserMap) []Location {

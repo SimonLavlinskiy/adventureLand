@@ -44,26 +44,12 @@ func (i Item) GetItemEndTime() time.Time {
 	return time.Now().Add(time.Duration(*i.Growing) * time.Minute)
 }
 
-func UserGetItem(user User, LocationStruct Location, char []string) string {
-	resultCell := Cell{MapsId: *LocationStruct.MapsId, AxisX: *LocationStruct.AxisX, AxisY: *LocationStruct.AxisY}
-	resultCell = resultCell.GetCell()
-
-	if resultCell.ItemID == nil {
-		return "Не получилось..."
-	}
-
-	return UserGetItemUpdateModels(user, resultCell, char[0])
-}
-
-func checkItemsOnNeededInstrument(cell Cell, msgInstrumentView string) (error, *Instrument) { //todo
+func checkItemsOnNeededInstrument(cell Cell, instrumentId uint) (error, *Instrument) {
 	for _, instrument := range cell.Item.Instruments {
-		if instrument.Good.View == msgInstrumentView {
+		if instrument.Good.ID == instrumentId {
 			res := Instrument{ID: instrument.ID}.GetInstrument()
 			return nil, &res
 		}
-	}
-	if msgInstrumentView == "👋" && cell.Item.CanTake {
-		return nil, nil
 	}
 
 	return errors.New("user has not instrument"), nil
@@ -256,12 +242,18 @@ func isItemCrushed(cell Cell, ItemHp int) bool {
 	}
 }
 
-func UserGetItemUpdateModels(user User, cell Cell, instrumentView string) string {
+func UserGetItemUpdateModels(user User, cell Cell, charData []string) string {
 	var userGetItem UserItem
+	var instrument *Instrument
+	var err error
 
-	err, instrument := checkItemsOnNeededInstrument(cell, instrumentView)
-	if err != nil {
-		return "Предмет не поддается под таким инструментом"
+	if charData[0] == "item" || charData[0] == "fist" {
+		instrumentId := uint(ToInt(charData[2]))
+
+		err, instrument = checkItemsOnNeededInstrument(cell, instrumentId)
+		if err != nil {
+			return "Предмет не поддается под таким инструментом"
+		}
 	}
 
 	if instrument == nil || instrument.ResultId == nil {
@@ -278,16 +270,15 @@ func UserGetItemUpdateModels(user User, cell Cell, instrumentView string) string
 		return "Не хватает деняк!"
 	}
 
-	if instrumentView == "👋" {
+	if charData[0] == "hand" {
 		return UserGetItemWithHand(cell, user, userGetItem)
-	} else if instrumentView == "🤜" {
+	} else if charData[0] == "fist" {
 		return DestructItem(cell, user, *instrument)
 	} else if len(cell.Item.Instruments) != 0 {
 		return UserGetItemWithInstrument(cell, user, *instrument)
 	}
 
 	return "Нельзя взять!"
-
 }
 
 func canUserPayItem(user User, cell Cell) bool {
@@ -301,9 +292,7 @@ func isUserHasMaxCountItem(item UserItem) bool {
 	return true
 }
 
-func ViewItemInfo(location Location) string {
-	cell := Cell{MapsId: *location.MapsId, AxisX: *location.AxisX, AxisY: *location.AxisY}
-	cell = cell.GetCell()
+func ViewItemInfo(cell Cell) string {
 	var itemInfo string
 	var dressType string
 

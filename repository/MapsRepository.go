@@ -281,88 +281,81 @@ func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons 
 	for i, cell := range CellsAroundUser {
 		switch true {
 		case cell.IsDefaultCell():
+			text := cell.View
 			switch i {
 			case 0:
-				btn.Up = cell.View
-				btn.UpData = cell.View
+				btn.Up, btn.UpData = text, text
 			case 1:
-				btn.Down = cell.View
-				btn.DownData = cell.View
+				btn.Down, btn.DownData = text, text
 			case 2:
-				btn.Right = cell.View
-				btn.RightData = cell.View
+				btn.Right, btn.RightData = text, text
 			case 3:
-				btn.Left = cell.View
-				btn.LeftData = cell.View
+				btn.Left, btn.LeftData = text, text
 			}
 		case cell.IsTeleport() || cell.IsHome():
-			buttonData := fmt.Sprintf(" %s %s", resUser.Avatar, cell.View)
 			button := fmt.Sprintf("%s%s", resUser.Avatar, cell.View)
+			data := fmt.Sprintf("move %d", cell.ID)
 			switch i {
 			case 0:
-				btn.UpData = btn.Up + buttonData
 				btn.Up = button
+				btn.UpData = data
 			case 1:
-				btn.DownData = btn.Down + buttonData
 				btn.Down = button
+				btn.DownData = data
 			case 2:
-				btn.RightData = btn.Right + buttonData
 				btn.Right = button
+				btn.RightData = data
 			case 3:
-				btn.LeftData = btn.Left + buttonData
 				btn.Left = button
+				btn.LeftData = data
 			}
 		case cell.IsWorkbench() || cell.IsQuest() || cell.IsChat():
-			var el string
+			var data string
 			if cell.IsWorkbench() {
-				el = "wrench"
+				data = fmt.Sprintf("wrench %d", cell.ID)
 			} else if cell.IsQuest() {
-				el = "quest"
+				data = fmt.Sprintf("quests %d", cell.ID)
 			} else if cell.IsChat() {
-				el = "chat"
+				data = fmt.Sprintf("chat %d", cell.ID)
 			}
 			switch i {
 			case 0:
-				btn.UpData = fmt.Sprintf("%s %s %s", v.GetString(fmt.Sprintf("message.emoji.%s", el)), btn.Up, cell.Item.View)
 				btn.Up += cell.Item.View
+				btn.UpData = data
 			case 1:
-				btn.DownData = fmt.Sprintf("%s %s %s", v.GetString(fmt.Sprintf("message.emoji.%s", el)), btn.Down, cell.Item.View)
 				btn.Down += cell.Item.View
+				btn.DownData = data
 			case 2:
-				btn.RightData = fmt.Sprintf("%s %s %s", v.GetString(fmt.Sprintf("message.emoji.%s", el)), btn.Right, cell.Item.View)
 				btn.Right += cell.Item.View
+				btn.RightData = data
 			case 3:
-				btn.LeftData = fmt.Sprintf("%s %s %s", v.GetString(fmt.Sprintf("message.emoji.%s", el)), btn.Left, cell.Item.View)
 				btn.Left += cell.Item.View
+				btn.LeftData = data
 			}
 		case cell.IsItem() || cell.IsSwap():
 			switch i {
 			case 0:
-				btn.Up, btn.UpData = cell.ViewItemButton(btn.Up, resUser)
-				btn.UpData = fmt.Sprintf("%s %s", btn.UpData, "up")
+				btn.Up, btn.UpData = cell.ViewItemButton(resUser)
 			case 1:
-				btn.Down, btn.DownData = cell.ViewItemButton(btn.Down, resUser)
-				btn.DownData = fmt.Sprintf("%s %s", btn.UpData, "down")
+				btn.Down, btn.DownData = cell.ViewItemButton(resUser)
 			case 2:
-				btn.Right, btn.RightData = cell.ViewItemButton(btn.Right, resUser)
-				btn.RightData = fmt.Sprintf("%s %s", btn.UpData, "right")
+				btn.Right, btn.RightData = cell.ViewItemButton(resUser)
 			case 3:
-				btn.Left, btn.LeftData = cell.ViewItemButton(btn.Left, resUser)
-				btn.LeftData = fmt.Sprintf("%s %s", btn.UpData, "left")
+				btn.Left, btn.LeftData = cell.ViewItemButton(resUser)
 			}
 		case cell.IsWordleGame():
 			switch i {
 			case 0:
-				btn.UpData = fmt.Sprintf("%s %s %s", v.GetString("message.emoji.wordle_game"), btn.Up, cell.View)
+				btn.UpData = fmt.Sprintf("wordle_game up %s", cell.View)
 				btn.Up = fmt.Sprintf("%s%s", btn.Up, cell.View)
 			case 1:
-				btn.DownData = fmt.Sprintf("%s %s %s", v.GetString("message.emoji.wordle_game"), btn.Down, cell.View)
+				btn.DownData = fmt.Sprintf("wordle_game down %s", cell.View)
 				btn.Down = fmt.Sprintf("%s%s", btn.Down, cell.View)
 			case 2:
-				btn.RightData = fmt.Sprintf("%s %s %s", v.GetString("message.emoji.wordle_game"), btn.Right, cell.View)
+				btn.RightData = fmt.Sprintf("wordle_game right %s", cell.View)
 				btn.Right = fmt.Sprintf("%s%s", btn.Right, cell.View)
 			case 3:
-				btn.LeftData = fmt.Sprintf("%s %s %s", v.GetString("message.emoji.wordle_game"), btn.Left, cell.View)
+				btn.LeftData = fmt.Sprintf("wordle_game left %s", cell.View)
 				btn.Left = fmt.Sprintf("%s%s", btn.Left, cell.View)
 			}
 		case cell.ID == 0:
@@ -379,13 +372,13 @@ func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons 
 		default:
 			switch i {
 			case 0:
-				btn.UpData = btn.Up
+				btn.UpData = fmt.Sprintf("move %d", cell.ID)
 			case 1:
-				btn.DownData = btn.Down
+				btn.DownData = fmt.Sprintf("move %d", cell.ID)
 			case 2:
-				btn.RightData = btn.Right
+				btn.RightData = fmt.Sprintf("move %d", cell.ID)
 			case 3:
-				btn.LeftData = btn.Left
+				btn.LeftData = fmt.Sprintf("move %d", cell.ID)
 			}
 		}
 	}

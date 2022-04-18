@@ -8,26 +8,6 @@ import (
 	"strings"
 )
 
-func DirectionCell(user r.User, direction string) r.Location {
-	res := r.GetOrCreateMyLocation(user)
-
-	switch direction {
-	case v.GetString("message.doing.up"):
-		y := *res.AxisY + 1
-		return r.Location{MapsId: res.MapsId, AxisX: res.AxisX, AxisY: &y}
-	case v.GetString("message.doing.down"):
-		y := *res.AxisY - 1
-		return r.Location{MapsId: res.MapsId, AxisX: res.AxisX, AxisY: &y}
-	case v.GetString("message.doing.left"):
-		x := *res.AxisX - 1
-		return r.Location{MapsId: res.MapsId, AxisX: &x, AxisY: res.AxisY}
-	case v.GetString("message.doing.right"):
-		x := *res.AxisX + 1
-		return r.Location{MapsId: res.MapsId, AxisX: &x, AxisY: res.AxisY}
-	}
-	return res
-}
-
 func MessageBackpackUserItems(user r.User, userItems []r.UserItem, rowUser int, itemType string) string {
 	var userItemMsg = fmt.Sprintf("%s🎒 *Рюкзачок* ➡️ *%s* \n \n", r.GetStatsLine(user), v.GetString(fmt.Sprintf("user_location.item_categories.%s", itemType)))
 
@@ -197,18 +177,6 @@ func UsersHandItemsView(user r.User) (r.Item, r.Item, r.Item) {
 	}
 
 	return ItemLeftHand, ItemRightHand, ItemHead
-}
-
-func Quest(cell *r.Cell, user r.User) (msgText string, buttons tg.InlineKeyboardMarkup) {
-	if !cell.IsQuest() {
-		msgText = v.GetString("error.no_quest_item")
-		return msgText, CancelButton()
-	}
-
-	msgText = v.GetString("user_location.tasks_menu_message")
-	buttons = AllQuestsMessageKeyboard(user)
-
-	return msgText, buttons
 }
 
 func UserTakeOffGood(user r.User, charData []string) (msgText string, buttons tg.InlineKeyboardMarkup) {
@@ -524,7 +492,8 @@ func UserCraftItem(user r.User, receipt *r.Receipt, charData []string) (msgText 
 	resultItem := r.UserItem{UserId: int(user.ID), ItemId: receipt.ItemResultID}.UserGetUserItem()
 
 	if resultItem.Item.MaxCountUserHas != nil && *receipt.ItemResultCount+*resultItem.Count > *resultItem.Item.MaxCountUserHas {
-		msgText = fmt.Sprintf("Вы не можете иметь больше, чем %d %s!\nСори... такие правила(", *resultItem.Item.MaxCountUserHas, resultItem.Item.View)
+		msgText, buttons = Workbench(nil, charData)
+		msgText = fmt.Sprintf("%s%sВы не можете иметь больше, чем %d %s!\nСори... такие правила(", msgText, v.GetString("msg_separator"), *resultItem.Item.MaxCountUserHas, resultItem.Item.View)
 		return msgText, buttons
 	}
 
@@ -557,10 +526,8 @@ func UserCraftItem(user r.User, receipt *r.Receipt, charData []string) (msgText 
 	return msgText, buttons
 }
 
-func UserMoving(user r.User, char []string, charDirection string) (msg string, buttons tg.InlineKeyboardMarkup) {
-	res := DirectionCell(user, charDirection)
-
-	locMsg, err := r.UpdateLocation(char, res, user)
+func UserMoving(user r.User, cell r.Cell) (msg string, buttons tg.InlineKeyboardMarkup) {
+	locMsg, err := r.UpdateLocation(user, cell)
 	msgMap, buttons := r.GetMyMap(user)
 
 	if err != nil {
@@ -570,23 +537,16 @@ func UserMoving(user r.User, char []string, charDirection string) (msg string, b
 		} else {
 			msg = fmt.Sprintf("%s%s%s", msgMap, v.GetString("msg_separator"), locMsg)
 		}
-	} else {
-		lighterMsg, err := user.CheckUserHasLighter()
-		if err != nil {
-			msg = fmt.Sprintf("%s%s", v.GetString("msg_separator"), lighterMsg)
-		}
-		msg = fmt.Sprintf("%s%s", msgMap, msg)
+		return msg, buttons
 	}
 
+	lighterMsg, err := user.CheckUserHasLighter()
+	if err != nil {
+		msg = fmt.Sprintf("%s%s", v.GetString("msg_separator"), lighterMsg)
+	}
+	msg = fmt.Sprintf("%s%s", msgMap, msg)
+
 	return msg, buttons
-}
-
-func UserUseHandOrInstrumentMessage(user r.User, cell r.Location, char []string) (msgText string, buttons tg.InlineKeyboardMarkup) {
-	resultOfGetItem := r.UserGetItem(user, cell, char)
-	msgText, buttons = r.GetMyMap(user)
-	msgText = fmt.Sprintf("%s%s%s", msgText, v.GetString("msg_separator"), resultOfGetItem)
-
-	return msgText, buttons
 }
 
 func OpenQuest(questId uint, user r.User) (msgText string, buttons tg.InlineKeyboardMarkup) {
@@ -650,15 +610,8 @@ func GetReceiptFromData(char []string) r.Receipt {
 	return result
 }
 
-func ChoseInstrumentMessage(user r.User, char []string, cellLocation r.Location) (msgText string, buttons tg.InlineKeyboardMarkup) {
-
-	if char[0] != v.GetString("message.emoji.exclamation_mark") {
-		char = strings.Fields(fmt.Sprintf("❗ 🛠 ❓ %s %s", char[1], char[2]))
-	}
-	cell := r.Cell{MapsId: *cellLocation.MapsId, AxisX: *cellLocation.AxisX, AxisY: *cellLocation.AxisY}
-	cell = cell.GetCell()
-
-	buttons, err := ChooseInstrumentKeyboard(char, cell, user)
+func ChoseInstrumentMessage(user r.User, cell r.Cell) (msgText string, buttons tg.InlineKeyboardMarkup) {
+	buttons, err := ChooseInstrumentKeyboard(cell, user)
 
 	if err == nil {
 		msgText = v.GetString("errors.chose_instrument_to_use")
