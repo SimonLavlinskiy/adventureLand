@@ -693,7 +693,7 @@ func CancelButton() tg.InlineKeyboardMarkup {
 func CancelChangeNameButton(username string) tg.InlineKeyboardMarkup {
 	return tg.NewInlineKeyboardMarkup(
 		tg.NewInlineKeyboardRow(
-			tg.NewInlineKeyboardButtonData(username+" ❓", "cancelChangeName"),
+			tg.NewInlineKeyboardButtonData(fmt.Sprintf("или «%s» ❓", username), "cancelChangeName"),
 		),
 	)
 }

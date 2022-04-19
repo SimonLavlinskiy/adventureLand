@@ -108,7 +108,7 @@ message:
     quest: "📟"
     chat: "📨"
     wordle_game: "🔤"
-    cassir: "👨‍🔧"
+    shop_assistant: "👨‍🔧"
 
 errors:
   no_quest_item: "Здесь нет доски с квестами!"

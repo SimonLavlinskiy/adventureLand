@@ -14,7 +14,7 @@ func messageResolver(update tg.Update) (msg tg.MessageConfig) {
 	var btns tg.InlineKeyboardMarkup
 	user := r.GetOrCreateUser(update)
 
-	fmt.Println(user.Username + " делает действие!")
+	fmt.Println(user.Username + " делает действие: " + msg.Text)
 
 	switch user.MenuLocation {
 	case v.GetString("user_location.menu"):
@@ -38,10 +38,14 @@ func messageResolver(update tg.Update) (msg tg.MessageConfig) {
 
 func userMenuLocation(update tg.Update, user r.User) (msg tg.MessageConfig, buttons tg.InlineKeyboardMarkup) {
 	newMessage := update.Message.Text
-
+	fmt.Println("newMsg: ", newMessage)
 	switch newMessage {
 	case "/start":
 		msg.Text = v.GetString("main_info.start_msg")
+		buttons = s.MainKeyboard(user)
+	case "/map":
+		msg.Text, buttons = r.GetMyMap(user)
+		user = r.User{TgId: user.TgId, MenuLocation: "Карта"}.UpdateUser()
 	default:
 		msg.Text = "Меню"
 		buttons = s.MainKeyboard(user)
@@ -65,6 +69,9 @@ func userProfileLocation(update tg.Update, user r.User) (msgText string, buttons
 		buttons = s.ProfileKeyboard(user)
 	} else {
 		switch newMessage {
+		case "/map":
+			msgText, buttons = r.GetMyMap(user)
+			user = r.User{TgId: user.TgId, MenuLocation: "Карта"}.UpdateUser()
 		case "/menu", v.GetString("user_location.menu"):
 			msgText = "Меню"
 			buttons = s.MainKeyboard(user)
@@ -81,12 +88,13 @@ func userProfileLocation(update tg.Update, user r.User) (msgText string, buttons
 func userMapLocation(update tg.Update, user r.User) (msg tg.MessageConfig, buttons tg.InlineKeyboardMarkup) {
 	newMessage := update.Message.Text
 
-	fmt.Println(newMessage)
-
 	if newMessage == "/menu" || newMessage == v.GetString("user_location.menu") {
-		msg.Text = "Меню:"
+		msg.Text = "📖 Меню 📖"
 		buttons = s.MainKeyboard(user)
 		r.User{TgId: user.TgId, MenuLocation: "Меню"}.UpdateUser()
+	} else if newMessage == "/map" {
+		msg.Text, buttons = r.GetMyMap(user)
+		user = r.User{TgId: user.TgId, MenuLocation: "Карта"}.UpdateUser()
 	} else {
 		msg.Text, buttons = r.GetMyMap(user)
 		msg.Text = fmt.Sprintf("%s%s🤨 Не пойму... 🧐", msg.Text, v.GetString("msg_separator"))
@@ -104,12 +112,12 @@ func callBackResolver(update tg.Update) (msg tg.EditMessageTextConfig, buttons t
 	userTgId := r.GetUserTgId(update)
 	user := r.GetUser(r.User{TgId: userTgId})
 
+	fmt.Println(user.Username + " делает действие: " + char)
+
 	if len(charData) == 1 && charData[0] == v.GetString("callback_char.cancel") {
 		msg.Text, btns = r.GetMyMap(user)
 		user = r.User{TgId: user.TgId, MenuLocation: "Карта"}.UpdateUser()
 	}
-
-	fmt.Println(charData)
 
 	switch user.MenuLocation {
 	case "wordle":
@@ -161,6 +169,9 @@ func gameWordle(update tg.Update, user r.User) (msgText string, btns tg.InlineKe
 	charData := strings.Fields(update.CallbackQuery.Data)
 
 	switch charData[0] {
+	case "/map":
+		msgText, btns = r.GetMyMap(user)
+		user = r.User{TgId: user.TgId, MenuLocation: "Карта"}.UpdateUser()
 	case v.GetString("callback_char.wordle_regulations"):
 		msgText = v.GetString("wordle.regulations")
 		btns = s.WordleExitButton()
@@ -344,19 +355,22 @@ func profile(update tg.Update, user r.User, charData []string) (msg string, butt
 
 	switch update.CallbackQuery.Data {
 	case "cancelChangeName":
-		user = r.User{TgId: user.TgId, Username: update.CallbackQuery.From.UserName}.UpdateUser()
+		user = r.User{TgId: user.TgId, Username: user.FirstName}.UpdateUser()
 		msg, buttons = userProfileLocation(update, user)
 	case "📝 Изменить имя? 📝":
 		r.User{TgId: user.TgId, Username: "waiting"}.UpdateUser()
 		msg = "‼️ *ВНИМАНИЕ*: ‼️‼\nТы должен вписать новое имя?\n‼️‼️‼️‼️‼️‼️‼️"
-		buttons = s.CancelChangeNameButton(update.CallbackQuery.From.UserName)
+		buttons = s.CancelChangeNameButton(user.FirstName)
 	case "avatarList":
 		msg = "‼️ *ВНИМАНИЕ*: ‼️‼\nВыбери себе аватар..."
 		buttons = s.EmojiInlineKeyboard()
 	case "/menu", v.GetString("user_location.menu"):
-		msg = "Меню:"
+		msg = "📖 Меню 📖"
 		buttons = s.MainKeyboard(user)
 		r.User{TgId: user.TgId, MenuLocation: "Меню"}.UpdateUser()
+	case "/map":
+		msg, buttons = r.GetMyMap(user)
+		user = r.User{TgId: user.TgId, MenuLocation: "Карта"}.UpdateUser()
 	}
 
 	return msg, buttons
@@ -364,8 +378,11 @@ func profile(update tg.Update, user r.User, charData []string) (msg string, butt
 
 func menu(update tg.Update, user r.User) (msg string, buttons tg.InlineKeyboardMarkup) {
 	switch update.CallbackQuery.Data {
+	case "/map":
+		msg, buttons = r.GetMyMap(user)
+		user = r.User{TgId: user.TgId, MenuLocation: "Карта"}.UpdateUser()
 	case "/menu", v.GetString("user_location.menu"):
-		msg = "Меню:"
+		msg = "📖 Меню 📖"
 		buttons = s.MainKeyboard(user)
 		r.User{TgId: user.TgId, MenuLocation: "Меню"}.UpdateUser()
 	case "🗺 Карта 🗺":
@@ -486,18 +503,22 @@ func mapsDoing(user r.User, char string) (msg string, buttons tg.InlineKeyboardM
 	case v.GetString("message.emoji.water"):
 		msg, buttons = useCellWithoutDoing(user, "Ты не похож на Jesus! 👮")
 	case v.GetString("message.emoji.clock"):
-		msg, buttons = useCellWithoutDoing(user, fmt.Sprintf("%s\nЧасики тикают...", t.Format("15:04:05")))
+		news := r.GetNewsMsg()
+		msg, buttons = useCellWithoutDoing(user, fmt.Sprintf("%s\nЧасики тикают...\n\n%s", t.Format("15:04:05"), news))
 	case v.GetString("message.emoji.casino"):
 		msg, buttons = useCellWithoutDoing(user, "💰💵🤑 Ставки на JOY CASINO дот COM! 🤑💵💰")
 	case v.GetString("message.emoji.forbidden"):
 		msg, buttons = useCellWithoutDoing(user, "🚫 Сюда нельзя! 🚫")
-	case v.GetString("message.emoji.cassir"):
+	case v.GetString("message.emoji.shop_assistant"):
 		msg, buttons = useCellWithoutDoing(user, "‍🔧 Зачем зашел за кассу? 😑")
 
 	case "/menu", v.GetString("user_location.menu"):
-		msg = "Меню:"
+		msg = "📖 Меню 📖"
 		buttons = s.MainKeyboard(user)
 		r.User{TgId: user.TgId, MenuLocation: "Меню"}.UpdateUser()
+	case "/map":
+		msg, buttons = r.GetMyMap(user)
+		user = r.User{TgId: user.TgId, MenuLocation: "Карта"}.UpdateUser()
 	case "cancel":
 		msg, buttons = r.GetMyMap(user)
 	default:
