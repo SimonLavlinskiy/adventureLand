@@ -31,8 +31,6 @@ type Item struct {
 	IsInventory       bool         `gorm:"embedded"`
 	MaxCountUserHas   *int         `gorm:"embedded"`
 	CountUse          *int         `gorm:"embedded"`
-	ResultsId         *uint        `gorm:"embedded"`
-	Results           *Result
 }
 
 type InstrumentItem struct {
@@ -330,7 +328,7 @@ func ViewItemInfo(cell Cell) string {
 	if cell.Item.Satiety != nil && *cell.Item.Satiety != 0 {
 		itemInfo = itemInfo + fmt.Sprintf("*Сытость*: `+%d`\U0001F9C3️\n", *cell.Item.Satiety)
 	}
-	if cell.Item.Cost != nil && *cell.Item.Cost != 0 {
+	if cell.Item.Cost != nil && *cell.Item.Cost != 0 && cell.NeedPay {
 		itemInfo = itemInfo + fmt.Sprintf("*Стоимость*: `%d`💰\n", *cell.Item.Cost)
 	}
 	if cell.Item.Destruction != nil && *cell.Item.Destruction != 0 {
@@ -355,7 +353,9 @@ func ViewItemInfo(cell Cell) string {
 	if len(cell.Item.Instruments) != 0 {
 		var itemsInstrument string
 		for _, i := range cell.Item.Instruments {
-			itemsInstrument = itemsInstrument + fmt.Sprintf("%s - `%s`\n", i.Good.View, i.Good.Name)
+			if i.GoodId != nil {
+				itemsInstrument = itemsInstrument + fmt.Sprintf("%s - `%s`\n", i.Good.View, i.Good.Name)
+			}
 		}
 		itemInfo = itemInfo + fmt.Sprintf("*Чем можно взаимодествовать*:\n%s", itemsInstrument)
 	}

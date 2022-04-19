@@ -9,7 +9,7 @@ import (
 )
 
 func MessageBackpackUserItems(user r.User, userItems []r.UserItem, rowUser int, itemType string) string {
-	var userItemMsg = fmt.Sprintf("%s🎒 *Рюкзачок* ➡️ *%s* \n \n", r.GetStatsLine(user), v.GetString(fmt.Sprintf("user_location.item_categories.%s", itemType)))
+	var userItemMsg = fmt.Sprintf("%s\n🎒*Рюкзачок* ➡️ *%s* \n\n", r.GetStatsLine(user), v.GetString(fmt.Sprintf("user_location.item_categories.%s", itemType)))
 
 	if len(userItems) == 0 {
 		return userItemMsg + "👻 \U0001F9B4  Пусто .... 🕸 🕷"
@@ -76,8 +76,10 @@ func MessageGoodsUserItems(user r.User, userItems []r.UserItem, rowUser int) str
 }
 
 func BackPackMoving(charData []string, user r.User) (msgText string, buttons tg.InlineKeyboardMarkup) {
+	updatedUser := r.GetUser(r.User{ID: user.ID})
+
 	category := charData[2]
-	userItems := r.GetBackpackItems(user.ID, category)
+	userItems := r.GetBackpackItems(updatedUser.ID, category)
 
 	var i int
 	switch charData[1] {
@@ -89,7 +91,7 @@ func BackPackMoving(charData []string, user r.User) (msgText string, buttons tg.
 		i = r.ToInt(charData[1])
 	}
 
-	msgText = MessageBackpackUserItems(user, userItems, i, category)
+	msgText = MessageBackpackUserItems(updatedUser, userItems, i, category)
 	buttons = BackpackInlineKeyboard(userItems, i, category)
 
 	return msgText, buttons
@@ -569,7 +571,7 @@ func UserDoneQuest(questId uint, user r.User) (msgText string, buttons tg.Inline
 	userQuest.UserDoneQuest(user)
 	user.UserGetResult(userQuest.Quest.Result)
 
-	questResult := msgQuestResult(userQuest.Quest.Result)
+	questResult := UserGetResultMsg(userQuest.Quest.Result)
 
 	msgText, buttons = OpenQuest(questId, user)
 	msgText = fmt.Sprintf("*Задание выполнено!*\n%s%s%s", msgText, v.GetString("msg_separator"), questResult)
@@ -622,7 +624,7 @@ func ChoseInstrumentMessage(user r.User, cell r.Cell) (msgText string, buttons t
 	return msgText, buttons
 }
 
-func msgQuestResult(result r.Result) string {
+func UserGetResultMsg(result r.Result) string {
 	result = result.GetResult()
 
 	msg := "🏆 *Ты получил*:"

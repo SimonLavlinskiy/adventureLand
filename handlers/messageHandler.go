@@ -250,6 +250,23 @@ func useHandOrInstrument(user r.User, charData []string, cell r.Cell) (msg strin
 	return msg, buttons
 }
 
+func userGetBox(user r.User, cell r.Cell) (msg string, buttons tg.InlineKeyboardMarkup) {
+	var resultMsg string
+
+	for _, instrument := range cell.Item.Instruments {
+		if instrument.Type == "get" {
+			user.UserGetResult(*instrument.Result)
+			resultMsg = s.UserGetResultMsg(*instrument.Result)
+		}
+	}
+
+	r.UserBox{BoxId: cell.Item.ID, UserId: user.ID}.CreateUserBox()
+
+	msg, buttons = r.GetMyMap(user)
+	msg = fmt.Sprintf("%s%s%s", msg, v.GetString("msg_separator"), resultMsg)
+	return msg, buttons
+}
+
 func craftItem(user r.User, charData []string) (msg string, buttons tg.InlineKeyboardMarkup) {
 	resp := s.GetReceiptFromData(charData)
 	receipt := r.FindReceiptForUser(resp)
@@ -381,6 +398,9 @@ func mapsDoing(user r.User, char string) (msg string, buttons tg.InlineKeyboardM
 		msg = v.GetString("errors.user_not_has_item_in_hand")
 	case user.Avatar:
 		msg, buttons = mapWithUserInfo(user)
+	case "box":
+		cell := r.Cell{ID: uint(r.ToInt(charData[1]))}.GetCell()
+		msg, buttons = userGetBox(user, cell)
 
 	// Использование надетых итемов
 	case "hand", "fist", "item":

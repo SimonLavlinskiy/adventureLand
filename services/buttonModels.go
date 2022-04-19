@@ -346,12 +346,12 @@ func MainKeyboard(user r.User) tg.InlineKeyboardMarkup {
 func ChooseInstrumentKeyboard(cell r.Cell, user r.User) (tg.InlineKeyboardMarkup, error) {
 	instruments := r.GetInstrumentsUserCanUse(user, cell)
 
-	if len(instruments) != 0 && ((cell.ItemCount == nil && *cell.Type == "swap") || *cell.ItemCount != 0) {
+	if len(instruments) != 0 {
 		var row []tg.InlineKeyboardButton
 
 		for view, instrument := range instruments {
 			button := tg.NewInlineKeyboardButtonData(
-				getButtonTextAndData(cell, instrument, view),
+				getButtonTextAndData(cell, instrument, view, user),
 			)
 			row = append(row, button)
 		}
@@ -369,7 +369,7 @@ func ChooseInstrumentKeyboard(cell r.Cell, user r.User) (tg.InlineKeyboardMarkup
 	return mapButton, nil
 }
 
-func getButtonTextAndData(cell r.Cell, instrument r.Item, instrumentView string) (text string, data string) {
+func getButtonTextAndData(cell r.Cell, instrument r.Item, instrumentView string, user r.User) (text string, data string) {
 	if cell.NeedPay && cell.Item.Cost != nil && *cell.Item.Cost > 0 {
 		if (instrument.Type == "hand" || instrument.Type == "swap") && (*cell.Type == "swap" || *cell.Type == "item" && *cell.ItemCount != 0) {
 			text = fmt.Sprintf("%s ( %d💰 )", instrumentView, *cell.Item.Cost)
@@ -386,6 +386,8 @@ func getButtonTextAndData(cell r.Cell, instrument r.Item, instrumentView string)
 		data = fmt.Sprintf("item %d %d", cell.ID, instrument.ID)
 	} else if instrument.Type == "fist" {
 		data = fmt.Sprintf("fist %d %d", cell.ID, instrument.ID)
+	} else if cell.IsBox(user) && instrument.Type == "hand" {
+		data = fmt.Sprintf("box %d", cell.ID)
 	} else {
 		data = fmt.Sprintf("%s %d", instrument.Type, cell.ID)
 	}

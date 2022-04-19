@@ -241,10 +241,11 @@ func (u User) UserBuyHome(m Map) {
 }
 
 func (u User) UserStepCounter() {
+	countStepsForSubstructionStats := uint(5)
 	u.Steps += 1
-	if u.Steps%10 == 0 && u.Satiety > 0 {
+	if u.Steps%countStepsForSubstructionStats == 0 && u.Satiety > 0 {
 		u.Satiety -= 1
-	} else if u.Steps%10 == 0 && u.Satiety == 0 {
+	} else if u.Steps%countStepsForSubstructionStats == 0 && u.Satiety == 0 {
 		u.Health -= 1
 	}
 	config.Db.

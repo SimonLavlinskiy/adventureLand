@@ -50,6 +50,7 @@ func (c Cell) GetCell() Cell {
 
 	if err != nil {
 		fmt.Println("Походу юзер вышел за границу.")
+		panic(err)
 	}
 
 	return result
@@ -311,8 +312,18 @@ func (c Cell) IsHome() bool {
 }
 
 func (c Cell) IsItem() bool {
-	if c.Type != nil && *c.Type == "item" && c.ItemID != nil && *c.ItemCount > 0 {
+	if c.Type != nil && *c.Type == "item" && c.ItemID != nil && c.ItemCount != nil && *c.ItemCount > 0 {
 		return true
+	}
+	return false
+}
+
+func (c Cell) IsBox(user User) bool {
+	if c.ItemID != nil {
+		box := UserBox{UserId: user.ID, BoxId: c.Item.ID}
+		if c.Type != nil && *c.Type == "item" && c.ItemID != nil && c.Item.Type == "box" && !box.IsUserGotBoxToday() {
+			return true
+		}
 	}
 	return false
 }

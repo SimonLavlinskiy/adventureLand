@@ -168,6 +168,14 @@ func (ui UserItem) EatItem(user User) string {
 		user.Health = user.Health + itemHeal - itemDamage
 		user.Satiety = user.Satiety + itemSatiety
 
+		if user.Satiety > 100 {
+			user.Satiety = 100
+		}
+
+		if user.Health > 100 {
+			user.Health = 100
+		}
+
 		User{
 			TgId:    user.TgId,
 			Health:  user.Health,

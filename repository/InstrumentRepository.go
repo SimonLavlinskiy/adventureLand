@@ -49,16 +49,16 @@ func GetInstrumentsUserCanUse(user User, cell Cell) map[string]Item {
 	instruments := cell.Item.Instruments
 
 	for _, instrument := range instruments {
-		if user.LeftHandId != nil && user.LeftHand.ID == instrument.Good.ID {
+		if user.LeftHandId != nil && instrument.GoodId != nil && user.LeftHand.ID == instrument.Good.ID {
 			instrumentsUserCanUse[user.LeftHand.View] = *user.LeftHand
 		}
-		if user.RightHandId != nil && user.RightHand.ID == instrument.Good.ID {
+		if user.RightHandId != nil && instrument.GoodId != nil && user.RightHand.ID == instrument.Good.ID {
 			instrumentsUserCanUse[user.RightHand.View] = *user.RightHand
 		}
-		if user.HeadId != nil && user.Head.ID == instrument.Good.ID {
+		if user.HeadId != nil && instrument.GoodId != nil && user.Head.ID == instrument.Good.ID {
 			instrumentsUserCanUse[user.Head.View] = *user.Head
 		}
-		if instrument.Good.Type == "fist" {
+		if instrument.GoodId != nil && instrument.Good.Type == "fist" {
 			instrumentsUserCanUse["🤜"] = *instrument.Good
 		}
 	}
@@ -66,9 +66,6 @@ func GetInstrumentsUserCanUse(user User, cell Cell) map[string]Item {
 	if cell.Item.CanTake {
 		instrumentsUserCanUse["👋"] = Item{Type: "hand"}
 	}
-	//if cell.Item.CanDestructByHand {
-	//	instrumentsUserCanUse["🤜"] = Item{Type: "fist"}
-	//}
 	if cell.Item.CanStep && *cell.Type != "swap" {
 		instrumentsUserCanUse["👣"] = Item{Type: "step"}
 	}

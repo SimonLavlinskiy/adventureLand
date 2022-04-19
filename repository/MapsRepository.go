@@ -140,7 +140,8 @@ func GetMyMap(us User) (textMessage string, buttons tg.InlineKeyboardMarkup) {
 		}
 	}
 
-	messageMap = fmt.Sprintf("%s\n%s", GetStatsLine(us), messageMap)
+	updatedUser := GetUser(User{ID: us.ID})
+	messageMap = fmt.Sprintf("%s\n%s", GetStatsLine(updatedUser), messageMap)
 
 	return messageMap, buttons
 }
@@ -179,20 +180,20 @@ func configurationMap(mapSize UserMap, resMap Map, resLocation Location, user Us
 	Maps := make([][]string, resMap.SizeY+1)
 
 	if (day && resLocation.Maps.DayType == "default") || resLocation.Maps.DayType == "alwaysDay" {
-		DayMap(Maps, mapSize, m, resLocation)
+		DayMap(Maps, mapSize, m, resLocation, user)
 	} else {
 		NightMap(Maps, mapSize, m, resLocation, user)
 	}
 	return Maps
 }
 
-func DayMap(Maps [][]string, mapSize UserMap, m map[[2]int]Cell, resLocation Location) {
+func DayMap(Maps [][]string, mapSize UserMap, m map[[2]int]Cell, resLocation Location, user User) {
 	type Point [2]int
 
 	for y := range Maps {
 		for x := mapSize.LeftIndent; x <= mapSize.RightIndent; x++ {
 			if m[Point{x, y}].ID != 0 || m[Point{x, y}] == m[Point{*resLocation.AxisX, *resLocation.AxisY}] {
-				appendVisibleUserZone(m, x, y, Maps)
+				appendVisibleUserZone(m, x, y, Maps, resLocation, user)
 			} else {
 				Maps[y] = append(Maps[y], resLocation.Maps.EmptySpaceSymbol)
 			}
@@ -206,7 +207,7 @@ func NightMap(Maps [][]string, mapSize UserMap, m map[[2]int]Cell, resLocation L
 	for y := range Maps {
 		for x := mapSize.LeftIndent; x <= mapSize.RightIndent; x++ {
 			if CalculateNightMap(user, resLocation, x, y) && m[Point{x, y}].ID != 0 {
-				appendVisibleUserZone(m, x, y, Maps)
+				appendVisibleUserZone(m, x, y, Maps, resLocation, user)
 			} else if (y+x)%2 == 1 || m[Point{x, y}].ID != 0 && (y+x)%2 == 1 {
 				Maps[y] = append(Maps[y], "⬛️")
 			} else if (y+x)%2 == 0 || m[Point{x, y}].ID != 0 && (y+x)%2 == 0 {
@@ -218,10 +219,18 @@ func NightMap(Maps [][]string, mapSize UserMap, m map[[2]int]Cell, resLocation L
 	}
 }
 
-func appendVisibleUserZone(m map[[2]int]Cell, x int, y int, Maps [][]string) {
+func appendVisibleUserZone(m map[[2]int]Cell, x int, y int, Maps [][]string, loc Location, user User) {
 	type Point [2]int
+	var box UserBox
 
-	if m[Point{x, y}].IsItem() || m[Point{x, y}].IsWorkbench() || m[Point{x, y}].IsSwap() || m[Point{x, y}].IsQuest() || m[Point{x, y}].IsChat() {
+	if m[Point{x, y}].IsBox(user) {
+		box = UserBox{UserId: loc.UserID, BoxId: m[Point{x, y}].Item.ID}
+		if !box.IsUserGotBoxToday() {
+			Maps[y] = append(Maps[y], m[Point{x, y}].Item.View)
+		} else {
+			Maps[y] = append(Maps[y], m[Point{x, y}].View)
+		}
+	} else if m[Point{x, y}].IsItem() || m[Point{x, y}].IsWorkbench() || m[Point{x, y}].IsSwap() || m[Point{x, y}].IsQuest() || m[Point{x, y}].IsChat() {
 		Maps[y] = append(Maps[y], m[Point{x, y}].Item.View)
 	} else {
 		Maps[y] = append(Maps[y], m[Point{x, y}].View)
@@ -277,7 +286,7 @@ func CalculateButtonMap(resLocation Location, resUser User, m map[[2]int]Cell) t
 	return CreateMapKeyboard(buttons)
 }
 
-func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons {
+func PutButton(CellsAroundUser []Cell, btn MapButtons, user User) MapButtons {
 	for i, cell := range CellsAroundUser {
 		switch true {
 		case cell.IsDefaultCell():
@@ -293,7 +302,7 @@ func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons 
 				btn.Left, btn.LeftData = text, text
 			}
 		case cell.IsTeleport() || cell.IsHome():
-			button := fmt.Sprintf("%s%s", resUser.Avatar, cell.View)
+			button := fmt.Sprintf("%s%s", user.Avatar, cell.View)
 			data := fmt.Sprintf("move %d", cell.ID)
 			switch i {
 			case 0:
@@ -332,16 +341,16 @@ func PutButton(CellsAroundUser []Cell, btn MapButtons, resUser User) MapButtons 
 				btn.Left += cell.Item.View
 				btn.LeftData = data
 			}
-		case cell.IsItem() || cell.IsSwap():
+		case cell.IsItem() || cell.IsSwap() || cell.IsBox(user):
 			switch i {
 			case 0:
-				btn.Up, btn.UpData = cell.ViewItemButton(resUser)
+				btn.Up, btn.UpData = cell.ViewItemButton(user)
 			case 1:
-				btn.Down, btn.DownData = cell.ViewItemButton(resUser)
+				btn.Down, btn.DownData = cell.ViewItemButton(user)
 			case 2:
-				btn.Right, btn.RightData = cell.ViewItemButton(resUser)
+				btn.Right, btn.RightData = cell.ViewItemButton(user)
 			case 3:
-				btn.Left, btn.LeftData = cell.ViewItemButton(resUser)
+				btn.Left, btn.LeftData = cell.ViewItemButton(user)
 			}
 		case cell.IsWordleGame():
 			switch i {
