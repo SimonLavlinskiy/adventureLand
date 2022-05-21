@@ -3,38 +3,39 @@ package migrations
 import (
 	"fmt"
 	"project0/config"
-	"project0/repository"
+	"project0/src/models"
 )
 
 func Migrate() bool {
 	err := config.Db.AutoMigrate(
-		repository.User{},
-		repository.Location{},
-		repository.Teleport{},
-		repository.Item{},
-		repository.Cell{},
-		repository.Map{},
-		repository.UserItem{},
-		repository.Instrument{},
-		repository.Receipt{},
-		repository.Quest{},
-		repository.UserQuest{},
-		repository.QuestTask{},
-		repository.Result{},
-		repository.Chat{},
-		repository.ChatUser{},
-		repository.Word{},
-		repository.WordleGameProcess{},
-		repository.UserWords{},
-		repository.UserBox{},
-		repository.News{},
+		models.User{},
+		models.Location{},
+		models.Teleport{},
+		models.Item{},
+		models.Cell{},
+		models.Map{},
+		models.UserItem{},
+		models.Instrument{},
+		models.Receipt{},
+		models.Quest{},
+		models.UserQuest{},
+		models.QuestTask{},
+		models.Result{},
+		models.Chat{},
+		models.ChatUser{},
+		models.Word{},
+		models.WordleGameProcess{},
+		models.UserWords{},
+		models.UserBox{},
+		models.News{},
+		models.UserSleep{},
 	)
 	if err != nil {
 		fmt.Println("Migration failed")
 		panic(err)
 		return false
 	}
-	//err = config.Db.SetupJoinTable(&repository.Item{}, "Instruments", &repository.InstrumentItem{})
+	//err = config.Db.SetupJoinTable(&models.Item{}, "Instruments", &models.InstrumentItem{})
 
 	return true
 }

@@ -7,8 +7,9 @@ import (
 	"log"
 	"os"
 	"project0/config"
-	"project0/handlers"
 	"project0/migrations"
+	handlers2 "project0/src/handlers"
+	"project0/templates"
 	"runtime"
 )
 
@@ -30,19 +31,19 @@ func main() {
 		runtime.Goexit()
 	}
 
-	go handlers.RequestHandler()
-	go handlers.GetMessageFromChat(telegramChatApiToken)
+	go handlers2.RequestHandler()
+	go handlers2.GetMessageFromChat(telegramChatApiToken)
 
-	handlers.GetMessage(telegramApiToken)
+	handlers2.GetMessage(telegramApiToken)
 }
 
 func ViperConfiguration() {
-	viper.SetConfigName("config")
+	viper.SetConfigName("templates/message")
 	viper.AddConfigPath(".")
 	viper.AutomaticEnv()
 	viper.SetConfigType("yml")
 
-	var configuration Messages
+	var configuration templates.Messages
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Printf("Error reading config file, %s", err)
 	}
