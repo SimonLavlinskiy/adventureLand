@@ -5,7 +5,7 @@ import (
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
 	"project0/src/actions/mapsActions"
-	"project0/src/actions/mapsActions/userGetBoxServices"
+	"project0/src/actions/mapsActions/userGetBoxAction"
 	"project0/src/controllers/userMapController"
 	"project0/src/models"
 	"project0/src/repositories"
@@ -34,7 +34,7 @@ func learningStep2And3(data string, user models.User) (text string, buttons tg.I
 
 	case strings.Contains(data, "box"):
 		cell := models.Cell{ID: uint(helpers.ToInt(charData[1]))}.GetCell()
-		text, buttons = userGetBoxServices.UserGetBox(user, cell)
+		text, buttons = userGetBoxAction.UserGetBox(user, cell)
 
 		if strings.Contains(user.MenuLocation, "step2") {
 			text = fmt.Sprintf("%s%s%s", info2, v.GetString("msg_separator"), text)

@@ -1,18 +1,19 @@
-package movingServices
+package movingActions
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
-	"project0/config"
 	"project0/src/controllers/userItemController"
 	"project0/src/controllers/userMapController"
 	"project0/src/models"
+	"project0/src/repositories"
 )
 
 func UserMoving(user models.User, cell models.Cell) (msg string, buttons tg.InlineKeyboardMarkup) {
-	locMsg, err := UpdateLocation(user, cell)
+	locMsg, err := UpdateUserLocation(user, cell)
 	msgMap, buttons := userMapController.GetMyMap(user)
 
 	if err != nil {
@@ -65,7 +66,7 @@ func CheckUserHasLighter(u models.User) (string, error) {
 	}
 	return "Ok", nil
 }
-func UpdateLocation(user models.User, cell models.Cell) (string, error) {
+func UpdateUserLocation(user models.User, cell models.Cell) (string, error) {
 	var err error
 
 	cell = isCellTeleport(cell)
@@ -78,15 +79,17 @@ func UpdateLocation(user models.User, cell models.Cell) (string, error) {
 		return "\nСюда никак не пройти(", errors.New("can't get through")
 	}
 
-	userLocation := models.Location{MapsId: &cell.MapsId, UserID: user.ID, AxisX: &cell.AxisX, AxisY: &cell.AxisY}
-
-	err = config.Db.
-		Where(&models.Location{UserTgId: user.TgId}).
-		Updates(&userLocation).
-		Error
-	if err != nil {
-		panic(err)
+	userLocation := models.Location{
+		MapsId:   &cell.MapsId,
+		AxisX:    &cell.AxisX,
+		AxisY:    &cell.AxisY,
+		UserTgId: user.TgId,
 	}
+
+	j, _ := json.Marshal(userLocation)
+	fmt.Println(string(j))
+
+	repositories.UpdateLocation(userLocation)
 
 	user.UserStepCounter()
 
@@ -95,11 +98,11 @@ func UpdateLocation(user models.User, cell models.Cell) (string, error) {
 
 func isCellTeleport(cell models.Cell) models.Cell {
 	if *cell.Type == "teleport" && cell.TeleportID != nil {
-		return models.Cell{
-			AxisX:  cell.Teleport.StartX,
-			AxisY:  cell.Teleport.StartY,
-			MapsId: cell.Teleport.MapId,
-		}.GetCell()
+		cell.AxisX = cell.Teleport.StartX
+		cell.AxisY = cell.Teleport.StartY
+		cell.MapsId = cell.Teleport.MapId
+
+		return cell.GetCell()
 	}
 	return cell
 }
@@ -107,13 +110,16 @@ func isCellTeleport(cell models.Cell) models.Cell {
 func isCellHome(cell models.Cell, user models.User) (models.Cell, error) {
 	if *cell.Type == "home" && user.HomeId != nil {
 		mapId := int(user.Home.ID)
-		return models.Cell{
-			AxisX:  user.Home.StartX,
-			AxisY:  user.Home.StartY,
-			MapsId: mapId,
-		}.GetCell(), nil
-	} else if *cell.Type == "home" && user.HomeId == nil {
+		cell.AxisX = user.Home.StartX
+		cell.AxisY = user.Home.StartY
+		cell.MapsId = mapId
+
+		return cell.GetCell(), nil
+	}
+
+	if *cell.Type == "home" && user.HomeId == nil {
 		return cell, errors.New("user has not home")
 	}
+
 	return cell, nil
 }

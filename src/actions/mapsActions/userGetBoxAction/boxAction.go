@@ -1,4 +1,4 @@
-package userGetBoxServices
+package userGetBoxAction
 
 import (
 	"fmt"

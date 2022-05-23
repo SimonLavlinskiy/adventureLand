@@ -5,9 +5,9 @@ import (
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
-	"project0/src/actions/mapsActions/instrumentServices"
-	"project0/src/actions/mapsActions/movingServices"
-	"project0/src/actions/mapsActions/userGetBoxServices"
+	"project0/src/actions/mapsActions/movingActions"
+	"project0/src/actions/mapsActions/userGetBoxAction"
+	"project0/src/controllers/instrumentController"
 	"project0/src/controllers/itemController"
 	"project0/src/controllers/userItemController"
 	"project0/src/controllers/userMapController"
@@ -22,7 +22,7 @@ func CheckUserActions(user models.User, charData []string) (msg string, buttons 
 	// Действия/кнопки  на карте
 	case "move":
 		cell := models.Cell{ID: uint(helpers.ToInt(charData[1]))}.GetCell()
-		msg, buttons = movingServices.UserMoving(user, cell)
+		msg, buttons = movingActions.UserMoving(user, cell)
 	case "chooseInstrument":
 		cell := models.Cell{ID: uint(helpers.ToInt(charData[1]))}.GetCell()
 		msg, buttons = userTouchItem(user, cell)
@@ -30,7 +30,7 @@ func CheckUserActions(user models.User, charData []string) (msg string, buttons 
 		msg, buttons = mapWithUserInfo(user)
 	case "box":
 		cell := models.Cell{ID: uint(helpers.ToInt(charData[1]))}.GetCell()
-		msg, buttons = userGetBoxServices.UserGetBox(user, cell)
+		msg, buttons = userGetBoxAction.UserGetBox(user, cell)
 
 	// Использование надетых итемов
 	case "hand", "fist", "item":
@@ -38,7 +38,7 @@ func CheckUserActions(user models.User, charData []string) (msg string, buttons 
 		msg, buttons = useHandOrInstrument(user, charData, cell)
 	case "step":
 		cell := models.Cell{ID: uint(helpers.ToInt(charData[1]))}.GetCell()
-		msg, buttons = movingServices.UserMoving(user, cell)
+		msg, buttons = movingActions.UserMoving(user, cell)
 	case "head":
 		cell := models.Cell{ID: uint(helpers.ToInt(charData[1]))}.GetCell()
 		msg, buttons = userHeadItem(user, cell, ItemHead)
@@ -52,7 +52,7 @@ func CheckUserActions(user models.User, charData []string) (msg string, buttons 
 
 func userTouchItem(user models.User, cell models.Cell) (msg string, buttons tg.InlineKeyboardMarkup) {
 	msg, _ = userMapController.GetMyMap(user)
-	buttons = instrumentServices.ChooseInstrumentKeyboard(cell, user)
+	buttons = instrumentController.ChooseInstrumentKeyboard(cell, user)
 
 	return msg, buttons
 }
@@ -79,7 +79,7 @@ func useHandOrInstrument(user models.User, charData []string, cell models.Cell) 
 		return msg, mapButton
 	}
 
-	buttons = instrumentServices.ChooseInstrumentKeyboard(newCell, user)
+	buttons = instrumentController.ChooseInstrumentKeyboard(newCell, user)
 
 	return msg, buttons
 }

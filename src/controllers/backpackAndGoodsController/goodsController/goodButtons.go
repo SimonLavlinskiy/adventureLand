@@ -1,4 +1,4 @@
-package goodsActions
+package goodsController
 
 import (
 	"fmt"

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
-	"project0/src/actions/mapsActions/instrumentServices"
+	"project0/src/controllers/instrumentController"
 	"project0/src/models"
 )
 
@@ -189,7 +189,7 @@ func CreateMapKeyboard(buttons models.MapButtons) tg.InlineKeyboardMarkup {
 }
 
 func ViewItemButton(cell models.Cell, user models.User) (btn string, btnData string) {
-	instrumentsUserCanUse := instrumentServices.GetInstrumentsUserCanUse(user, cell)
+	instrumentsUserCanUse := instrumentController.GetInstrumentsUserCanUse(user, cell)
 
 	if len(instrumentsUserCanUse) > 0 {
 		btn = fmt.Sprintf("🛠❓%s", cell.Item.View)

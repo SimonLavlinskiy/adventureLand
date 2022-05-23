@@ -1,4 +1,4 @@
-package questServices
+package questController
 
 import (
 	"fmt"

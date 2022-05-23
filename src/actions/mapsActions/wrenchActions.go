@@ -5,7 +5,7 @@ import (
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
-	"project0/src/actions/mapsActions/wrenchServices"
+	wrenchController2 "project0/src/controllers/wrenchController"
 	"project0/src/models"
 	"project0/src/repositories"
 	"project0/src/services/helpers"
@@ -17,9 +17,9 @@ func CheckWrenchActions(user models.User, charData []string) (msg string, button
 	switch charData[0] {
 	case "wrench":
 		cell := models.Cell{ID: uint(helpers.ToInt(charData[1]))}.GetCell()
-		msg, buttons = wrenchServices.Workbench(&cell, charData)
+		msg, buttons = wrenchController2.Workbench(&cell, charData)
 	case v.GetString("callback_char.workbench"):
-		msg, buttons = wrenchServices.Workbench(nil, charData)
+		msg, buttons = wrenchController2.Workbench(nil, charData)
 	case v.GetString("callback_char.receipt"):
 		msg, buttons = listOfReceipt(charData)
 	case v.GetString("callback_char.put_item"):
@@ -38,7 +38,7 @@ func CheckWrenchActions(user models.User, charData []string) (msg string, button
 func craftItem(user models.User, charData []string) (msg string, buttons tg.InlineKeyboardMarkup) {
 	resp := GetReceiptFromData(charData)
 	receipt := repositories.FindReceiptForUser(resp)
-	msg, buttons = wrenchServices.UserCraftItem(user, receipt, charData)
+	msg, buttons = wrenchController2.UserCraftItem(user, receipt, charData)
 	return msg, buttons
 }
 
@@ -76,21 +76,21 @@ func GetReceiptFromData(char []string) models.Receipt {
 }
 
 func changeCountComponent(charData []string) (msg string, buttons tg.InlineKeyboardMarkup) {
-	buttons = wrenchServices.PutCountComponent(charData)
-	msg = fmt.Sprintf("%s%s⚠️ Сколько выкладываешь?", wrenchServices.OpenWorkbenchMessage(charData), v.GetString("msg_separator"))
+	buttons = wrenchController2.PutCountComponent(charData)
+	msg = fmt.Sprintf("%s%s⚠️ Сколько выкладываешь?", wrenchController2.OpenWorkbenchMessage(charData), v.GetString("msg_separator"))
 	return msg, buttons
 }
 
 func changeComponent(user models.User, charData []string) (msg string, buttons tg.InlineKeyboardMarkup) {
 	userItem := repositories.GetUserItemsByType(user.ID, strings.Fields("food resource"))
 	buttons = ChooseUserItemKeyboard(userItem, charData)
-	msg = fmt.Sprintf("%s%sВыбери предмет:", wrenchServices.OpenWorkbenchMessage(charData), v.GetString("msg_separator"))
+	msg = fmt.Sprintf("%s%sВыбери предмет:", wrenchController2.OpenWorkbenchMessage(charData), v.GetString("msg_separator"))
 	return msg, buttons
 }
 
 func listOfReceipt(charData []string) (msg string, buttons tg.InlineKeyboardMarkup) {
-	msg = fmt.Sprintf("📖 *Рецепты*: 📖%s%s", v.GetString("msg_separator"), wrenchServices.AllReceiptsMsg())
-	buttons = wrenchServices.ReturnToWorkbench(charData)
+	msg = fmt.Sprintf("📖 *Рецепты*: 📖%s%s", v.GetString("msg_separator"), wrenchController2.AllReceiptsMsg())
+	buttons = wrenchController2.ReturnToWorkbench(charData)
 	return msg, buttons
 }
 

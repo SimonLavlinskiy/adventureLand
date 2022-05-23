@@ -59,3 +59,14 @@ func GetLocationOnlineUser(userLocation models.Location, mapSize models.UserMap)
 
 	return results
 }
+
+func UpdateLocation(location models.Location) {
+	err := config.Db.
+		Where(&models.Location{UserTgId: location.UserTgId}).
+		Updates(&location).
+		Error
+
+	if err != nil {
+		fmt.Println(err)
+	}
+}

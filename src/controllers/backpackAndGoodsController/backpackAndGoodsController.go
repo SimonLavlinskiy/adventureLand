@@ -1,11 +1,11 @@
-package backpackAndGoodsActions
+package backpackAndGoodsController
 
 import (
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
-	"project0/src/actions/mapsActions/backpackAndGoodsActions/backpackActions"
-	"project0/src/actions/mapsActions/backpackAndGoodsActions/goodsActions"
+	"project0/src/controllers/backpackAndGoodsController/backpackController"
+	"project0/src/controllers/backpackAndGoodsController/goodsController"
 	"project0/src/controllers/cellController"
 	"project0/src/models"
 	"project0/src/repositories"
@@ -25,12 +25,12 @@ func UserWantsToThrowOutItem(user models.User, charData []string) (msgText strin
 		if charData[3] == "good" {
 			charDataForOpenList = strings.Fields(fmt.Sprintf("%s %s", v.GetString("callback_char.goods_moving"), charData[2]))
 			if *userItem.CountUseLeft == *userItem.Item.CountUse {
-				goodsActions.UserTakeOffGood(user, charData)
+				goodsController.UserTakeOffGood(user, charData)
 			}
-			msgText, buttons = goodsActions.GoodsMoving(charDataForOpenList, user)
+			msgText, buttons = goodsController.GoodsMoving(charDataForOpenList, user)
 		} else {
 			charDataForOpenList = strings.Fields(fmt.Sprintf("%s %s %s", v.GetString("callback_char.backpack_moving"), charData[2], charData[3]))
-			msgText, buttons = backpackActions.BackPackMoving(charDataForOpenList, user)
+			msgText, buttons = backpackController.BackPackMoving(charDataForOpenList, user)
 		}
 		msgText = fmt.Sprintf("%s%sНельзя выкинуть на карту предмет, который уже был использован!", msgText, v.GetString("msg_separator"))
 	} else {
@@ -116,12 +116,12 @@ func UserDeleteItem(user models.User, charData []string) (msgText string, button
 	var charDataForOpenList []string
 	if charData[3] == "good" {
 		charDataForOpenList = strings.Fields(fmt.Sprintf("%s %s", v.GetString("callback_char.goods_moving"), charData[2]))
-		goodsActions.UserTakeOffGood(user, charData)
+		goodsController.UserTakeOffGood(user, charData)
 		user = repositories.GetUser(models.User{TgId: user.TgId})
-		msgText, buttons = goodsActions.GoodsMoving(charDataForOpenList, user)
+		msgText, buttons = goodsController.GoodsMoving(charDataForOpenList, user)
 	} else {
 		charDataForOpenList = strings.Fields(fmt.Sprintf("%s %s %s", v.GetString("callback_char.backpack_moving"), charData[2], charData[3]))
-		msgText, buttons = backpackActions.BackPackMoving(charDataForOpenList, user)
+		msgText, buttons = backpackController.BackPackMoving(charDataForOpenList, user)
 	}
 
 	msgText = fmt.Sprintf("%s%s🗑 Вы уничтожили %s%dшт.", msgText, v.GetString("msg_separator"), userItem.Item.View, *userItem.Count)
@@ -153,12 +153,12 @@ func UserThrowOutItem(user models.User, charData []string) (msg string, buttons 
 	if charData[4] == "good" {
 		charDataForOpenList = strings.Fields(fmt.Sprintf("%s %s", v.GetString("callback_char.goods_moving"), charData[2]))
 		if *userItem.Count == 0 {
-			goodsActions.UserTakeOffGood(user, charData)
+			goodsController.UserTakeOffGood(user, charData)
 		}
-		msg, buttons = goodsActions.GoodsMoving(charDataForOpenList, user)
+		msg, buttons = goodsController.GoodsMoving(charDataForOpenList, user)
 	} else {
 		charDataForOpenList = strings.Fields(fmt.Sprintf("%s %s %s", v.GetString("callback_char.backpack_moving"), charData[2], charData[4]))
-		msg, buttons = backpackActions.BackPackMoving(charDataForOpenList, user)
+		msg, buttons = backpackController.BackPackMoving(charDataForOpenList, user)
 	}
 
 	msg = fmt.Sprintf("%s%s", msg, msgText)
