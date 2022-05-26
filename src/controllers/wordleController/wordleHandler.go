@@ -30,6 +30,9 @@ func GameWordle(update tg.Update, user models.User) (msgText string, btns tg.Inl
 		btns = wordleExitButton()
 	case "wordleMenu":
 		msgText, btns = WordleMap(user)
+	case "cancel":
+		msgText, btns = userMapController.GetMyMap(user)
+		user = repositories.UpdateUser(models.User{TgId: user.TgId, MenuLocation: "Карта"})
 	}
 
 	return msgText, btns

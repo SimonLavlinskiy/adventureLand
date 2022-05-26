@@ -1,4 +1,4 @@
-package learningPackage
+package learningController
 
 import (
 	"fmt"
@@ -12,19 +12,28 @@ import (
 )
 
 func Learning(update tg.Update, user models.User) (text string, buttons tg.InlineKeyboardMarkup) {
+	if update.CallbackQuery == nil && user.MenuLocation == "learning" {
+		return greetingUser(user)
+	}
+
 	if update.CallbackQuery == nil {
 		return
 	}
-
 	data := update.CallbackQuery.Data
 
 	switch true {
 	case strings.Contains(user.MenuLocation, "step1"):
 		text, buttons = learningStep1(data, user)
-	case strings.Contains(user.MenuLocation, "step2"), strings.Contains(user.MenuLocation, "step3"):
-		text, buttons = learningStep2And3(data, user)
+	case strings.Contains(user.MenuLocation, "step2"):
+		text, buttons = learningStep2(data, user)
+	case strings.Contains(user.MenuLocation, "step3"):
+		text, buttons = learningStep3(data, user)
 	case strings.Contains(user.MenuLocation, "step4"):
 		text, buttons = learningStep4(data, user)
+	case strings.Contains(user.MenuLocation, "step5"):
+		text, buttons = learningStep5(data, user)
+	case strings.Contains(user.MenuLocation, "step6"):
+		text, buttons = learningStep6(data, user)
 	default:
 		if len(data) != 0 {
 			text, buttons = startUserAction(data, user)

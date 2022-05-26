@@ -58,8 +58,7 @@ func (c Cell) GetCell() (result Cell) {
 		Error
 
 	if err != nil {
-		fmt.Println("Походу юзер вышел за границу.")
-		panic(err)
+		fmt.Println(err)
 	}
 
 	return result

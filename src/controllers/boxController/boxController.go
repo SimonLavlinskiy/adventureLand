@@ -1,4 +1,4 @@
-package userGetBoxAction
+package boxController
 
 import (
 	"fmt"

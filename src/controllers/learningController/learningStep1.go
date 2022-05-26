@@ -1,4 +1,4 @@
-package learningPackage
+package learningController
 
 import (
 	"fmt"

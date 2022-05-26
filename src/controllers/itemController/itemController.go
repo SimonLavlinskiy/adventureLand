@@ -108,10 +108,11 @@ func itemHpLeft(cell models.Cell, instrument models.Instrument) string {
 }
 
 func DestructItem(cell models.Cell, user models.User, instrument models.Instrument) (result string) {
-	itemDestructionHp := *cell.DestructionHp
-
+	var itemDestructionHp int
 	if cell.DestructionHp == nil {
 		itemDestructionHp = *cell.Item.DestructionHp
+	} else {
+		itemDestructionHp = *cell.DestructionHp
 	}
 
 	itemDestructionHp -= *instrument.Good.Destruction

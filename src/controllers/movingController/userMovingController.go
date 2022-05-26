@@ -1,7 +1,6 @@
-package movingActions
+package movingController
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -86,9 +85,6 @@ func UpdateUserLocation(user models.User, cell models.Cell) (string, error) {
 		UserTgId: user.TgId,
 	}
 
-	j, _ := json.Marshal(userLocation)
-	fmt.Println(string(j))
-
 	repositories.UpdateLocation(userLocation)
 
 	user.UserStepCounter()
@@ -96,13 +92,13 @@ func UpdateUserLocation(user models.User, cell models.Cell) (string, error) {
 	return "Ok", nil
 }
 
-func isCellTeleport(cell models.Cell) models.Cell {
+func isCellTeleport(cell models.Cell) (newCell models.Cell) {
 	if *cell.Type == "teleport" && cell.TeleportID != nil {
-		cell.AxisX = cell.Teleport.StartX
-		cell.AxisY = cell.Teleport.StartY
-		cell.MapsId = cell.Teleport.MapId
+		newCell.AxisX = cell.Teleport.StartX
+		newCell.AxisY = cell.Teleport.StartY
+		newCell.MapsId = cell.Teleport.MapId
 
-		return cell.GetCell()
+		return newCell.GetCell()
 	}
 	return cell
 }

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
-	"project0/src/actions/mapsActions/movingActions"
-	"project0/src/actions/mapsActions/userGetBoxAction"
+	"project0/src/controllers/boxController"
 	"project0/src/controllers/instrumentController"
 	"project0/src/controllers/itemController"
+	"project0/src/controllers/movingController"
 	"project0/src/controllers/userItemController"
 	"project0/src/controllers/userMapController"
 	"project0/src/models"
@@ -22,7 +22,7 @@ func CheckUserActions(user models.User, charData []string) (msg string, buttons 
 	// Действия/кнопки  на карте
 	case "move":
 		cell := models.Cell{ID: uint(helpers.ToInt(charData[1]))}.GetCell()
-		msg, buttons = movingActions.UserMoving(user, cell)
+		msg, buttons = movingController.UserMoving(user, cell)
 	case "chooseInstrument":
 		cell := models.Cell{ID: uint(helpers.ToInt(charData[1]))}.GetCell()
 		msg, buttons = userTouchItem(user, cell)
@@ -30,7 +30,7 @@ func CheckUserActions(user models.User, charData []string) (msg string, buttons 
 		msg, buttons = mapWithUserInfo(user)
 	case "box":
 		cell := models.Cell{ID: uint(helpers.ToInt(charData[1]))}.GetCell()
-		msg, buttons = userGetBoxAction.UserGetBox(user, cell)
+		msg, buttons = boxController.UserGetBox(user, cell)
 
 	// Использование надетых итемов
 	case "hand", "fist", "item":
@@ -38,7 +38,7 @@ func CheckUserActions(user models.User, charData []string) (msg string, buttons 
 		msg, buttons = useHandOrInstrument(user, charData, cell)
 	case "step":
 		cell := models.Cell{ID: uint(helpers.ToInt(charData[1]))}.GetCell()
-		msg, buttons = movingActions.UserMoving(user, cell)
+		msg, buttons = movingController.UserMoving(user, cell)
 	case "head":
 		cell := models.Cell{ID: uint(helpers.ToInt(charData[1]))}.GetCell()
 		msg, buttons = userHeadItem(user, cell, ItemHead)
