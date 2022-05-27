@@ -7,8 +7,8 @@ import (
 	v "github.com/spf13/viper"
 	"project0/src/controllers/chatUserController"
 	"project0/src/controllers/houseController"
+	"project0/src/controllers/mapController"
 	"project0/src/controllers/sleepUserController"
-	"project0/src/controllers/userMapController"
 	"project0/src/controllers/wordleController"
 	"project0/src/models"
 	"project0/src/repositories"
@@ -70,7 +70,7 @@ func buyHome(user models.User) (msg string, buttons tg.InlineKeyboardMarkup) {
 		}
 	}
 
-	msg, buttons = userMapController.GetMyMap(user)
+	msg, buttons = mapController.GetMyMap(user)
 	msg = fmt.Sprintf("%s%s%s", msg, v.GetString("msg_separator"), text)
 	return msg, buttons
 }

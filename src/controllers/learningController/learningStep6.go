@@ -6,7 +6,7 @@ import (
 	v "github.com/spf13/viper"
 	"project0/src/actions/mapsActions"
 	"project0/src/controllers/boxController"
-	"project0/src/controllers/userMapController"
+	"project0/src/controllers/mapController"
 	"project0/src/models"
 	"project0/src/repositories"
 	"project0/src/services/helpers"
@@ -40,7 +40,7 @@ func learningStep6(data string, user models.User) (text string, buttons tg.Inlin
 
 	switch true {
 	case strings.Contains(data, "Меню"):
-		text, buttons = userMapController.GetMyMap(user)
+		text, buttons = mapController.GetMyMap(user)
 		text = fmt.Sprintf("%s%s%s%s❗️ Пока еще рано это нажимать 🤫", info, v.GetString("msg_separator"), text, v.GetString("msg_separator"))
 
 	case strings.Contains(data, "move 44316"):

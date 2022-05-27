@@ -1,4 +1,4 @@
-package userMapController
+package mapController
 
 import (
 	"fmt"
@@ -11,6 +11,33 @@ func CalculateNightMap(user models.User, l models.Location, x int, y int) bool {
 		return true
 	}
 	if (*l.AxisX >= x-1 && *l.AxisX <= x+1) && (*l.AxisY >= y-2 && *l.AxisY <= y+2) {
+		return true
+	}
+
+	if user.LeftHandId != nil && user.LeftHand.Type == "light" || user.RightHandId != nil && user.RightHand.Type == "light" {
+		if (*l.AxisX == x-4 || *l.AxisX == x+4) && (*l.AxisY >= y-1 && *l.AxisY <= y+1) {
+			return true
+		}
+		if (*l.AxisX == x-3 || *l.AxisX == x+3) && (*l.AxisY >= y-2 && *l.AxisY <= y+2) {
+			return true
+		}
+		if (*l.AxisX == x-2 || *l.AxisX == x+2) && (*l.AxisY >= y-3 && *l.AxisY <= y+3) {
+			return true
+		}
+		if (*l.AxisX >= x-1 && *l.AxisX <= x+1) && (*l.AxisY >= y-4 && *l.AxisY <= y+4) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func CalculateSuperNightMap(user models.User, l models.Location, x int, y int) bool {
+
+	if (*l.AxisX == x-1 || *l.AxisX == x+1) && (*l.AxisY >= y-1 && *l.AxisY <= y+1) {
+		return true
+	}
+	if (*l.AxisX >= x-1 && *l.AxisX <= x+1) && (*l.AxisY >= y-1 && *l.AxisY <= y+1) {
 		return true
 	}
 

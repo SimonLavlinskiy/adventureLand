@@ -1,8 +1,9 @@
-package userMapController
+package mapController
 
 import (
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"math/rand"
 	"project0/src/models"
 	"project0/src/repositories"
 	"strings"
@@ -77,11 +78,15 @@ func configurationMap(mapSize models.UserMap, resMap models.Map, resLocation mod
 	day := "06" <= t.Format("15") && t.Format("15") <= "23"
 	Maps := make([][]string, resMap.SizeY+1)
 
-	if (day && resLocation.Maps.DayType == "default") || resLocation.Maps.DayType == "alwaysDay" {
+	switch true {
+	case day && resLocation.Maps.DayType == "default", resLocation.Maps.DayType == "alwaysDay":
 		Maps = DayMap(Maps, mapSize, m, resLocation, user)
-	} else {
+	case resLocation.Maps.DayType == "alwaysSuperNight":
+		Maps = SuperNightMap(Maps, mapSize, m, resLocation, user)
+	default: // !day or alwaysNight
 		Maps = NightMap(Maps, mapSize, m, resLocation, user)
 	}
+
 	return Maps
 }
 
@@ -119,4 +124,32 @@ func NightMap(Maps [][]string, mapSize models.UserMap, m map[[2]int]models.Cell,
 	}
 
 	return Maps
+}
+
+func SuperNightMap(Maps [][]string, mapSize models.UserMap, m map[[2]int]models.Cell, resLocation models.Location, user models.User) [][]string {
+	type Point [2]int
+
+	for y := range Maps {
+		for x := mapSize.LeftIndent; x <= mapSize.RightIndent; x++ {
+			if CalculateSuperNightMap(user, resLocation, x, y) && m[Point{x, y}].ID != 0 {
+				appendVisibleUserZone(m, x, y, Maps, resLocation, user)
+			} else if m[Point{x, y}].ID != 0 {
+				Maps[y] = append(Maps[y], RandNightCell())
+			} else {
+				Maps[y] = append(Maps[y], resLocation.Maps.EmptySpaceSymbol)
+			}
+		}
+	}
+
+	return Maps
+}
+
+func RandNightCell() string {
+	randomInt := rand.Intn(100)
+	if randomInt < 5 {
+		return "💀"
+	} else if randomInt > 5 && randomInt < 10 {
+		return "👹"
+	}
+	return "⬛️"
 }

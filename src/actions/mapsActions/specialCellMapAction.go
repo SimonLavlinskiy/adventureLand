@@ -5,8 +5,8 @@ import (
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
+	"project0/src/controllers/mapController"
 	"project0/src/controllers/newsController"
-	"project0/src/controllers/userMapController"
 	"project0/src/models"
 	"time"
 )
@@ -39,7 +39,7 @@ func CheckSpecialCellAction(user models.User, charData []string) (msg string, bu
 }
 
 func useCellWithoutDoing(user models.User, text string) (msg string, buttons tg.InlineKeyboardMarkup) {
-	msg, buttons = userMapController.GetMyMap(user)
+	msg, buttons = mapController.GetMyMap(user)
 	msg = fmt.Sprintf("%s%s%s", msg, v.GetString("msg_separator"), text)
 	return msg, buttons
 }

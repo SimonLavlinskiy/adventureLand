@@ -4,7 +4,7 @@ import (
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
-	"project0/src/controllers/userMapController"
+	"project0/src/controllers/mapController"
 	"project0/src/models"
 	"project0/src/repositories"
 	"project0/src/services/menu"
@@ -17,12 +17,12 @@ func CheckDefaultActions(user models.User, charData []string) (msg string, butto
 		buttons = menu.MainKeyboard(user.Avatar)
 		repositories.UpdateUser(models.User{TgId: user.TgId, MenuLocation: "Меню"})
 	case "/map":
-		msg, buttons = userMapController.GetMyMap(user)
+		msg, buttons = mapController.GetMyMap(user)
 		user = repositories.UpdateUser(models.User{TgId: user.TgId, MenuLocation: "Карта"})
 	case "cancel":
-		msg, buttons = userMapController.GetMyMap(user)
+		msg, buttons = mapController.GetMyMap(user)
 	default:
-		msg, buttons = userMapController.GetMyMap(user)
+		msg, buttons = mapController.GetMyMap(user)
 		msg = fmt.Sprintf("%s%sХммм....🤔", msg, v.GetString("msg_separator"))
 	}
 	return msg, buttons

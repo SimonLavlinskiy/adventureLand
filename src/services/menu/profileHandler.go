@@ -3,7 +3,7 @@ package menu
 import (
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
-	"project0/src/controllers/userMapController"
+	"project0/src/controllers/mapController"
 	"project0/src/models"
 	"project0/src/repositories"
 	"strings"
@@ -31,7 +31,7 @@ func Profile(update tg.Update, user models.User, charData []string) (msg string,
 		buttons = MainKeyboard(user.Avatar)
 		repositories.UpdateUser(models.User{TgId: user.TgId, MenuLocation: "Меню"})
 	case "/map":
-		msg, buttons = userMapController.GetMyMap(user)
+		msg, buttons = mapController.GetMyMap(user)
 		user = repositories.UpdateUser(models.User{TgId: user.TgId, MenuLocation: "Карта"})
 	}
 
@@ -53,7 +53,7 @@ func UserProfileLocation(update tg.Update, user models.User) (msgText string, bu
 	} else {
 		switch newMessage {
 		case "/map":
-			msgText, buttons = userMapController.GetMyMap(user)
+			msgText, buttons = mapController.GetMyMap(user)
 			user = repositories.UpdateUser(models.User{TgId: user.TgId, MenuLocation: "Карта"})
 		case "/menu", v.GetString("user_location.menu"):
 			msgText = "Меню"

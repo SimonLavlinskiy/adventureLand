@@ -1,4 +1,4 @@
-package userMapController
+package mapController
 
 import (
 	"fmt"

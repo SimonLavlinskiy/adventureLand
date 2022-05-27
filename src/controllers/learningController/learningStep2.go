@@ -6,7 +6,7 @@ import (
 	v "github.com/spf13/viper"
 	"project0/src/actions/mapsActions"
 	"project0/src/controllers/boxController"
-	"project0/src/controllers/userMapController"
+	"project0/src/controllers/mapController"
 	"project0/src/models"
 	"project0/src/repositories"
 	"project0/src/services/helpers"
@@ -25,7 +25,7 @@ func learningStep2(data string, user models.User) (text string, buttons tg.Inlin
 		strings.Contains(data, "Меню"),
 		strings.Contains(data, "category"):
 
-		text, buttons = userMapController.GetMyMap(user)
+		text, buttons = mapController.GetMyMap(user)
 
 		if strings.Contains(user.MenuLocation, "step2.1") {
 			text = fmt.Sprintf("%s%s%s%s❗️ Пока еще рано это нажимать 🤫", info2, v.GetString("msg_separator"), text, v.GetString("msg_separator"))
@@ -34,7 +34,7 @@ func learningStep2(data string, user models.User) (text string, buttons tg.Inlin
 		}
 
 	case strings.Contains(data, "move 44209"):
-		text, buttons = userMapController.GetMyMap(user)
+		text, buttons = mapController.GetMyMap(user)
 		text = fmt.Sprintf("%s%s%s%s❗️ Для начала тебе надо выполнить задание! ", info2, v.GetString("msg_separator"), text, v.GetString("msg_separator"))
 
 	case strings.Contains(data, "box"):

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
+	"project0/src/controllers/mapController"
 	"project0/src/controllers/userItemController"
-	"project0/src/controllers/userMapController"
 	"project0/src/models"
 	"project0/src/repositories"
 	"project0/src/services/helpers"
@@ -46,7 +46,7 @@ func BackPackMoving(charData []string, user models.User) (msgText string, button
 }
 
 func MessageBackpackUserItems(user models.User, userItems []models.UserItem, rowUser int, itemType string) string {
-	var userItemMsg = fmt.Sprintf("%s\n🎒*Рюкзачок* ➡️ *%s* \n\n", userMapController.GetStatsLine(user), v.GetString(fmt.Sprintf("user_location.item_categories.%s", itemType)))
+	var userItemMsg = fmt.Sprintf("%s\n🎒*Рюкзачок* ➡️ *%s* \n\n", mapController.GetStatsLine(user), v.GetString(fmt.Sprintf("user_location.item_categories.%s", itemType)))
 
 	if len(userItems) == 0 {
 		return userItemMsg + "👻 \U0001F9B4  Пусто .... 🕸 🕷"

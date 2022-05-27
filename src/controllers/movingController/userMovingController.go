@@ -5,15 +5,15 @@ import (
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
+	"project0/src/controllers/mapController"
 	"project0/src/controllers/userItemController"
-	"project0/src/controllers/userMapController"
 	"project0/src/models"
 	"project0/src/repositories"
 )
 
 func UserMoving(user models.User, cell models.Cell) (msg string, buttons tg.InlineKeyboardMarkup) {
 	locMsg, err := UpdateUserLocation(user, cell)
-	msgMap, buttons := userMapController.GetMyMap(user)
+	msgMap, buttons := mapController.GetMyMap(user)
 
 	if err != nil {
 		if err.Error() == "user has not home" {

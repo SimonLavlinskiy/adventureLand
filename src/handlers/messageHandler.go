@@ -61,7 +61,7 @@ func callBackResolver(update tg.Update) (msg tg.EditMessageTextConfig, buttons t
 	// todo
 	//if strings.Contains(char, "cancel") {
 	// 	user = repositories.UpdateUser(models.User{TgId: user.TgId, MenuLocation: "Карта"})
-	//	msg.Text, btns = userMapController.GetMyMap(user)
+	//	msg.Text, btns = mapController.GetMyMap(user)
 	//}
 
 	switch user.MenuLocation {

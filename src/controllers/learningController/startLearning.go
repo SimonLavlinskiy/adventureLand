@@ -4,7 +4,7 @@ import (
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
-	"project0/src/controllers/userMapController"
+	"project0/src/controllers/mapController"
 	"project0/src/models"
 	"project0/src/repositories"
 	"project0/src/services/menu"
@@ -80,7 +80,7 @@ func startUserAction(data string, user models.User) (text string, buttons tg.Inl
 		user.MenuLocation = "learning step1"
 		repositories.UpdateUser(user)
 
-		text, buttons = userMapController.GetMyMap(user)
+		text, buttons = mapController.GetMyMap(user)
 		text = fmt.Sprintf("Это первая карта, которую я создал, когда начинал писать игру!\n\n"+
 			"%s - это ты!\n\n"+
 			"*Шаг 1:*\nВидишь снизу кнопки-стрелочки (◀️ 🔼 ▶️ 🔽)? Они позволяют тебе ходить!\n"+

@@ -5,7 +5,7 @@ import (
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
 	"project0/src/actions/mapsActions"
-	"project0/src/controllers/userMapController"
+	"project0/src/controllers/mapController"
 	"project0/src/models"
 	"project0/src/repositories"
 	"strings"
@@ -32,7 +32,7 @@ func learningStep3(data string, user models.User) (text string, buttons tg.Inlin
 		user.MenuLocation = "learning step4"
 		repositories.UpdateUser(user)
 	default:
-		text, buttons = userMapController.GetMyMap(user)
+		text, buttons = mapController.GetMyMap(user)
 		text = fmt.Sprintf("%s%s%s%s❗️ Нажми кнопку «Вещи 🧦»!", info, v.GetString("msg_separator"), text, v.GetString("msg_separator"))
 	}
 

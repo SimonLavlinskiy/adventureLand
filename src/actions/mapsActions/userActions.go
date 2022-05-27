@@ -8,9 +8,9 @@ import (
 	"project0/src/controllers/boxController"
 	"project0/src/controllers/instrumentController"
 	"project0/src/controllers/itemController"
+	"project0/src/controllers/mapController"
 	"project0/src/controllers/movingController"
 	"project0/src/controllers/userItemController"
-	"project0/src/controllers/userMapController"
 	"project0/src/models"
 	"project0/src/services/helpers"
 )
@@ -51,7 +51,7 @@ func CheckUserActions(user models.User, charData []string) (msg string, buttons 
 }
 
 func userTouchItem(user models.User, cell models.Cell) (msg string, buttons tg.InlineKeyboardMarkup) {
-	msg, _ = userMapController.GetMyMap(user)
+	msg, _ = mapController.GetMyMap(user)
 	buttons = instrumentController.ChooseInstrumentKeyboard(cell, user)
 
 	return msg, buttons
@@ -70,7 +70,7 @@ func userHeadItem(user models.User, cell models.Cell, ItemHead models.Item) (msg
 func useHandOrInstrument(user models.User, charData []string, cell models.Cell) (msg string, buttons tg.InlineKeyboardMarkup) {
 	resultOfGetItem := itemController.UserGetItemUpdateModels(user, cell, charData)
 
-	msgMap, mapButton := userMapController.GetMyMap(user)
+	msgMap, mapButton := mapController.GetMyMap(user)
 	msg = fmt.Sprintf("%s%s%s", msgMap, v.GetString("msg_separator"), resultOfGetItem)
 
 	newCell := models.Cell{ID: cell.ID}.GetCell()
@@ -85,7 +85,7 @@ func useHandOrInstrument(user models.User, charData []string, cell models.Cell) 
 }
 
 func mapWithUserInfo(user models.User) (msg string, buttons tg.InlineKeyboardMarkup) {
-	msg, buttons = userMapController.GetMyMap(user)
+	msg, buttons = mapController.GetMyMap(user)
 	msg = fmt.Sprintf("%s\n\n%s", user.GetUserInfo(), msg)
 	return msg, buttons
 }

@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/viper"
 	"math"
 	"project0/config"
-	"project0/src/controllers/userMapController"
+	"project0/src/controllers/mapController"
 	"project0/src/models"
 	"project0/src/repositories"
 	"time"
@@ -75,7 +75,7 @@ func Round(x float64) float64 {
 func UserSleep(user models.User, char string) (msg string, buttons tg.InlineKeyboardMarkup) {
 	switch char {
 	case "wakeUp":
-		msg, buttons = userMapController.GetMyMap(user)
+		msg, buttons = mapController.GetMyMap(user)
 		msg = fmt.Sprintf("%s%s%s", msg, viper.GetString("msg_separator"), UserGetHpAfterSleep(user))
 		user = repositories.UpdateUser(models.User{TgId: user.TgId, MenuLocation: "Карта"})
 	}

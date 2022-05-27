@@ -4,8 +4,8 @@ import (
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
+	"project0/src/controllers/mapController"
 	"project0/src/controllers/resultController"
-	"project0/src/controllers/userMapController"
 	"project0/src/models"
 )
 
@@ -21,7 +21,7 @@ func UserGetBox(user models.User, cell models.Cell) (msg string, buttons tg.Inli
 
 	models.UserBox{BoxId: cell.Item.ID, UserId: user.ID}.CreateUserBox()
 
-	msg, buttons = userMapController.GetMyMap(user)
+	msg, buttons = mapController.GetMyMap(user)
 	msg = fmt.Sprintf("%s%s%s", msg, v.GetString("msg_separator"), resultMsg)
 	return msg, buttons
 }
