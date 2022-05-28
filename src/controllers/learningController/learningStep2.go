@@ -40,6 +40,13 @@ func learningStep2(data string, user models.User) (text string, buttons tg.Inlin
 	case strings.Contains(data, "box"):
 		cell := models.Cell{ID: uint(helpers.ToInt(charData[1]))}.GetCell()
 		text, buttons = boxController.UserGetBox(user, cell)
+		if strings.Contains(data, "box 44210") {
+			text = fmt.Sprintf("%s\n\nПоздравляю! Ты нашел фрукт! \n"+
+				"🍎 Яблоко восстанавливает твои жизни ♥️ и сытость \U0001F9C3\n"+
+				"Теперь оно лежит в твоем Рюкзаке 🎒\n\n"+
+				"_(не забудь заглянуть туда после обучения)_ ", text)
+			return text, buttons
+		}
 
 		if strings.Contains(user.MenuLocation, "step2.1") {
 			text = fmt.Sprintf("%s%s%s", infoNextStep, v.GetString("msg_separator"), text)
