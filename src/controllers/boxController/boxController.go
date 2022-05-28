@@ -15,7 +15,7 @@ func UserGetBox(user models.User, cell models.Cell) (msg string, buttons tg.Inli
 	for _, instrument := range cell.Item.Instruments {
 		if instrument.Type == "get" {
 			resultController.UserGetResult(user, *instrument.Result)
-			resultMsg = UserGetBoxResultMsg(*instrument.Result)
+			resultMsg = resultController.UserGetResultMsg(*instrument.Result)
 		}
 	}
 
@@ -24,18 +24,4 @@ func UserGetBox(user models.User, cell models.Cell) (msg string, buttons tg.Inli
 	msg, buttons = mapController.GetMyMap(user)
 	msg = fmt.Sprintf("%s%s%s", msg, v.GetString("msg_separator"), resultMsg)
 	return msg, buttons
-}
-
-func UserGetBoxResultMsg(result models.Result) string {
-	result = result.GetResult()
-
-	msg := "🏆 *Ты получил*:"
-	if result.Item != nil {
-		msg = fmt.Sprintf("%s\n_%s %s - %d шт._", msg, result.Item.View, result.Item.Name, *result.CountItem)
-	}
-	if result.SpecialItem != nil {
-		msg = fmt.Sprintf("%s\n_%s %s - %d шт._", msg, result.SpecialItem.View, result.SpecialItem.Name, *result.SpecialItemCount)
-	}
-
-	return msg
 }

@@ -8,16 +8,25 @@ import (
 	"time"
 )
 
+type StartMapStruct struct {
+	AsX      int
+	AsY      int
+	startMap int
+}
+
+var StartLearningMap = StartMapStruct{
+	AsX:      2,
+	AsY:      0,
+	startMap: 4,
+}
+
 func GetOrCreateMyLocation(user models.User) models.Location {
-	AsX := 2
-	AsY := 0
-	startMap := 4
 
 	result := models.Location{
 		UserTgId: user.TgId,
-		AxisX:    &AsX,
-		AxisY:    &AsY,
-		MapsId:   &startMap,
+		AxisX:    &StartLearningMap.AsX,
+		AxisY:    &StartLearningMap.AsY,
+		MapsId:   &StartLearningMap.startMap,
 	}
 
 	err := config.Db.

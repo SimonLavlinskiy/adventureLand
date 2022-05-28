@@ -29,24 +29,10 @@ func UserDoneQuest(questId uint, user models.User) (msgText string, buttons tg.I
 	userQuest.UserDoneQuest(user)
 	resultController.UserGetResult(user, userQuest.Quest.Result)
 
-	questResult := UserGetResultMsg(userQuest.Quest.Result)
+	questResult := resultController.UserGetResultMsg(userQuest.Quest.Result)
 
 	msgText, buttons = OpenQuest(questId, user)
 	msgText = fmt.Sprintf("*Задание выполнено!*\n%s%s%s", msgText, v.GetString("msg_separator"), questResult)
 
 	return msgText, buttons
-}
-
-func UserGetResultMsg(result models.Result) string {
-	result = result.GetResult()
-
-	msg := "🏆 *Ты получил*:"
-	if result.Item != nil {
-		msg = fmt.Sprintf("%s\n_%s %s - %d шт._", msg, result.Item.View, result.Item.Name, *result.CountItem)
-	}
-	if result.SpecialItem != nil {
-		msg = fmt.Sprintf("%s\n_%s %s - %d шт._", msg, result.SpecialItem.View, result.SpecialItem.Name, *result.SpecialItemCount)
-	}
-
-	return msg
 }

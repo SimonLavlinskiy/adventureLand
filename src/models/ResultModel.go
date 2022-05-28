@@ -14,6 +14,7 @@ type Result struct {
 	SpecialItem      *Item
 	SpecialItemCount *uint `gorm:"embedded"`
 	Experience       *int  `gorm:"embedded"`
+	Money            *int  `gorm:"embedded"`
 }
 
 func (r Result) GetResult() Result {

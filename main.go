@@ -8,7 +8,7 @@ import (
 	"os"
 	"project0/config"
 	"project0/migrations"
-	handlers2 "project0/src/handlers"
+	"project0/src/handlers"
 	"project0/templates"
 	"runtime"
 )
@@ -31,10 +31,10 @@ func main() {
 		runtime.Goexit()
 	}
 
-	go handlers2.RequestHandler()
-	go handlers2.GetMessageFromChat(telegramChatApiToken)
+	go handlers.RequestHandler()
+	go handlers.GetMessageFromChat(telegramChatApiToken)
 
-	handlers2.GetMessage(telegramApiToken)
+	handlers.GetMessage(telegramApiToken)
 }
 
 func ViperConfiguration() {
