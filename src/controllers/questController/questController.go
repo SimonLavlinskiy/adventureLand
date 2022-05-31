@@ -11,6 +11,7 @@ import (
 
 func OpenQuest(questId uint, user models.User) (msgText string, buttons tg.InlineKeyboardMarkup) {
 	quest := models.Quest{ID: questId}.GetQuest()
+	checkOrUpdateUserQuest(user)
 	userQuest := models.UserQuest{UserId: user.ID, QuestId: questId}.GetUserQuest()
 
 	msgText = quest.QuestInfo(userQuest)

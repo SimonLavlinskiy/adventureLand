@@ -4,7 +4,16 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b74d7335-7172-4f14-a6c9-5c335e1bde64" name="Changes" comment="Добавил в обучалку пояснение про еду" />
+    <list default="true" id="b74d7335-7172-4f14-a6c9-5c335e1bde64" name="Changes" comment="Добавил в обучалку пояснение про еду">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/actions/mapsActions/questActions.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/actions/mapsActions/questActions.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controllers/itemController/itemController.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/itemController/itemController.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controllers/questController/questButtons.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/questController/questButtons.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controllers/questController/questController.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/questController/questController.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/QuestModel.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/QuestModel.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/UserQuestModel.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/UserQuestModel.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/message.yml" beforeDir="false" afterPath="$PROJECT_DIR$/templates/message.yml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />

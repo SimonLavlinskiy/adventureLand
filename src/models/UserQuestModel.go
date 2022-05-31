@@ -31,7 +31,7 @@ func (uq UserQuest) GetUserQuest() UserQuest {
 	return result
 }
 
-func (uq UserQuest) GetOrCreateUserQuest() UserQuest {
+func (uq UserQuest) CreateOrUpdateUserQuest() {
 	result := UserQuest{
 		UserId:  uq.UserId,
 		QuestId: uq.QuestId,
@@ -47,11 +47,11 @@ func (uq UserQuest) GetOrCreateUserQuest() UserQuest {
 		FirstOrCreate(&result).
 		Error
 
+	err = config.Db.Where(uq).Updates(UserQuest{Status: "processed"}).Error
+
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	return result
 }
 
 func (uq UserQuest) UpdateUserQuest() bool {
@@ -69,6 +69,23 @@ func (uq UserQuest) UpdateUserQuest() bool {
 	}
 
 	return true
+}
+
+func (uq UserQuest) UpdateUserQuestStatus() {
+	err := config.Db.
+		Where(UserQuest{
+			QuestId: uq.QuestId,
+			UserId:  uq.UserId,
+		}).
+		Updates(UserQuest{
+			Status: uq.Status,
+		}).
+		Update("done_at", nil).
+		Error
+
+	if err != nil {
+		fmt.Println("Update user quest status error:", err)
+	}
 }
 
 func (uq UserQuest) UserDoneQuest(user User) bool {

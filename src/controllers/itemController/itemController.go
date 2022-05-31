@@ -70,7 +70,7 @@ func UserGetItemWithHand(cell models.Cell, user models.User, userGetItem models.
 	models.User{ID: user.ID}.UpdateUserItem(models.UserItem{ID: userGetItem.ID, Count: &sumCountItem, CountUseLeft: countUseLeft})
 	repositories.UpdateUser(models.User{TgId: user.TgId, Money: &updateUserMoney})
 
-	textCountLeft := ""
+	var textCountLeft string
 	if *cell.Type != "swap" && (*cell.ItemCount > 1 || cell.PrevItemID == nil) {
 		countAfterUserGetItem := *cell.ItemCount - 1
 		cell.ItemCount = &countAfterUserGetItem
