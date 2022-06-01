@@ -41,7 +41,7 @@ func (u User) UserGetResultItem(r Result) {
 	ui := UserItem{UserId: int(u.ID), ItemId: int(*r.ItemId)}.UserGetUserItem()
 	resItemCount := *ui.Count + int(*r.CountItem)
 
-	if ui.CountUseLeft == nil {
+	if ui.CountUseLeft == nil || *ui.CountUseLeft == 0 {
 		item := Item{ID: uint(ui.ItemId)}.GetItem()
 		ui.CountUseLeft = item.CountUse
 	}

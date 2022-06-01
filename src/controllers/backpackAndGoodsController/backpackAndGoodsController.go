@@ -88,9 +88,15 @@ func CountItemUserWantsToThrowKeyboard(buttonData []string, userItem models.User
 	buttons = append(buttons, row)
 
 	// Кнопка Отмена
-	buttons = append(buttons, tg.NewInlineKeyboardRow(
-		tg.NewInlineKeyboardButtonData("Отмена", fmt.Sprintf("goodsMoving %s", buttonData[2])),
-	))
+	if buttonData[3] != "good" {
+		buttons = append(buttons, tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("Отмена", fmt.Sprintf("category %s %s", buttonData[3], buttonData[2])),
+		))
+	} else {
+		buttons = append(buttons, tg.NewInlineKeyboardRow(
+			tg.NewInlineKeyboardButtonData("Отмена", fmt.Sprintf("goodsMoving %s", buttonData[2])),
+		))
+	}
 
 	return tg.NewInlineKeyboardMarkup(buttons...)
 }

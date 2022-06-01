@@ -7,11 +7,12 @@ import (
 )
 
 type Quest struct {
-	ID          uint   `gorm:"primaryKey"`
-	Name        string `gorm:"embedded"`
-	Description string `gorm:"embedded"`
-	Type        string `gorm:"embedded"`
-	ResultId    int    `gorm:"embedded"`
+	ID          uint    `gorm:"primaryKey"`
+	Name        string  `gorm:"embedded"`
+	Description string  `gorm:"embedded"`
+	Type        string  `gorm:"embedded"`
+	Timeout     *string `gorm:"embedded"`
+	ResultId    int     `gorm:"embedded"`
 	Result      Result
 	TaskId      int `gorm:"embedded"`
 	Task        QuestTask
@@ -21,6 +22,21 @@ func (q Quest) GetQuests() []Quest {
 	var results []Quest
 
 	err := config.Db.
+		Where("timeout is null").
+		Find(&results).Error
+
+	if err != nil {
+		fmt.Println("Нет квестов!")
+	}
+
+	return results
+}
+
+func (q Quest) GetDailyQuests() []Quest {
+	var results []Quest
+
+	err := config.Db.
+		Where("timeout is not null").
 		Find(&results).Error
 
 	if err != nil {
@@ -47,11 +63,11 @@ func (q Quest) GetQuest() Quest {
 }
 
 func (q Quest) QuestInfo(uq UserQuest) string {
-	result := fmt.Sprintf("📜 *Задание* 📜\n`%s`\n\n"+
+	result := fmt.Sprintf("📜 *Задание* 📜 - *%s*\n\n"+
 		"*Описание*: `%s`",
 		q.Name, q.Description)
 
-	if uq.Status != "" {
+	if uq.Status != "" && uq.Status != "new" {
 		result = fmt.Sprintf("%s\n\n*Статус*: _%s_",
 			result, v.Get(fmt.Sprintf("quest_statuses.%s", uq.Status)))
 	}

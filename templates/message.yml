@@ -5,7 +5,8 @@ user_location:
   maps: "Карта"
   profile: "Профиль"
   wordle: "wordle"
-  tasks_menu_message: "📜 *Квесты* 📟 *Задания* 📆 *Ежедневки* 📜"
+  tasks_menu_message: "📜 *Квесты* 📜"
+  daily_tasks_menu_message: "📆 *Ежедневки* 📆"
   item_categories:
     category_title: "🍕 \U0001F9F1 Категории 🌱 🛋"
     categories: "food resource sprout furniture other"

@@ -10,7 +10,7 @@ import (
 
 func CheckEventsForUpdate() {
 	go UpdateFiredChats()
-	go UpdateCellWithNextStateTime()
+	UpdateCellWithNextStateTime()
 }
 
 func UpdateFiredChats() {
@@ -47,7 +47,9 @@ func UpdateCellWithNextStateTime() {
 
 	for _, result := range results {
 		for _, instrument := range result.Item.Instruments {
-			if instrument.Type == "growing" {
+			if instrument.Type == "breakup" {
+				result.UpdateCellAfterBreakUp(instrument)
+			} else if instrument.Type == "growing" {
 				result.UpdateCellAfterGrowing(instrument)
 			}
 		}

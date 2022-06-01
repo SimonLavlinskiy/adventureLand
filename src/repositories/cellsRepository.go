@@ -4,9 +4,14 @@ import (
 	"fmt"
 	"project0/config"
 	"project0/src/models"
+	"time"
 )
 
 func UpdateCellUnderUser(cell models.Cell, userItem models.UserItem, count int, cellType string) {
+	var nextStateTime time.Time
+	if userItem.Item.GrowingUpTime != nil {
+		nextStateTime = time.Now().Add(time.Duration(*userItem.Item.GrowingUpTime) * time.Minute)
+	}
 	err := config.Db.
 		Model(models.Cell{}).
 		Where(&models.Cell{AxisX: cell.AxisX, AxisY: cell.AxisY, MapsId: cell.MapsId}).
@@ -14,7 +19,7 @@ func UpdateCellUnderUser(cell models.Cell, userItem models.UserItem, count int, 
 		Update("item_count", count).
 		Update("type", cellType).
 		Update("destruction_hp", nil).
-		Update("next_state_time", nil).
+		Update("next_state_time", nextStateTime).
 		Update("last_growing", nil).
 		Update("prev_item_id", nil).
 		Update("prev_item_count", nil).

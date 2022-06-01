@@ -4,7 +4,7 @@ import (
 	"errors"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
-	questController2 "project0/src/controllers/questController"
+	"project0/src/controllers/questController"
 	"project0/src/models"
 	"project0/src/services/helpers"
 )
@@ -14,12 +14,14 @@ func CheckQuestActions(user models.User, charData []string) (msg string, buttons
 	switch charData[0] {
 	case "quests":
 		msg, buttons = listOfQuests(user)
+	case "dailyQuests":
+		msg, buttons = listOfDailyQuests(user)
 	case v.GetString("callback_char.quest"):
-		msg, buttons = questController2.OpenQuest(uint(helpers.ToInt(charData[1])), user)
+		msg, buttons = questController.OpenQuest(uint(helpers.ToInt(charData[1])), user)
 	case v.GetString("callback_char.user_get_quest"):
 		msg, buttons = userGetQuest(user, charData)
 	case v.GetString("callback_char.user_done_quest"):
-		msg, buttons = questController2.UserDoneQuest(uint(helpers.ToInt(charData[1])), user)
+		msg, buttons = questController.UserDoneQuest(uint(helpers.ToInt(charData[1])), user)
 	default:
 		err = errors.New("not quest actions")
 	}
@@ -31,13 +33,19 @@ func userGetQuest(user models.User, charData []string) (msg string, buttons tg.I
 	models.UserQuest{
 		UserId:  user.ID,
 		QuestId: uint(helpers.ToInt(charData[1])),
-	}.GetOrCreateUserQuest()
-	msg, buttons = questController2.OpenQuest(uint(helpers.ToInt(charData[1])), user)
+	}.CreateOrUpdateUserQuest()
+	msg, buttons = questController.OpenQuest(uint(helpers.ToInt(charData[1])), user)
 	return msg, buttons
 }
 
 func listOfQuests(user models.User) (msg string, buttons tg.InlineKeyboardMarkup) {
 	msg = v.GetString("user_location.tasks_menu_message")
-	buttons = questController2.AllQuestsMessageKeyboard(user)
+	buttons = questController.AllQuestsMessageKeyboard(user, false)
+	return msg, buttons
+}
+
+func listOfDailyQuests(user models.User) (msg string, buttons tg.InlineKeyboardMarkup) {
+	msg = v.GetString("user_location.daily_tasks_menu_message")
+	buttons = questController.AllQuestsMessageKeyboard(user, true)
 	return msg, buttons
 }
