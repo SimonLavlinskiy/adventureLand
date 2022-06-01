@@ -38,14 +38,14 @@ func GetInventoryItems(userId uint) []models.UserItem {
 func UpdateUserInstrument(user models.User, instrument models.Item) (result string, err error) {
 	userItem := models.UserItem{ItemId: int(instrument.ID), UserId: int(user.ID)}.UserGetUserItem()
 
-	newCountUser := *userItem.Item.CountUse - 1
+	newCountUseLeft := *userItem.Item.CountUse - 1
 
 	if userItem.CountUseLeft != nil {
-		newCountUser = *userItem.CountUseLeft - 1
+		newCountUseLeft = *userItem.CountUseLeft - 1
 	}
 
-	if newCountUser > 0 {
-		user.UpdateUserItem(models.UserItem{ID: userItem.ID, CountUseLeft: &newCountUser})
+	if newCountUseLeft > 0 {
+		user.UpdateUserItem(models.UserItem{ID: userItem.ID, CountUseLeft: &newCountUseLeft})
 		return "Ok", nil
 	}
 

@@ -11,7 +11,7 @@ import (
 
 func OpenQuestKeyboard(q models.Quest, uq models.UserQuest) (buttons tg.InlineKeyboardMarkup) {
 	switch uq.Status {
-	case "new":
+	case "new", "":
 		buttons = tg.NewInlineKeyboardMarkup(
 			tg.NewInlineKeyboardRow(tg.NewInlineKeyboardButtonData("Взять в работу", fmt.Sprintf("user_get_quest %d", q.ID))),
 			quitButton(q),

@@ -63,11 +63,11 @@ func (q Quest) GetQuest() Quest {
 }
 
 func (q Quest) QuestInfo(uq UserQuest) string {
-	result := fmt.Sprintf("📜 *Задание* 📜\n`%s`\n\n"+
+	result := fmt.Sprintf("📜 *Задание* 📜 - *%s*\n\n"+
 		"*Описание*: `%s`",
 		q.Name, q.Description)
 
-	if uq.Status != "new" {
+	if uq.Status != "" && uq.Status != "new" {
 		result = fmt.Sprintf("%s\n\n*Статус*: _%s_",
 			result, v.Get(fmt.Sprintf("quest_statuses.%s", uq.Status)))
 	}

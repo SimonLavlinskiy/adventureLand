@@ -9,9 +9,9 @@ import (
 	"time"
 )
 
-func GrowingItem(cell models.Cell, user models.User, instrument models.Instrument) (result string) {
+func GrowingItem(cell models.Cell, user models.User, instrument models.Instrument) (result string, err error) {
 	if result, err := canUserGrowIt(cell, instrument); err != nil {
-		return result
+		return result, errors.New("not update userItem")
 	}
 
 	updateItemTime := GetNewItemTime(cell, instrument)
@@ -19,7 +19,7 @@ func GrowingItem(cell models.Cell, user models.User, instrument models.Instrumen
 	if isItemGrown(cell, updateItemTime) {
 		cell.UpdateCellAfterGrowing(instrument)
 		result = getResultAfterItemGrown(user, cell, instrument)
-		return result
+		return result, nil
 	}
 
 	t := time.Now()
@@ -27,8 +27,12 @@ func GrowingItem(cell models.Cell, user models.User, instrument models.Instrumen
 	cell.LastGrowing = &t
 	cell.UpdateCell()
 
-	result = "\U0001F973 Вырастет " + updateItemTime.Format("15:04:05 02.01.06") + "!"
-	return result
+	growingTime := updateItemTime.Sub(t)
+	h := growingTime.Truncate(time.Hour).Hours()
+	m := growingTime.Truncate(time.Minute).Minutes() - growingTime.Truncate(time.Hour).Minutes()
+
+	result = fmt.Sprintf("\U0001F973 Вырастет через %vч %vм !", h, m)
+	return result, nil
 }
 
 func GetNewItemTime(cell models.Cell, instrument models.Instrument) (updateItemTime time.Time) {
@@ -47,10 +51,12 @@ func GetNewItemTime(cell models.Cell, instrument models.Instrument) (updateItemT
 func canUserGrowIt(cell models.Cell, instrument models.Instrument) (result string, err error) {
 	if cell.LastGrowing != nil && time.Now().Before(cell.LastGrowing.Add(time.Duration(*cell.Item.IntervalGrowing)*time.Minute)) {
 		nextTimeGrowing := cell.LastGrowing.
-			Add(time.Duration(*cell.Item.IntervalGrowing) * time.Minute).
-			Format("15:04:05 02.01.06")
+			Add(time.Duration(*cell.Item.IntervalGrowing) * time.Minute).Sub(time.Now())
 
-		result = fmt.Sprintf("Ты уже использовал %s\nМожно будет повторить %s!", instrument.Good.View, nextTimeGrowing)
+		h := nextTimeGrowing.Truncate(time.Hour).Hours()
+		m := nextTimeGrowing.Truncate(time.Minute).Minutes()
+
+		result = fmt.Sprintf("Ты уже использовал %s\n\nМожно будет повторить через %vч %vм!", instrument.Good.View, h, m)
 		err = errors.New("user can not growing")
 	}
 	return result, err

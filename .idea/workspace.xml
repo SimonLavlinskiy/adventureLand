@@ -4,15 +4,20 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b74d7335-7172-4f14-a6c9-5c335e1bde64" name="Changes" comment="Добавил в обучалку пояснение про еду">
+    <list default="true" id="b74d7335-7172-4f14-a6c9-5c335e1bde64" name="Changes" comment="Сделал ежедневные и еженедельные квестые">
+      <change afterPath="$PROJECT_DIR$/src/models/ItemCellModel.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/actions/mapsActions/questActions.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/actions/mapsActions/questActions.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controllers/backpackAndGoodsController/backpackAndGoodsController.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/backpackAndGoodsController/backpackAndGoodsController.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controllers/itemController/growingItem.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/itemController/growingItem.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/controllers/itemController/itemController.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/itemController/itemController.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/controllers/questController/questButtons.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/questController/questButtons.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/controllers/questController/questController.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/questController/questController.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controllers/userItemController/userItemController.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/userItemController/userItemController.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/handlers/botHandler.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/handlers/botHandler.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/CelluleModel.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/CelluleModel.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/models/QuestModel.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/QuestModel.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/models/UserQuestModel.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/UserQuestModel.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/message.yml" beforeDir="false" afterPath="$PROJECT_DIR$/templates/message.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/UserItemModel.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/UserItemModel.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/repositories/cellsRepository.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/repositories/cellsRepository.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/helpers/EventsChecker.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/helpers/EventsChecker.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -113,7 +118,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Сделал привязку юезра к чату и отвязку, когда тайминг чатика закончился&#10;* переделал удаление итема чата с карты, в момент когда чатик истекает" />
     <MESSAGE value="Переделал чуть удаление итемов, выкидывание итемов, отправку нескольких сообщений и что то еще)" />
     <MESSAGE value="доп ошибочка" />
     <MESSAGE value="Завез игру Wordle" />
@@ -138,7 +142,8 @@
     <MESSAGE value="Вроде закончил обучение и рефакторинг" />
     <MESSAGE value="сделал superNight" />
     <MESSAGE value="Добавил в обучалку пояснение про еду" />
-    <option name="LAST_COMMIT_MESSAGE" value="Добавил в обучалку пояснение про еду" />
+    <MESSAGE value="Сделал ежедневные и еженедельные квестые" />
+    <option name="LAST_COMMIT_MESSAGE" value="Сделал ежедневные и еженедельные квестые" />
   </component>
   <component name="VgoProject">
     <integration-enabled>true</integration-enabled>

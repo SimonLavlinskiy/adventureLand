@@ -66,16 +66,31 @@ func (c Cell) GetCell() (result Cell) {
 
 func (c Cell) UpdateCellAfterGrowing(instrument Instrument) {
 
-	if *c.ItemCount > 1 && instrument.NextStageItem != nil {
-		c.PrevItemID = c.ItemID
-		c.PrevItemCount = c.ItemCount
+	//if *c.ItemCount > 1 && instrument.NextStageItem != nil {
+	//	c.PrevItemID = c.ItemID
+	//	c.PrevItemCount = c.ItemCount
+	//	c = c.CellUpdatedNextItem(instrument)
+	//} else if *c.ItemCount > 1 && instrument.NextStageItem == nil {
+	//	*c.ItemCount = *c.ItemCount - 1
+	//} else if *c.ItemCount <= 1 && c.PrevItemID != nil {
+	//	c = c.CellUpdatePrevItem()
+	//} else if *c.ItemCount <= 1 && instrument.NextStageItem != nil {
+	//	c = c.CellUpdatedNextItem(instrument)
+	//}
+
+	if instrument.NextStageItem != nil {
+		if *c.ItemCount > 1 {
+			c.PrevItemID = c.ItemID
+			c.PrevItemCount = c.ItemCount
+		}
 		c = c.CellUpdatedNextItem(instrument)
-	} else if *c.ItemCount > 1 && instrument.NextStageItem == nil {
-		*c.ItemCount = *c.ItemCount - 1
-	} else if *c.ItemCount <= 1 && c.PrevItemID != nil {
-		c = c.CellUpdatePrevItem()
-	} else if *c.ItemCount <= 1 && instrument.NextStageItem != nil {
-		c = c.CellUpdatedNextItem(instrument)
+	} else {
+		if *c.ItemCount > 1 {
+			*c.ItemCount = *c.ItemCount - 1
+		}
+		if *c.ItemCount <= 1 && c.PrevItemID != nil {
+			c = c.CellUpdatePrevItem()
+		}
 	}
 
 	c.LastGrowing = nil
@@ -91,6 +106,22 @@ func (c Cell) UpdateCellAfterGrowing(instrument Instrument) {
 		Update("prev_item_id", c.PrevItemID).
 		Update("prev_item_count", c.PrevItemCount).
 		Update("chat_id", c.ChatId).
+		Error
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (c Cell) UpdateCellAfterBreakUp(instrument Instrument) {
+	c.LastGrowing = nil
+	c.NextStateTime = nil
+	c.ItemID = instrument.NextStageItemId
+
+	err := config.Db.Model(Cell{}).
+		Where(&Cell{ID: c.ID}).
+		Update("item_id", c.ItemID).
+		Update("next_state_time", c.NextStateTime).
+		Update("last_growing", c.LastGrowing).
 		Error
 	if err != nil {
 		panic(err)
@@ -126,6 +157,7 @@ func (c Cell) CellUpdatedNextItem(instrument Instrument) Cell {
 	} else {
 		c.ItemCount = instrument.CountNextStageItem
 	}
+
 	return c
 }
 

@@ -38,10 +38,12 @@ func UserGetItemWithInstrument(cell models.Cell, user models.User, instrument mo
 			result = result + instrumentMsg
 		}
 	case "growing":
-		result = GrowingItem(cell, user, instrument)
-		instrumentMsg, err = userItemController.UpdateUserInstrument(user, userInstrument)
+		result, err = GrowingItem(cell, user, instrument)
+		if err == nil {
+			instrumentMsg, err = userItemController.UpdateUserInstrument(user, userInstrument)
+		}
 		if err != nil {
-			result = result + instrumentMsg
+			result = fmt.Sprintf("%s\n%s", result, instrumentMsg)
 		}
 	case "swap":
 		result = swapItem(user, cell, instrument, userInstrument)
@@ -249,13 +251,16 @@ func ViewItemInfo(cell models.Cell) string {
 	if cell.Item.Destruction != nil && *cell.Item.Destruction != 0 {
 		itemInfo = itemInfo + fmt.Sprintf("*Сила*: `%d %s`\n", *cell.Item.Destruction, cell.Item.View)
 	}
-	if cell.DestructionHp != nil && *cell.Item.DestructionHp != 0 {
+	if cell.DestructionHp != nil && cell.Item.DestructionHp != nil && *cell.Item.DestructionHp != 0 {
 		itemInfo = itemInfo + fmt.Sprintf("*Прочность*: `%d`\n", *cell.DestructionHp)
 	} else if cell.Item.DestructionHp != nil && *cell.Item.DestructionHp != 0 {
 		itemInfo = itemInfo + fmt.Sprintf("*Прочность*: `%d`\n", *cell.Item.DestructionHp)
 	}
 	if cell.Item.Growing != nil && cell.NextStateTime != nil {
-		itemInfo = itemInfo + fmt.Sprintf("*\U0001F973 Вырастет*: %s\n", cell.NextStateTime.Format("15:04:05 02.01.06"))
+		t := cell.NextStateTime.Sub(time.Now())
+		h := t.Truncate(time.Hour).Hours()
+		m := t.Truncate(time.Minute).Minutes() - t.Truncate(time.Hour).Minutes()
+		itemInfo = itemInfo + fmt.Sprintf("*\U0001F973 Вырастет через*: _%vч %vм_\n", h, m)
 	} else if cell.Item.Growing != nil {
 		itemInfo = itemInfo + fmt.Sprintf("*Время роста*: `%d мин.`\n", *cell.Item.Growing)
 	}
@@ -263,7 +268,9 @@ func ViewItemInfo(cell models.Cell) string {
 		itemInfo = itemInfo + fmt.Sprintf("*Интервал ускорения роста*: `раз в %d мин.`\n", *cell.Item.IntervalGrowing)
 	}
 	if cell.LastGrowing != nil {
-		itemInfo = itemInfo + fmt.Sprintf("*Последнее ускорение:* %s\n", cell.LastGrowing.Format("15:04:05"))
+		t := time.Now().Sub(*cell.LastGrowing)
+		m := t.Truncate(time.Minute).Minutes()
+		itemInfo = itemInfo + fmt.Sprintf("*Последнее ускорение:* %vм назад\n", m)
 	}
 	if len(cell.Item.Instruments) != 0 {
 		var itemsInstrument string

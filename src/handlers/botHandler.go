@@ -2,7 +2,7 @@ package handlers
 
 import (
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	helpers2 "project0/src/services/helpers"
+	"project0/src/services/helpers"
 	"project0/src/services/notificationUserChat"
 )
 
@@ -38,31 +38,31 @@ func GetMessageFromChat(tgApiToken string) {
 	updates := bot.GetUpdatesChan(updateConfig)
 
 	for update := range updates {
-		helpers2.NotifyUsers(notificationUserChat.SendUserMessageAllChatUsers(update))
+		helpers.NotifyUsers(notificationUserChat.SendUserMessageAllChatUsers(update))
 	}
 }
 
 func messageHandler(bot *tg.BotAPI, update tg.Update) {
 
-	helpers2.CheckEventsForUpdate()
+	helpers.CheckEventsForUpdate()
 
 	if update.CallbackQuery != nil {
 		msg, buttons, sendLikeNewMsg := callBackResolver(update)
 		if !sendLikeNewMsg {
-			helpers2.UpdateMessage(msg, buttons, bot)
+			helpers.UpdateMessage(msg, buttons, bot)
 		} else {
 			newMsg := tg.NewMessage(update.CallbackQuery.From.ID, msg.Text)
 			newMsg.ReplyMarkup = buttons.ReplyMarkup
 			newMsg.ParseMode = "markdown"
-			helpers2.SendMessage(newMsg, bot)
+			helpers.SendMessage(newMsg, bot)
 
 			deletedMsg := tg.DeleteMessageConfig{ChatID: update.CallbackQuery.From.ID, MessageID: update.CallbackQuery.Message.MessageID}
-			helpers2.DeleteMessage(deletedMsg, bot)
+			helpers.DeleteMessage(deletedMsg, bot)
 		}
 	}
 
 	if update.Message != nil {
 		msg := messageResolver(update)
-		helpers2.SendMessage(msg, bot)
+		helpers.SendMessage(msg, bot)
 	}
 }
