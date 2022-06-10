@@ -9,22 +9,21 @@ import (
 )
 
 type User struct {
-	ID         uint   `gorm:"primaryKey"`
+	ID         uint   `gorm:"primaryKey" json:"id"`
 	TgId       uint   `gorm:"embedded"`
-	Username   string `gorm:"embedded"`
-	Avatar     string `gorm:"embedded"`
+	Username   string `gorm:"embedded" json:"username"`
+	Avatar     string `gorm:"embedded" json:"avatar"`
 	FirstName  string `gorm:"embedded"`
 	LastName   string `gorm:"embedded"`
-	Health     uint   `gorm:"embedded"`
-	Satiety    uint   `gorm:"embedded"`
-	Experience int    `gorm:"embedded"`
+	Health     uint   `gorm:"embedded" json:"health"`
+	Satiety    uint   `gorm:"embedded" json:"satiety"`
+	Experience int    `gorm:"embedded" json:"experience"`
 	Money      *int   `gorm:"embedded"`
-	Steps      uint   `gorm:"embedded"`
 	HomeId     *uint  `gorm:"embedded"`
 	Clothes
 	Home         *Map
 	MenuLocation string    `gorm:"embedded"`
-	CreatedAt    time.Time `gorm:"autoCreateTime"`
+	CreatedAt    time.Time `gorm:"autoCreateTime" json:"createdAt"`
 	Deleted      bool      `gorm:"embedded"`
 }
 
@@ -49,6 +48,8 @@ type Clothes struct {
 }
 
 func (u User) GetUserInfo() string {
+	step := GetOrCreateUserAction(UserActionsCounter{UserId: u.ID, ActionName: "step"})
+	stepPlace := step.GetStepsPlace()
 	messageMap := fmt.Sprintf("🔅 🔆 *Профиль* 🔆 🔅\n\n"+
 		"*Твое имя*: %s\n"+
 		"*Аватар*: %s\n"+
@@ -56,7 +57,7 @@ func (u User) GetUserInfo() string {
 		"*Здоровье*: _%d_ ❤️\n"+
 		"*Сытость*: _%d_ 😋️\n"+
 		"*Шаги*: _%d_ 👣 (_%d место_)",
-		u.Username, u.Avatar, *u.Money, u.Health, u.Satiety, u.Steps, u.GetStepsPlace())
+		u.Username, u.Avatar, *u.Money, u.Health, u.Satiety, step.Count, stepPlace)
 
 	return messageMap
 }
@@ -89,7 +90,7 @@ func (u User) CheckUserHasInstrument(instrument Instrument) (error, Item) {
 	if u.Clothes.RightHandId != nil && *u.Clothes.RightHandId == *instrument.GoodId {
 		return nil, *u.Clothes.RightHand
 	}
-	return errors.New("User dont have instrument"), Item{}
+	return errors.New("user dont have instrument"), Item{}
 }
 
 func (u User) GetUserQuests() []UserQuest {
@@ -108,37 +109,4 @@ func (u User) GetUserQuests() []UserQuest {
 	}
 
 	return result
-}
-
-func (u User) UserStepCounter() {
-	countStepsForSubstructionStats := uint(v.GetInt("main_info.count_step_for_substruction_stats"))
-	u.Steps += 1
-
-	if u.Steps%countStepsForSubstructionStats == 0 && u.Satiety > 0 {
-		u.Satiety -= 1
-	} else if u.Steps%countStepsForSubstructionStats == 0 && u.Satiety == 0 {
-		u.Health -= 1
-	}
-
-	err := config.Db.
-		Table("users").
-		Where(&User{ID: u.ID}).
-		Update("steps", u.Steps).
-		Update("satiety", u.Satiety).
-		Update("health", u.Health).
-		Error
-
-	if err != nil {
-		panic(err)
-	}
-
-}
-
-func (u User) GetStepsPlace() int {
-	var users []User
-	config.Db.
-		Where(fmt.Sprintf("steps >= %d", u.Steps)).
-		Find(&users)
-
-	return len(users)
 }

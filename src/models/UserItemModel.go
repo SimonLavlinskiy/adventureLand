@@ -49,7 +49,7 @@ func (u User) UserGetResultItem(r Result) {
 	u.UpdateUserItem(UserItem{ID: ui.ID, Count: &resItemCount, CountUseLeft: ui.CountUseLeft})
 }
 
-func (u User) UserGetResultSpecialItem(r Result) {
+func (u User) UserGetResultExtraItem(r Result) {
 	ui := UserItem{UserId: int(u.ID), ItemId: int(*r.SpecialItemId)}.UserGetUserItem()
 	resItemCount := *ui.Count + int(*r.SpecialItemCount)
 

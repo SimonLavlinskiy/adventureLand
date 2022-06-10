@@ -61,7 +61,7 @@ func GetLocationOnlineUser(userLocation models.Location, mapSize models.UserMap)
 
 	var results []models.Location
 	for _, loc := range resultLocationsOnlineUser {
-		if loc.User.MenuLocation == "sleep" {
+		if loc.User.MenuLocation != "sleep" {
 			results = append(results, loc)
 		}
 	}

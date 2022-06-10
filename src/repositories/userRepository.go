@@ -25,7 +25,6 @@ func GetOrCreateUser(update tg.Update) models.User {
 		Satiety:      100,
 		Health:       100,
 		Experience:   0,
-		Steps:        0,
 		Money:        &MoneyUserStart,
 		MenuLocation: "learning",
 	}
@@ -59,6 +58,27 @@ func GetUser(user models.User) models.User {
 		Preload("Shoes").
 		Preload("Home").
 		Where(user).
+		First(&result).Error
+	if err != nil {
+		panic(err)
+	}
+
+	return result
+}
+
+func GetUsers() (result []models.User) {
+	err := config.Db.
+		Find(&result).Error
+	if err != nil {
+		panic(err)
+	}
+
+	return result
+}
+
+func GetUserId(id uint) (result models.User) {
+	result.ID = id
+	err := config.Db.
 		First(&result).Error
 	if err != nil {
 		panic(err)

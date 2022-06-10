@@ -35,7 +35,7 @@ func GetInventoryItems(userId uint) []models.UserItem {
 	return inventoryUserItem
 }
 
-func UpdateUserInstrument(user models.User, instrument models.Item) (result string, err error) {
+func SubCountUsingFromInstrument(user models.User, instrument models.Item) (result string, err error) {
 	userItem := models.UserItem{ItemId: int(instrument.ID), UserId: int(user.ID)}.UserGetUserItem()
 
 	newCountUseLeft := *userItem.Item.CountUse - 1
@@ -51,7 +51,7 @@ func UpdateUserInstrument(user models.User, instrument models.Item) (result stri
 
 	userItem = CrushUserItem(user, userItem)
 	result = fmt.Sprintf("\n💥 Инструмент «%s %s» был сломан! 💥\n_Осталось: %d шт_.",
-		userItem.Item.View, userItem.Item.Name, *userItem.Count)
+		userItem.Item.View, userItem.Item.Name, *userItem.Count-1)
 
 	return result, errors.New("item is broken")
 }

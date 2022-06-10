@@ -1,12 +1,14 @@
 package helpers
 
 import (
+	"encoding/json"
+	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"strconv"
 )
 
 func ToInt(string string) int {
-	numInt64, _ := strconv.ParseUint(string, 10, 32)
+	numInt64, _ := strconv.ParseInt(string, 10, 32)
 	return int(numInt64)
 }
 
@@ -28,4 +30,9 @@ func CancelButton() tg.InlineKeyboardMarkup {
 			tg.NewInlineKeyboardButtonData("Выйти", "cancel"),
 		),
 	)
+}
+
+func PrintJson(elem interface{}) {
+	j, _ := json.Marshal(elem)
+	fmt.Println(string(j))
 }

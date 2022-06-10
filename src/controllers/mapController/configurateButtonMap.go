@@ -100,16 +100,16 @@ func PutButton(CellsAroundUser []models.Cell, btn models.MapButtons, user models
 			}
 			switch i {
 			case 0:
-				btn.Up += cell.Item.View
+				btn.Up += cell.ItemCell.Item.View
 				btn.UpData = data
 			case 1:
-				btn.Down += cell.Item.View
+				btn.Down += cell.ItemCell.Item.View
 				btn.DownData = data
 			case 2:
-				btn.Right += cell.Item.View
+				btn.Right += cell.ItemCell.Item.View
 				btn.RightData = data
 			case 3:
-				btn.Left += cell.Item.View
+				btn.Left += cell.ItemCell.Item.View
 				btn.LeftData = data
 			}
 		case cell.IsItem() || cell.IsSwap() || cell.IsBox(user):
@@ -192,11 +192,11 @@ func ViewItemButton(cell models.Cell, user models.User) (btn string, btnData str
 	instrumentsUserCanUse := instrumentController.GetInstrumentsUserCanUse(user, cell)
 
 	if len(instrumentsUserCanUse) > 0 {
-		btn = fmt.Sprintf("🛠❓%s", cell.Item.View)
+		btn = fmt.Sprintf("🛠❓%s", cell.ItemCell.Item.View)
 		btnData = fmt.Sprintf("chooseInstrument %d", cell.ID)
 	} else {
-		btn = cell.Item.View
-		btnData = cell.Item.View
+		btn = cell.ItemCell.Item.View
+		btnData = cell.ItemCell.Item.View
 	}
 
 	return btn, btnData

@@ -4,20 +4,45 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b74d7335-7172-4f14-a6c9-5c335e1bde64" name="Changes" comment="Сделал ежедневные и еженедельные квестые">
-      <change afterPath="$PROJECT_DIR$/src/models/ItemCellModel.go" afterDir="false" />
+    <list default="true" id="b74d7335-7172-4f14-a6c9-5c335e1bde64" name="Changes" comment="Изменил выращиевание, разрушение и саморазрушение итема.&#10;&#10;Добавил userAction, для подсчета разных юкшенов юзера (переделал пожсчет шагов) &#10;&#10;и много всяких других фиксов">
+      <change afterPath="$PROJECT_DIR$/src/controllers/UserActionController/actionsController/handActionController.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/controllers/actionsCounterController/actionCounterController.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/controllers/eventChecker/EventsChecker.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/controllers/itemCellController/ItemCellController.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/controllers/itemCellController/destructItemController.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/controllers/itemCellController/growingItem.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/controllers/itemCellController/swapItemController.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/models/UserActionsModel.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/controllers/backpackAndGoodsController/backpackAndGoodsController.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/backpackAndGoodsController/backpackAndGoodsController.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/controllers/itemController/growingItem.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/itemController/growingItem.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/migrations/Migration.go" beforeDir="false" afterPath="$PROJECT_DIR$/migrations/Migration.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/actions/mapsActions/MapsActions.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/actions/mapsActions/MapsActions.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/actions/mapsActions/specialCellMapAction.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/actions/mapsActions/specialCellMapAction.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/actions/mapsActions/userActions.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/actions/mapsActions/userActions.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controllers/boxController/boxController.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/boxController/boxController.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controllers/cellController/cellController.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/cellController/cellController.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controllers/instrumentController/instrumentController.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/instrumentController/instrumentController.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controllers/itemController/growingItem.go" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/controllers/itemController/itemController.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/itemController/itemController.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/controllers/questController/questButtons.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/questController/questButtons.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controllers/mapController/configurateButtonMap.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/mapController/configurateButtonMap.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controllers/mapController/mapController.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/mapController/mapController.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controllers/movingController/userMovingController.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/UserActionController/movingController/userMovingController.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controllers/resultController/resultController.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/resultController/resultController.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/controllers/userItemController/userItemController.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/userItemController/userItemController.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/handlers/botHandler.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/handlers/botHandler.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/handlers/requestHandler.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/handlers/requestHandler.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/models/CelluleModel.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/CelluleModel.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/models/QuestModel.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/QuestModel.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/InstrumentModel.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/InstrumentModel.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/ItemCellModel.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/ItemCellModel.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/ItemModel.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/ItemModel.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/ResultModel.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/ResultModel.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/models/UserItemModel.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/UserItemModel.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/UserModel.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/UserModel.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/repositories/cellsRepository.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/repositories/cellsRepository.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/helpers/EventsChecker.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/helpers/EventsChecker.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/repositories/locationRepository.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/repositories/locationRepository.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/repositories/userRepository.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/repositories/userRepository.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/helpers/EventsChecker.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/helpers/createMapServices.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/helpers/createMapServices.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/helpers/helpersFunction.go" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/helpers/helpersFunction.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -55,7 +80,7 @@
     <option name="stateVersion" value="1" />
   </component>
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="CurrentFile" />
+    <option name="selectedTabId" value="ProjectErrors" />
   </component>
   <component name="ProjectId" id="24I28lY1FtRhLbPedIwRa5OQvGD" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
@@ -77,6 +102,7 @@
     <property name="go.sdk.automatically.set" value="true" />
     <property name="go.watchers.conflict.with.on.save.actions.check.performed" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="run.code.analysis.last.selected.profile" value="pProject Default" />
     <property name="settings.editor.selected.configurable" value="reference.settingsdialog.IDE.editor.colors" />
   </component>
   <component name="RecentsManager">
@@ -84,11 +110,11 @@
       <recent name="$PROJECT_DIR$/files" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/controllers/eventChecker" />
+      <recent name="$PROJECT_DIR$/src/controllers/itemCellController" />
+      <recent name="$PROJECT_DIR$/src/controllers/UserActionController" />
       <recent name="$PROJECT_DIR$/src/controllers" />
       <recent name="$PROJECT_DIR$/src/controllers/instrumentController" />
-      <recent name="$PROJECT_DIR$/src/repositories" />
-      <recent name="$PROJECT_DIR$/src/controllers/userMapController" />
-      <recent name="$PROJECT_DIR$/src/services" />
     </key>
   </component>
   <component name="RunManager">
@@ -118,7 +144,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Переделал чуть удаление итемов, выкидывание итемов, отправку нескольких сообщений и что то еще)" />
     <MESSAGE value="доп ошибочка" />
     <MESSAGE value="Завез игру Wordle" />
     <MESSAGE value="Вроде доделал wordle и сделал статистику" />
@@ -143,7 +168,8 @@
     <MESSAGE value="сделал superNight" />
     <MESSAGE value="Добавил в обучалку пояснение про еду" />
     <MESSAGE value="Сделал ежедневные и еженедельные квестые" />
-    <option name="LAST_COMMIT_MESSAGE" value="Сделал ежедневные и еженедельные квестые" />
+    <MESSAGE value="Изменил выращиевание, разрушение и саморазрушение итема.&#10;&#10;Добавил userAction, для подсчета разных юкшенов юзера (переделал пожсчет шагов) &#10;&#10;и много всяких других фиксов" />
+    <option name="LAST_COMMIT_MESSAGE" value="Изменил выращиевание, разрушение и саморазрушение итема.&#10;&#10;Добавил userAction, для подсчета разных юкшенов юзера (переделал пожсчет шагов) &#10;&#10;и много всяких других фиксов" />
   </component>
   <component name="VgoProject">
     <integration-enabled>true</integration-enabled>

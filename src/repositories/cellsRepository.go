@@ -4,25 +4,14 @@ import (
 	"fmt"
 	"project0/config"
 	"project0/src/models"
-	"time"
 )
 
-func UpdateCellUnderUser(cell models.Cell, userItem models.UserItem, count int, cellType string) {
-	var nextStateTime time.Time
-	if userItem.Item.GrowingUpTime != nil {
-		nextStateTime = time.Now().Add(time.Duration(*userItem.Item.GrowingUpTime) * time.Minute)
-	}
+func UpdateCellUnderUser(cell models.Cell, itemCell models.ItemCell, cellType string) {
 	err := config.Db.
 		Model(models.Cell{}).
 		Where(&models.Cell{AxisX: cell.AxisX, AxisY: cell.AxisY, MapsId: cell.MapsId}).
-		Update("item_id", userItem.ItemId).
-		Update("item_count", count).
+		Update("item_cell_id", itemCell.ID).
 		Update("type", cellType).
-		Update("destruction_hp", nil).
-		Update("next_state_time", nextStateTime).
-		Update("last_growing", nil).
-		Update("prev_item_id", nil).
-		Update("prev_item_count", nil).
 		Error
 	if err != nil {
 		fmt.Println(err)
@@ -57,11 +46,11 @@ func CreateCells(cells []models.Cell) bool {
 	return false
 }
 
-func UpdateCellDestructHp(cell models.Cell, destructionHp int) {
-	err := config.Db.Model(&models.Cell{}).
-		Where(&models.Cell{ID: cell.ID}).
+func UpdateItemCellDestructHp(itemCell models.ItemCell, destructionHp int) {
+	err := config.Db.Model(&models.ItemCell{}).
+		Where(&models.ItemCell{ID: itemCell.ID}).
 		Update("destruction_hp", destructionHp).
-		Update("next_state_time", nil).
+		Update("growing_time", nil).
 		Update("last_growing", nil).
 		Error
 
@@ -72,12 +61,15 @@ func UpdateCellDestructHp(cell models.Cell, destructionHp int) {
 
 func GetCellsUserMap(mapSize models.UserMap, userLocation models.Location) (resultCell []models.Cell) {
 	err := config.Db.
-		Preload("Item").
 		Preload("Teleport").
-		Preload("Item.Instruments").
-		Preload("Item.Instruments.Good").
-		Preload("Item.Instruments.Result").
-		Preload("Item.Instruments.NextStageItem").
+		Preload("ItemCell").
+		Preload("ItemCell.Item").
+		Preload("ItemCell.Item.Instruments").
+		Preload("ItemCell.Item.Instruments.Good").
+		Preload("ItemCell.Item.Instruments.Result").
+		Preload("ItemCell.Item.Instruments.NextStageItem").
+		Preload("ItemCell.Item.Instruments.GrowingItem").
+		Preload("ItemCell.ContainedItem").
 		Where(models.Cell{MapsId: *userLocation.MapsId}).
 		Where("axis_x >= " + fmt.Sprintf("%d", mapSize.LeftIndent)).
 		Where("axis_x <= " + fmt.Sprintf("%d", mapSize.RightIndent)).

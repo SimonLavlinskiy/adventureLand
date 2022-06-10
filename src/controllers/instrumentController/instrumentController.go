@@ -10,10 +10,10 @@ import (
 func GetInstrumentsUserCanUse(user models.User, cell models.Cell) map[string]models.Item {
 	instrumentsUserCanUse := map[string]models.Item{}
 
-	if cell.Item == nil {
+	if cell.ItemCell == nil || cell.ItemCell.Item == nil {
 		return instrumentsUserCanUse
 	}
-	instruments := cell.Item.Instruments
+	instruments := cell.ItemCell.Item.Instruments
 
 	for _, instrument := range instruments {
 		if instrument.GoodId != nil && user.LeftHandId != nil && user.LeftHand.ID == instrument.Good.ID {
@@ -33,11 +33,14 @@ func GetInstrumentsUserCanUse(user models.User, cell models.Cell) map[string]mod
 		}
 	}
 
-	if cell.Item.CanTake {
+	if cell.ItemCell.Item.CanTake {
 		instrumentsUserCanUse["👋"] = models.Item{Type: "hand"}
 	}
-	if cell.Item.CanStep && *cell.Type != "swap" {
+	if cell.ItemCell.Item.CanStep && *cell.Type != "swap" {
 		instrumentsUserCanUse["👣"] = models.Item{Type: "step"}
+	}
+	if cell.ItemCell.ContainedItemId != nil && cell.ItemCell.ContainedItemCount != nil && *cell.ItemCell.ContainedItemCount > 0 {
+		instrumentsUserCanUse[fmt.Sprintf("👋%s", cell.ItemCell.ContainedItem.View)] = models.Item{Type: "takeContain"}
 	}
 
 	return instrumentsUserCanUse
@@ -47,20 +50,33 @@ func ChooseInstrumentKeyboard(cell models.Cell, user models.User) (mapButton tg.
 	instruments := GetInstrumentsUserCanUse(user, cell)
 
 	if len(instruments) != 0 {
+		var rows [][]tg.InlineKeyboardButton
 		var row []tg.InlineKeyboardButton
 
-		for view, instrument := range instruments {
+		i := 0
+
+		for view, instrument := range instruments { // todo tut proishodit kakaya to magic, кнопки все время в разном порядке
+			i = i + 1
+
 			button := tg.NewInlineKeyboardButtonData(
 				getButtonTextAndData(cell, instrument, view, user),
 			)
+
+			if i > 5 {
+				rows = append(rows, row)
+				row = []tg.InlineKeyboardButton{}
+			}
+
 			row = append(row, button)
+			if len(instruments) == i {
+				rows = append(rows, row)
+			}
 		}
 
+		rows = append(rows, tg.NewInlineKeyboardRow(tg.NewInlineKeyboardButtonData("Отмена", v.GetString("callback_char.cancel"))))
+
 		mapButton = tg.NewInlineKeyboardMarkup(
-			row,
-			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("Отмена", v.GetString("callback_char.cancel")),
-			),
+			rows...,
 		)
 	}
 
@@ -68,9 +84,9 @@ func ChooseInstrumentKeyboard(cell models.Cell, user models.User) (mapButton tg.
 }
 
 func getButtonTextAndData(cell models.Cell, instrument models.Item, instrumentView string, user models.User) (text string, data string) {
-	if cell.NeedPay && cell.Item.Cost != nil && *cell.Item.Cost > 0 {
-		if (instrument.Type == "hand" || instrument.Type == "swap") && (*cell.Type == "swap" || *cell.Type == "item" && *cell.ItemCount != 0) {
-			text = fmt.Sprintf("%s ( %d💰 )", instrumentView, *cell.Item.Cost)
+	if cell.NeedPay && cell.ItemCell.Item.Cost != nil && *cell.ItemCell.Item.Cost > 0 {
+		if (instrument.Type == "hand" || instrument.Type == "swap") && (*cell.Type == "swap" || *cell.Type == "item" && *cell.ItemCell.ItemCount != 0) {
+			text = fmt.Sprintf("%s ( %d💰 )", instrumentView, *cell.ItemCell.Item.Cost)
 		} else {
 			text = instrumentView
 		}

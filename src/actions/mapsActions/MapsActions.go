@@ -12,7 +12,7 @@ func MapsActions(user models.User, char string) (string, tg.InlineKeyboardMarkup
 	if msg, buttons, err := CheckUserActions(user, charData); err == nil {
 		return msg, buttons
 	}
-	if msg, buttons, err := CheckSpecialCellAction(user, charData); err == nil {
+	if msg, buttons, err := CheckCellEmojiAction(user, charData); err == nil {
 		return msg, buttons
 	}
 	if msg, buttons, err := CheckBackpackAndGoodsAction(user, charData); err == nil {

@@ -5,25 +5,30 @@ import (
 	"project0/src/controllers/userController"
 	"project0/src/models"
 	"project0/src/repositories"
+	"strings"
 )
 
 func UserGetResult(u models.User, r models.Result) {
-	switch r.Type {
-	case "casual":
+
+	if strings.Contains(r.Type, "experience") {
 		userController.UserGetExperience(u, r)
-	case "casualPlus":
-		userController.UserGetExperience(u, r)
-		u.UserGetResultItem(r)
-	case "superCasual":
-		userController.UserGetExperience(u, r)
-		u.UserGetResultItem(r)
-		u.UserGetResultSpecialItem(r)
 	}
 
-	if r.Money != nil {
-		userMoney := *u.Money + *r.Money
-		repositories.UpdateUser(models.User{TgId: u.TgId, Money: &userMoney})
+	if strings.Contains(r.Type, "money") {
+		if r.Money != nil {
+			userMoney := *u.Money + *r.Money
+			repositories.UpdateUser(models.User{TgId: u.TgId, Money: &userMoney})
+		}
 	}
+
+	if strings.Contains(r.Type, "item") {
+		u.UserGetResultItem(r)
+	}
+
+	if strings.Contains(r.Type, "extraItem") {
+		u.UserGetResultExtraItem(r)
+	}
+
 }
 
 func UserGetResultMsg(result models.Result) string {

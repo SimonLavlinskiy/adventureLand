@@ -29,6 +29,7 @@ func Migrate() bool {
 		models.UserBox{},
 		models.News{},
 		models.UserSleep{},
+		models.UserActionsCounter{},
 	)
 	if err != nil {
 		fmt.Println("Migration failed")

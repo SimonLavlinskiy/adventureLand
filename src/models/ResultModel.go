@@ -5,16 +5,16 @@ import (
 )
 
 type Result struct {
-	ID               uint   `gorm:"primaryKey"`
-	Type             string `gorm:"embedded"`
-	ItemId           *uint  `gorm:"embedded"`
+	ID               uint   `gorm:"primaryKey" json:"id"`
+	Type             string `gorm:"embedded" json:"type"`
+	ItemId           *uint  `gorm:"embedded" json:"item_id"`
 	Item             *Item
-	CountItem        *uint `gorm:"embedded"`
-	SpecialItemId    *uint `gorm:"embedded"`
+	CountItem        *uint `gorm:"embedded" json:"count_item"`
+	SpecialItemId    *uint `gorm:"embedded" json:"special_item_id"`
 	SpecialItem      *Item
-	SpecialItemCount *uint `gorm:"embedded"`
-	Experience       *int  `gorm:"embedded"`
-	Money            *int  `gorm:"embedded"`
+	SpecialItemCount *uint `gorm:"embedded" json:"special_item_count"`
+	Experience       *int  `gorm:"embedded" json:"experience"`
+	Money            *int  `gorm:"embedded" json:"money"`
 }
 
 func (r Result) GetResult() Result {

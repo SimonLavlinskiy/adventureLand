@@ -2,6 +2,7 @@ package handlers
 
 import (
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"project0/src/controllers/eventChecker"
 	"project0/src/services/helpers"
 	"project0/src/services/notificationUserChat"
 )
@@ -44,7 +45,7 @@ func GetMessageFromChat(tgApiToken string) {
 
 func messageHandler(bot *tg.BotAPI, update tg.Update) {
 
-	helpers.CheckEventsForUpdate()
+	eventChecker.CheckEventsForUpdate()
 
 	if update.CallbackQuery != nil {
 		msg, buttons, sendLikeNewMsg := callBackResolver(update)

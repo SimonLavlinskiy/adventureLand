@@ -3,6 +3,7 @@ package cellController
 import (
 	"errors"
 	"project0/config"
+	"project0/src/controllers/itemCellController"
 	"project0/src/models"
 	"project0/src/repositories"
 )
@@ -12,11 +13,12 @@ func UpdateCellUnderUserWhenUserThrowItem(user models.User, userItem models.User
 
 	cell := models.Cell{AxisX: *userLocation.AxisX, AxisY: *userLocation.AxisY, MapsId: *userLocation.MapsId}
 	cell = cell.GetCell()
-	if cell.ItemCount != nil && *cell.ItemCount > 0 {
+	if cell.ItemCellId != nil && cell.ItemCell.ItemCount != nil && *cell.ItemCell.ItemCount > 0 {
 		return errors.New("В этой ячейке уже есть предмет, перейди на другую ячейку")
 	}
 
-	repositories.UpdateCellUnderUser(cell, userItem, count, cellType)
+	itemCell := itemCellController.UpdateItemCellUnderUser(cell, userItem, count)
+	repositories.UpdateCellUnderUser(cell, itemCell, cellType)
 
 	if cellType == "chat" {
 		timeOut := userItem.Item.GetItemEndTime()

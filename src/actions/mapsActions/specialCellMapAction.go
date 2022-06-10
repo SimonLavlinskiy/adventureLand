@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func CheckSpecialCellAction(user models.User, charData []string) (msg string, buttons tg.InlineKeyboardMarkup, err error) {
+func CheckCellEmojiAction(user models.User, charData []string) (msg string, buttons tg.InlineKeyboardMarkup, err error) {
 	t := time.Now()
 
 	// Взаимодействие с предметами на карте, у которых нет действий

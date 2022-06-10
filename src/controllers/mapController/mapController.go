@@ -64,14 +64,14 @@ func appendVisibleUserZone(m map[[2]int]models.Cell, x int, y int, Maps [][]stri
 	var box models.UserBox
 
 	if m[Point{x, y}].IsBox(user) {
-		box = models.UserBox{UserId: loc.UserID, BoxId: m[Point{x, y}].Item.ID}
+		box = models.UserBox{UserId: loc.UserID, BoxId: m[Point{x, y}].ItemCell.Item.ID}
 		if !box.IsUserGotBoxToday() {
-			Maps[y] = append(Maps[y], m[Point{x, y}].Item.View)
+			Maps[y] = append(Maps[y], m[Point{x, y}].ItemCell.Item.View)
 		} else {
 			Maps[y] = append(Maps[y], m[Point{x, y}].View)
 		}
 	} else if m[Point{x, y}].IsItem() || m[Point{x, y}].IsWorkbench() || m[Point{x, y}].IsSwap() || m[Point{x, y}].IsQuest() || m[Point{x, y}].IsChat() {
-		Maps[y] = append(Maps[y], m[Point{x, y}].Item.View)
+		Maps[y] = append(Maps[y], m[Point{x, y}].ItemCell.Item.View)
 	} else {
 		Maps[y] = append(Maps[y], m[Point{x, y}].View)
 	}

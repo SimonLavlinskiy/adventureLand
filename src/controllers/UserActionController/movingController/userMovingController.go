@@ -5,6 +5,7 @@ import (
 	"fmt"
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
+	"project0/src/controllers/actionsCounterController"
 	"project0/src/controllers/mapController"
 	"project0/src/controllers/userItemController"
 	"project0/src/models"
@@ -48,7 +49,7 @@ func BuyHomeKeyboard() tg.InlineKeyboardMarkup {
 func CheckUserHasLighter(u models.User) (string, error) {
 	if u.Clothes.LeftHandId != nil && u.Clothes.LeftHand.Type == "light" {
 
-		res, err := userItemController.UpdateUserInstrument(u, *u.Clothes.LeftHand)
+		res, err := userItemController.SubCountUsingFromInstrument(u, *u.Clothes.LeftHand)
 		if err != nil {
 			return res, errors.New("lighter is updated")
 		}
@@ -57,7 +58,7 @@ func CheckUserHasLighter(u models.User) (string, error) {
 
 	if u.Clothes.RightHandId != nil && u.Clothes.RightHand.Type == "light" {
 
-		res, err := userItemController.UpdateUserInstrument(u, *u.Clothes.RightHand)
+		res, err := userItemController.SubCountUsingFromInstrument(u, *u.Clothes.RightHand)
 		if err != nil {
 			return res, errors.New("lighter is updated")
 		}
@@ -74,7 +75,7 @@ func UpdateUserLocation(user models.User, cell models.Cell) (string, error) {
 		return "\nУ тебя еще нет дома, очень жаль...", errors.New("user has not home")
 	}
 
-	if !cell.CanStep || cell.Item != nil && cell.ItemCount != nil && *cell.ItemCount > 0 && !cell.Item.CanStep {
+	if !cell.CanStep || cell.ItemCell != nil && cell.ItemCell.Item != nil && cell.ItemCell.ItemCount != nil && *cell.ItemCell.ItemCount > 0 && !cell.ItemCell.Item.CanStep {
 		return "\nСюда никак не пройти(", errors.New("can't get through")
 	}
 
@@ -87,7 +88,7 @@ func UpdateUserLocation(user models.User, cell models.Cell) (string, error) {
 
 	repositories.UpdateLocation(userLocation)
 
-	user.UserStepCounter()
+	actionsCounterController.UserDo(user, "step")
 
 	return "Ok", nil
 }
