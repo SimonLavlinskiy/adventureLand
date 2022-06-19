@@ -87,26 +87,3 @@ func (uq UserQuest) UpdateUserQuestStatus() {
 		fmt.Println("Update user quest status error:", err)
 	}
 }
-
-func (uq UserQuest) UserDoneQuest(user User) bool {
-	task := uq.Quest.Task
-
-	switch task.Type {
-	case "haveItem":
-		ui := UserItem{ItemId: *task.ItemId, UserId: int(user.ID)}.UserGetUserItem()
-		countItemResult := *ui.Count - *task.CountItem
-		user.UpdateUserItem(UserItem{ID: ui.ID, Count: &countItemResult})
-	case "userLocation":
-		uLoc := user.GetUserLocation()
-		if uLoc.MapsId == task.MapId && uLoc.AxisX == task.UserAxisX && uLoc.AxisY == task.UserAxisY {
-			return true
-		}
-	}
-
-	t := time.Now()
-	uq.Status = "completed"
-	uq.DoneAt = &t
-	uq.UpdateUserQuest()
-
-	return false
-}

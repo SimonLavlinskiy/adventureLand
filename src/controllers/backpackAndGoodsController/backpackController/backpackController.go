@@ -14,16 +14,25 @@ import (
 
 func ListOfBackpackItems(user models.User, charData []string) (msg string, buttons tg.InlineKeyboardMarkup) {
 	if len(charData) == 1 {
+
 		msg, buttons = BackpackCategoryKeyboard()
+
 	} else {
 		resUserItems := userItemController.GetBackpackItems(user.ID, charData[1])
-		msg = MessageBackpackUserItems(user, resUserItems, 0, charData[1])
-		buttons = BackpackInlineKeyboard(resUserItems, 0, charData[1])
+
+		if len(charData) == 3 {
+			msg = MessageBackpackUserItems(user, resUserItems, helpers.ToInt(charData[2]), charData[1])
+			buttons = BackpackInlineKeyboard(user, resUserItems, helpers.ToInt(charData[2]), charData[1])
+		} else {
+			msg = MessageBackpackUserItems(user, resUserItems, 0, charData[1])
+			buttons = BackpackInlineKeyboard(user, resUserItems, 0, charData[1])
+		}
 	}
 	return msg, buttons
 }
 
 func BackPackMoving(charData []string, user models.User) (msgText string, buttons tg.InlineKeyboardMarkup) {
+	fmt.Println("DATA: ", charData, ";\n")
 	updatedUser := repositories.GetUser(models.User{ID: user.ID})
 
 	category := charData[2]
@@ -40,7 +49,7 @@ func BackPackMoving(charData []string, user models.User) (msgText string, button
 	}
 
 	msgText = MessageBackpackUserItems(updatedUser, userItems, i, category)
-	buttons = BackpackInlineKeyboard(userItems, i, category)
+	buttons = BackpackInlineKeyboard(user, userItems, i, category)
 
 	return msgText, buttons
 }
@@ -80,7 +89,7 @@ func MessageBackpackUserItems(user models.User, userItems []models.UserItem, row
 func UserEatItem(user models.User, charData []string) (msgText string, buttons tg.InlineKeyboardMarkup) {
 	userItemId := helpers.ToInt(charData[1])
 
-	userItem := models.UserItem{ID: userItemId}.UserGetUserItem()
+	userItem := models.UserItem{ID: userItemId}.GetOrCreateUserItem()
 
 	res := userItemController.EatItem(userItem, user)
 	charDataForOpenBackPack := strings.Fields(fmt.Sprintf("%s %s food", v.GetString("callback_char.backpack_moving"), charData[2]))

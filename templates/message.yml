@@ -24,6 +24,8 @@ callback_char:
   goods_moving: "goodsMoving"
   eat_food: "eatFood"
   delete_item: "deleteItem"
+  select_count_sell_item: "selectCountSellItem"
+  sell_item: "sellItem"
   dress_good: "dressGood"
   take_off_good: "takeOffGood"
   change_left_hand: "changeLeftHand"
@@ -123,7 +125,6 @@ errors:
 
 wordle:
   text_awaiting_msg: "1 слово! 5 букв! Не ошибись)"
-  wordle_error: "Хммм....🤔\nВозможно ты не нажал(-а) кнопку *Написать слово*\nИли хочешь ⚠️ *Выйти?*"
   regulations: "*ПРАВИЛА ИГРЫ:*
 \n\n〰️〰️〰️〰️〰️〰️〰️〰️〰️️〰️〰️〰️️\n\n
 Угадайте загаданное слово в игре *Wordle* с шести попыток. У всех одинаковое слово, поэтому, пожалуйста, без спойлеров!

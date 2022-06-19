@@ -31,7 +31,6 @@ func UpdateModelsAfterHandOrInstrumentActions(user models.User, cell models.Cell
 		newUserItem = repositories.GetOrCreateUserItem(user, *cell.ItemCell.Item)
 	} else if instrument.ResultId != nil {
 		newUserItem = repositories.GetOrCreateUserItem(user, *instrument.Result.Item)
-		fmt.Println(3)
 	}
 
 	switch true {

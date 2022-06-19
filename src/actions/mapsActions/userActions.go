@@ -11,6 +11,7 @@ import (
 	"project0/src/controllers/instrumentController"
 	"project0/src/controllers/itemController"
 	"project0/src/controllers/mapController"
+	"project0/src/controllers/userController"
 	"project0/src/controllers/userItemController"
 	"project0/src/models"
 	"project0/src/services/helpers"
@@ -86,7 +87,7 @@ func useHandOrInstrument(user models.User, charData []string, cell models.Cell) 
 
 func mapWithUserInfo(user models.User) (msg string, buttons tg.InlineKeyboardMarkup) {
 	msg, buttons = mapController.GetMyMap(user)
-	msg = fmt.Sprintf("%s\n\n%s", user.GetUserInfo(), msg)
+	msg = fmt.Sprintf("%s\n\n%s", userController.GetUserInfo(user), msg)
 
 	return msg, buttons
 }

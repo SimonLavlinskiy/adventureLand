@@ -21,8 +21,8 @@ type Item struct {
 	Growing             *int    `gorm:"embedded" json:"growing"`
 	Breaking            *int    `gorm:"embedded" json:"breaking"`
 	ItemAfterBreakingId *int    `gorm:"embedded" json:"item_after_breaking_id"`
-	BreakingType        *string `gorm:"embedded" json:"breaking_type"`
 	ItemAfterBreaking   *Item
+	BreakingType        *string      `gorm:"embedded" json:"breaking_type"`
 	IntervalGrowing     *int         `gorm:"embedded" json:"interval_growing"`
 	CanTake             bool         `gorm:"embedded" json:"can_take"`
 	CanStep             bool         `gorm:"embedded" json:"can_step"`

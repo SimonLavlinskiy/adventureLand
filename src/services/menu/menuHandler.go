@@ -5,6 +5,7 @@ import (
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
 	"project0/src/controllers/mapController"
+	"project0/src/controllers/userController"
 	"project0/src/models"
 	"project0/src/repositories"
 )
@@ -22,7 +23,7 @@ func Menu(update tg.Update, user models.User) (msg string, buttons tg.InlineKeyb
 		msg, buttons = mapController.GetMyMap(user)
 		repositories.UpdateUser(models.User{TgId: user.TgId, MenuLocation: "Карта"})
 	case fmt.Sprintf("%s Профиль 👔", user.Avatar):
-		msg = user.GetUserInfo()
+		msg = userController.GetUserInfo(user)
 		buttons = ProfileKeyboard(user.Avatar)
 		repositories.UpdateUser(models.User{TgId: user.TgId, MenuLocation: "Профиль"})
 	}

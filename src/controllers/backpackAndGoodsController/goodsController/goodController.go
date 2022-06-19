@@ -136,9 +136,9 @@ func messageUserDressedGoods(user models.User) string {
 	return messageUserGoods
 }
 
-func UserTakeOffGood(user models.User, charData []string) (msgText string, buttons tg.InlineKeyboardMarkup) {
+func UserTakeOffClothes(user models.User, charData []string) (msgText string, buttons tg.InlineKeyboardMarkup) {
 	userItemId := helpers.ToInt(charData[1])
-	userItem := models.UserItem{ID: userItemId}.UserGetUserItem()
+	userItem := models.UserItem{ID: userItemId}.GetOrCreateUserItem()
 
 	if user.HeadId != nil && userItem.ItemId == *user.HeadId {
 		repositories.SetNullUserField(user, "head_id")
@@ -166,7 +166,7 @@ func UserTakeOffGood(user models.User, charData []string) (msgText string, butto
 func DressUserItem(user models.User, charData []string) (msgText string, buttons tg.InlineKeyboardMarkup) {
 
 	userItemId := helpers.ToInt(charData[1])
-	userItem := models.UserItem{ID: userItemId}.UserGetUserItem()
+	userItem := models.UserItem{ID: userItemId}.GetOrCreateUserItem()
 	changeHandItem := false
 
 	var result = fmt.Sprintf("Вы надели %s", userItem.Item.View)

@@ -46,7 +46,7 @@ func GetReceiptFromData(char []string) models.Receipt {
 	var result models.Receipt
 
 	if char[4] != "nil" && char[5] != "0" {
-		fstItem := models.UserItem{ID: helpers.ToInt(char[4])}.UserGetUserItem()
+		fstItem := models.UserItem{ID: helpers.ToInt(char[4])}.GetOrCreateUserItem()
 		id := int(fstItem.Item.ID)
 		c := helpers.ToInt(char[5])
 
@@ -55,7 +55,7 @@ func GetReceiptFromData(char []string) models.Receipt {
 	}
 
 	if char[7] != "nil" && char[8] != "0" {
-		fstItem := models.UserItem{ID: helpers.ToInt(char[7])}.UserGetUserItem()
+		fstItem := models.UserItem{ID: helpers.ToInt(char[7])}.GetOrCreateUserItem()
 		id := int(fstItem.Item.ID)
 		c := helpers.ToInt(char[8])
 
@@ -64,7 +64,7 @@ func GetReceiptFromData(char []string) models.Receipt {
 	}
 
 	if char[10] != "nil" && char[11] != "0" {
-		fstItem := models.UserItem{ID: helpers.ToInt(char[10])}.UserGetUserItem()
+		fstItem := models.UserItem{ID: helpers.ToInt(char[10])}.GetOrCreateUserItem()
 		id := int(fstItem.Item.ID)
 		c := helpers.ToInt(char[11])
 

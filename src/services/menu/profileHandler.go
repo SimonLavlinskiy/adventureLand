@@ -4,6 +4,7 @@ import (
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	v "github.com/spf13/viper"
 	"project0/src/controllers/mapController"
+	"project0/src/controllers/userController"
 	"project0/src/models"
 	"project0/src/repositories"
 	"strings"
@@ -48,7 +49,7 @@ func UserProfileLocation(update tg.Update, user models.User) (msgText string, bu
 
 	if user.Username == "waiting" {
 		user = repositories.UpdateUser(models.User{TgId: user.TgId, Username: newMessage})
-		msgText = user.GetUserInfo()
+		msgText = userController.GetUserInfo(user)
 		buttons = ProfileKeyboard(user.Avatar)
 	} else {
 		switch newMessage {
@@ -60,7 +61,7 @@ func UserProfileLocation(update tg.Update, user models.User) (msgText string, bu
 			buttons = MainKeyboard(user.Avatar)
 			repositories.UpdateUser(models.User{TgId: user.TgId, MenuLocation: "Меню"})
 		default:
-			msgText = user.GetUserInfo()
+			msgText = userController.GetUserInfo(user)
 			buttons = ProfileKeyboard(user.Avatar)
 		}
 	}

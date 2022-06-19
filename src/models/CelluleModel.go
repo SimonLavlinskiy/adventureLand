@@ -18,7 +18,8 @@ type Cell struct {
 	Teleport   *Teleport
 	ItemCellId *uint `gorm:"embedded"`
 	ItemCell   *ItemCell
-	NeedPay    bool `gorm:"embedded"`
+	NeedPay    bool `gorm:"embedded" default:"false"`
+	CanSell    bool `gorm:"embedded" default:"false"`
 	ChatId     *int `gorm:"embedded"`
 	Chat       *Chat
 }

@@ -29,18 +29,25 @@ func CheckBackpackAndGoodsAction(user models.User, charData []string) (msg strin
 	case v.GetString("callback_char.change_left_hand"), v.GetString("callback_char.change_right_hand"):
 		msg, buttons = goodsController.ChangeHand(user, charData)
 	case v.GetString("callback_char.take_off_good"):
-		msg, buttons = goodsController.UserTakeOffGood(user, charData)
+		msg, buttons = goodsController.UserTakeOffClothes(user, charData)
 
-	// Удаление, выкидывание, описание итема
+	// Удаление предмета
 	case v.GetString("callback_char.delete_item"):
 		msg, buttons = backpackAndGoodsController.UserDeleteItem(user, charData)
-	case v.GetString("callback_char.count_of_throw_out"):
-		msg, buttons = backpackAndGoodsController.UserWantsToThrowOutItem(user, charData)
+	// выкидывание, продажа (выбор количества)
+	case v.GetString("callback_char.count_of_throw_out"), v.GetString("callback_char.select_count_sell_item"):
+		msg, buttons = backpackAndGoodsController.SelectCountItem(user, charData)
+	// Выкидывание
 	case v.GetString("callback_char.throw_out_item"):
-		msg, buttons = backpackAndGoodsController.UserThrowOutItem(user, charData)
+		msg, buttons = backpackController.UserThrowOutItem(user, charData)
+	// Продажа предмета
+	case v.GetString("callback_char.sell_item"):
+		msg, buttons = backpackController.SellItem(charData)
+	// Описание
 	case v.GetString("callback_char.description"):
 		msg = models.UserItem{ID: helpers.ToInt(charData[1])}.GetFullDescriptionOfUserItem()
 		buttons = backpackAndGoodsController.DescriptionInlineButton(charData)
+
 	default:
 		err = errors.New("not good or backpack actions")
 	}

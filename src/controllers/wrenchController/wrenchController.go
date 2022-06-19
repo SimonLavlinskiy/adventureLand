@@ -34,7 +34,7 @@ func AllReceiptsMsg() string {
 
 func PutCountComponent(char []string) (buttons tg.InlineKeyboardMarkup) {
 	userItemId := char[helpers.ToInt(char[2])+(4+helpers.ToInt(char[2])*2)] // char[x + (4+x*2 )] = char[4]
-	userItem := models.UserItem{ID: helpers.ToInt(userItemId)}.UserGetUserItem()
+	userItem := models.UserItem{ID: helpers.ToInt(userItemId)}.GetOrCreateUserItem()
 
 	buttons = ChangeCountUserItemKeyboard(char, userItem)
 	return buttons
@@ -48,7 +48,7 @@ func UserCraftItem(user models.User, receipt *models.Receipt, charData []string)
 		return msgText, buttons
 	}
 
-	resultItem := models.UserItem{UserId: int(user.ID), ItemId: receipt.ItemResultID}.UserGetUserItem()
+	resultItem := models.UserItem{UserId: int(user.ID), ItemId: receipt.ItemResultID}.GetOrCreateUserItem()
 
 	if resultItem.Item.MaxCountUserHas != nil && *receipt.ItemResultCount+*resultItem.Count > *resultItem.Item.MaxCountUserHas {
 		msgText, buttons = Workbench(nil, charData)
@@ -57,17 +57,17 @@ func UserCraftItem(user models.User, receipt *models.Receipt, charData []string)
 	}
 
 	if receipt.Component1ID != nil && receipt.Component1Count != nil {
-		userItem := models.UserItem{UserId: int(user.ID), ItemId: *receipt.Component1ID}.UserGetUserItem()
+		userItem := models.UserItem{UserId: int(user.ID), ItemId: *receipt.Component1ID}.GetOrCreateUserItem()
 		countItem1 := *userItem.Count - *receipt.Component1Count
 		user.UpdateUserItem(models.UserItem{ID: userItem.ID, ItemId: *receipt.Component1ID, Count: &countItem1}) // CountUseLeft: resultItem.CountUseLeft
 	}
 	if receipt.Component2ID != nil && receipt.Component2Count != nil {
-		userItem := models.UserItem{UserId: int(user.ID), ItemId: *receipt.Component2ID}.UserGetUserItem()
+		userItem := models.UserItem{UserId: int(user.ID), ItemId: *receipt.Component2ID}.GetOrCreateUserItem()
 		countItem2 := *userItem.Count - *receipt.Component2Count
 		user.UpdateUserItem(models.UserItem{ID: userItem.ID, ItemId: *receipt.Component2ID, Count: &countItem2}) // CountUseLeft: resultItem.CountUseLeft
 	}
 	if receipt.Component3ID != nil && receipt.Component3Count != nil {
-		userItem := models.UserItem{UserId: int(user.ID), ItemId: *receipt.Component3ID}.UserGetUserItem()
+		userItem := models.UserItem{UserId: int(user.ID), ItemId: *receipt.Component3ID}.GetOrCreateUserItem()
 		countItem3 := *userItem.Count - *receipt.Component3Count
 		user.UpdateUserItem(models.UserItem{ID: userItem.ID, ItemId: *receipt.Component3ID, Count: &countItem3}) // CountUseLeft: resultItem.CountUseLeft
 	}
@@ -146,7 +146,7 @@ func getViewEmojiForMsg(char []string, i int) string {
 
 func viewComponent(id string) string {
 	if id != "nil" {
-		component := models.UserItem{ID: helpers.ToInt(id)}.UserGetUserItem()
+		component := models.UserItem{ID: helpers.ToInt(id)}.GetOrCreateUserItem()
 		return component.Item.View
 	}
 	return "⚪"

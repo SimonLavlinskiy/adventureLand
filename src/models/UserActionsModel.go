@@ -12,18 +12,6 @@ type UserActionsCounter struct {
 	Count      uint   `gorm:"embedded"`
 }
 
-func GetOrCreateUserAction(action UserActionsCounter) UserActionsCounter {
-	err := config.Db.
-		Where(action).
-		FirstOrCreate(&action).Error
-
-	if err != nil {
-		fmt.Println("GetOrCreateUserAction", err)
-	}
-
-	return action
-}
-
 func (u UserActionsCounter) UpdateUserAction() {
 	err := config.Db.
 		Updates(&u).

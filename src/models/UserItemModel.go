@@ -15,7 +15,7 @@ type UserItem struct {
 	Item         Item
 }
 
-func (ui UserItem) UserGetUserItem() UserItem {
+func (ui UserItem) GetOrCreateUserItem() UserItem {
 	zero := 0
 	result := UserItem{
 		UserId:       int(ui.User.ID),
@@ -38,7 +38,7 @@ func (ui UserItem) UserGetUserItem() UserItem {
 }
 
 func (u User) UserGetResultItem(r Result) {
-	ui := UserItem{UserId: int(u.ID), ItemId: int(*r.ItemId)}.UserGetUserItem()
+	ui := UserItem{UserId: int(u.ID), ItemId: int(*r.ItemId)}.GetOrCreateUserItem()
 	resItemCount := *ui.Count + int(*r.CountItem)
 
 	if ui.CountUseLeft == nil || *ui.CountUseLeft == 0 {
@@ -50,7 +50,7 @@ func (u User) UserGetResultItem(r Result) {
 }
 
 func (u User) UserGetResultExtraItem(r Result) {
-	ui := UserItem{UserId: int(u.ID), ItemId: int(*r.SpecialItemId)}.UserGetUserItem()
+	ui := UserItem{UserId: int(u.ID), ItemId: int(*r.SpecialItemId)}.GetOrCreateUserItem()
 	resItemCount := *ui.Count + int(*r.SpecialItemCount)
 
 	if ui.CountUseLeft == nil {
@@ -73,7 +73,7 @@ func (u User) UpdateUserItem(ui UserItem) {
 }
 
 func (ui UserItem) GetFullDescriptionOfUserItem() string {
-	userItem := ui.UserGetUserItem()
+	userItem := ui.GetOrCreateUserItem()
 	var fullDescriptionUserItem string
 
 	switch userItem.Item.Type {

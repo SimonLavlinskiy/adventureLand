@@ -14,7 +14,7 @@ type QuestTask struct {
 func (t QuestTask) HasUserDoneTask(user User) bool {
 	switch t.Type {
 	case "haveItem":
-		ui := UserItem{ItemId: *t.ItemId, UserId: int(user.ID)}.UserGetUserItem()
+		ui := UserItem{ItemId: *t.ItemId, UserId: int(user.ID)}.GetOrCreateUserItem()
 		if *ui.Count >= *t.CountItem {
 			return true
 		}

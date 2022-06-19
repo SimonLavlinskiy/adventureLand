@@ -47,21 +47,6 @@ type Clothes struct {
 	ShoesId *int
 }
 
-func (u User) GetUserInfo() string {
-	step := GetOrCreateUserAction(UserActionsCounter{UserId: u.ID, ActionName: "step"})
-	stepPlace := step.GetStepsPlace()
-	messageMap := fmt.Sprintf("🔅 🔆 *Профиль* 🔆 🔅\n\n"+
-		"*Твое имя*: %s\n"+
-		"*Аватар*: %s\n"+
-		"*Золото*: %d 💰\n"+
-		"*Здоровье*: _%d_ ❤️\n"+
-		"*Сытость*: _%d_ 😋️\n"+
-		"*Шаги*: _%d_ 👣 (_%d место_)",
-		u.Username, u.Avatar, *u.Money, u.Health, u.Satiety, step.Count, stepPlace)
-
-	return messageMap
-}
-
 func (u User) IsDressedItem(userItem UserItem) (string, string) {
 	dressItem := "Надеть ✅"
 	dressItemData := v.GetString("callback_char.dress_good")

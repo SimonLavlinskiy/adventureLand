@@ -36,7 +36,7 @@ func GetInventoryItems(userId uint) []models.UserItem {
 }
 
 func SubCountUsingFromInstrument(user models.User, instrument models.Item) (result string, err error) {
-	userItem := models.UserItem{ItemId: int(instrument.ID), UserId: int(user.ID)}.UserGetUserItem()
+	userItem := models.UserItem{ItemId: int(instrument.ID), UserId: int(user.ID)}.GetOrCreateUserItem()
 
 	newCountUseLeft := *userItem.Item.CountUse - 1
 

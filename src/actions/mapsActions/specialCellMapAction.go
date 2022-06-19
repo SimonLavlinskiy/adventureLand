@@ -26,7 +26,7 @@ func CheckCellEmojiAction(user models.User, charData []string) (msg string, butt
 	case v.GetString("message.emoji.forbidden"):
 		msg, buttons = useCellWithoutDoing(user, "🚫 Сюда нельзя! 🚫")
 	case v.GetString("message.emoji.shop_assistant"):
-		msg, buttons = useCellWithoutDoing(user, "‍🔧 Зачем зашел за кассу? 😑")
+		msg, buttons = useCellWithoutDoing(user, "‍🔧 Зачем зашел за кассу? 😑\nЕсли хочешь продать предмет, просто зайди в инвентарь, выбери предмет и нажми кнопку 💰")
 	case v.GetString("message.emoji.wc"):
 		msg, buttons = useCellWithoutDoing(user, "пись-пись 👏")
 	case v.GetString("message.emoji.stop_use"):

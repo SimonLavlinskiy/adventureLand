@@ -9,10 +9,8 @@ import (
 )
 
 func UpdateCellUnderUserWhenUserThrowItem(user models.User, userItem models.UserItem, count int, cellType string) error {
-	userLocation := repositories.GetOrCreateMyLocation(user)
+	cell, userLocation := GetCellUnderUser(user)
 
-	cell := models.Cell{AxisX: *userLocation.AxisX, AxisY: *userLocation.AxisY, MapsId: *userLocation.MapsId}
-	cell = cell.GetCell()
 	if cell.ItemCellId != nil && cell.ItemCell.ItemCount != nil && *cell.ItemCell.ItemCount > 0 {
 		return errors.New("В этой ячейке уже есть предмет, перейди на другую ячейку")
 	}
@@ -30,4 +28,12 @@ func UpdateCellUnderUserWhenUserThrowItem(user models.User, userItem models.User
 
 	return nil
 
+}
+
+func GetCellUnderUser(user models.User) (models.Cell, models.Location) {
+	userLocation := repositories.GetOrCreateMyLocation(user)
+	cell := models.Cell{AxisX: *userLocation.AxisX, AxisY: *userLocation.AxisY, MapsId: *userLocation.MapsId}
+	cell = cell.GetCell()
+
+	return cell, userLocation
 }
